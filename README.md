@@ -3,12 +3,11 @@
 ## Setup
 
 ### Prerequisites (tested on)
-- Python 3.8+
+- Python 3.11
 - For GPU support (optional):
   - NVIDIA GPU with CUDA support
   - CUDA Toolkit 12.2
-
-**Note:** cuDNN is installed automatically via pip dependencies.
+  - cuDNN 8.9
 
 ### Installation
 
