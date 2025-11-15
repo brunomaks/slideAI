@@ -1,9 +1,3 @@
-grayscale-service/__pycache__
-flip-service/__pycache__
-
-grayscale-service/output
-flip-service/output
-
 *.pyc
 __pycache__/
 *.pyo
