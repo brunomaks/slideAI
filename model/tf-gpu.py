@@ -1,10 +1,10 @@
 import tensorflow as tf
 import platform
 from tensorflow.keras import layers, models
-import numpy as np
 
 IMG_SIZE = (50, 50)
 BATCH_SIZE = 32
+EPOCHS = 20
 
 print(f"Platform: {platform.system()}")
 print(f"TensorFlow version: {tf.__version__}")
@@ -53,11 +53,12 @@ model = models.Sequential([
 
     layers.Flatten(),
     layers.Dense(256, activation='relu'),
+    layers.Dropout(0.4),
 
     layers.Dense(num_classes, activation='softmax')
 ])
 
-model.compile(optimizer='adam',
+model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=0.001),
               loss='sparse_categorical_crossentropy',
               metrics=['accuracy'])
 
@@ -66,8 +67,10 @@ model.summary()
 history = model.fit(
     train_data,
     validation_data=val_data,
-    epochs=20
+    epochs=EPOCHS
 )
 
 test_loss, test_acc = model.evaluate(val_data, verbose=2)
 print('\nTest accuracy:', test_acc)
+
+model.save('gesture_cnn_model.h5')
