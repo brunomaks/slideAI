@@ -3,3 +3,13 @@ flip-service/__pycache__
 
 grayscale-service/output
 flip-service/output
+
+*.pyc
+__pycache__/
+*.pyo
+*.pyd
+venv/
+.env
+db.sqlite3
+migrations/
+grayscale_app/output/
