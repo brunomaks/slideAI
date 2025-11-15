@@ -20,4 +20,5 @@ from django.urls import path, include
 urlpatterns = [
 path('admin/', admin.site.urls),
 path('grayscale/', include('grayscale_app.urls')),
+path('flip/', include('flip_app.urls')),
 ]

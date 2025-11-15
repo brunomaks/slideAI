@@ -13,3 +13,4 @@ venv/
 db.sqlite3
 migrations/
 grayscale_app/output/
+flip_app/output/

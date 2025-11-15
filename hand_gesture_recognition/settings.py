@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'grayscale_app',
+    'flip_app',
 ]
 
 MIDDLEWARE = [
