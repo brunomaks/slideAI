@@ -1,3 +1,2 @@
 # MacOS Specific
-
-**/.DS_Store
+.env/
