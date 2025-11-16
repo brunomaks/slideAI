@@ -4,6 +4,7 @@ __pycache__/
 *.pyd
 venv/
 .env
+main_app/.env
 db.sqlite3
 migrations/
 media/
