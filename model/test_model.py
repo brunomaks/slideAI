@@ -2,6 +2,7 @@ import tensorflow as tf
 from PIL import Image
 import numpy as np
 
+
 loaded_model = tf.keras.models.load_model('gesture_cnn_model.h5')
 loaded_model.summary()
 
@@ -19,7 +20,7 @@ loaded_model.summary()
 #     print(f"Image {i}: Predicted class {predicted_class}")
 
 
-img = Image.open('pavlo/ok.jpg').convert('L')
+img = Image.open('real-images/ok.jpg').convert('L')
 
 img_array = np.array(img)
 
@@ -36,5 +37,3 @@ for i in range(0, prediction.shape[1]):
 
 predicted_class = np.argmax(prediction)
 print(f"Predicted class {predicted_class}")
-
-
