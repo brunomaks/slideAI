@@ -4,7 +4,7 @@ from tensorflow.keras import layers, models
 
 IMG_SIZE = (50, 50)
 BATCH_SIZE = 32
-EPOCHS = 20
+EPOCHS = 5
 
 print(f"Platform: {platform.system()}")
 print(f"TensorFlow version: {tf.__version__}")
@@ -39,15 +39,15 @@ val_data = val_data.prefetch(buffer_size=tf.data.AUTOTUNE)
 model = models.Sequential([
     layers.experimental.preprocessing.Rescaling(1./255, input_shape=(IMG_SIZE[0], IMG_SIZE[1], 1)),
 
-    layers.Conv2D(32, (3, 3), activation='relu'),
+    layers.Conv2D(32, (3, 3), activation='relu', padding='same'),
     layers.BatchNormalization(),
     layers.MaxPooling2D((2, 2)),
 
-    layers.Conv2D(64, (3, 3), activation='relu'),
+    layers.Conv2D(32, (3, 3), activation='relu', padding='same'),
     layers.BatchNormalization(),
     layers.MaxPooling2D((2, 2)),
 
-    layers.Conv2D(128, (3, 3), activation='relu'),
+    layers.Conv2D(32, (3, 3), activation='relu', padding='same'),
     layers.BatchNormalization(),
     layers.MaxPooling2D((2, 2)),
 
