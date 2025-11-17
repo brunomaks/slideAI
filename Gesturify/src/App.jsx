@@ -1,12 +1,26 @@
-import VideoWrapper from './components/VideoWrapper'
+import { useState } from 'react'
+import Home from './pages/Home'
+import Landing from './pages/LandingPage'
+import Topbar from './components/TopBar'
 
 function App() {
+  const [showLanding, setShowLanding] = useState(true);
+
+  const handleEnter = () => {
+    setShowLanding(false);
+  };
+
+  const handleReset = () => {
+    setShowLanding(true);
+  };
 
   return (
     <>
-      <div>
-        <VideoWrapper></VideoWrapper>
-      </div>
+      <Topbar onBrandClick={handleReset} />
+      {showLanding && <Landing onEnter={handleEnter} />}
+      {!showLanding && (
+        <Home />
+      )}
     </>
   )
 }

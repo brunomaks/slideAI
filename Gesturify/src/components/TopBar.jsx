@@ -1,0 +1,19 @@
+import '../pages/LandingPage.css';
+
+export default function Topbar({ onBrandClick }) {
+  return (
+    <nav className="topbar">
+      <div className="topbar-content">
+        <div className="topbar-brand" onClick={onBrandClick}>Gesturify</div>
+        <a 
+          href="https://git.chalmers.se/courses/dit826/2025/team4/-/wikis/home" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          className="topbar-button"
+        >
+          Documentation
+        </a>
+      </div>
+    </nav>
+  );
+}
