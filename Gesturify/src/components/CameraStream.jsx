@@ -52,7 +52,7 @@ export default function CameraStream({ onStreamReady }) {
   }, [onStreamReady]);
 
   return (
-    <div>
+    <div className="camera-stream-wrapper">
       <video
         ref={videoRef}
         autoPlay
