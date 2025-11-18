@@ -1,25 +1,15 @@
 import cv2
 import numpy as np
 
-# -----------------------------
-# SETTINGS
-# -----------------------------
-
 INPUT_IMAGE = "real-images/2.jpeg"
 OUTPUT_MASK = "real-images/mask.png"
 
-# Target size
 SIZE = (50, 50)
 
-# Example: black color mask in HSV
-lower = np.array([0, 20, 50])      # lower HSV bound
-upper = np.array([255, 255, 255])   # upper HSV bound
+# HSV bounds
+lower = np.array([0, 20, 50])      
+upper = np.array([255, 255, 255])
 
-# -----------------------------
-# PROCESSING
-# -----------------------------
-
-# 1. Load image
 img = cv2.imread(INPUT_IMAGE)
 
 # 2. Resize to 50×50 pixels
@@ -33,5 +23,3 @@ mask = cv2.inRange(hsv, lower, upper)
 
 # 5. Save mask
 cv2.imwrite(OUTPUT_MASK, mask)
-
-print("Done! Mask saved to:", OUTPUT_MASK)
