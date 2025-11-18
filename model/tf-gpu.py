@@ -4,7 +4,7 @@ from tensorflow.keras import layers, models
 
 IMG_SIZE = (50, 50)
 BATCH_SIZE = 32
-EPOCHS = 10
+EPOCHS = 5
 
 print(f"Platform: {platform.system()}")
 print(f"TensorFlow version: {tf.__version__}")
@@ -14,7 +14,7 @@ train_data = tf.keras.preprocessing.image_dataset_from_directory(
     'images/train',
     shuffle=False,
     color_mode='grayscale',
-    validation_split=0.2,
+    validation_split=0.1,
     subset='training',
     seed=123,
     image_size=IMG_SIZE,
@@ -25,7 +25,7 @@ val_data = tf.keras.preprocessing.image_dataset_from_directory(
 	'images/train',
     shuffle=False,
     color_mode='grayscale',
-    validation_split=0.2,
+    validation_split=0.1,
     subset='validation',
     seed=123,
     image_size=IMG_SIZE,
@@ -44,16 +44,18 @@ model = models.Sequential([
     layers.Conv2D(32, (3, 3), activation='relu'),
     layers.BatchNormalization(),
     layers.MaxPooling2D((2, 2)),
-    layers.Dropout(0.3),
 
-    layers.Conv2D(64, (3, 3), activation='relu'),
+    layers.Conv2D(32, (3, 3), activation='relu'),
     layers.BatchNormalization(),
     layers.MaxPooling2D((2, 2)),
-    layers.Dropout(0.3),
+#
+#    layers.Conv2D(128, (3, 3), activation='relu'),
+#    layers.BatchNormalization(),
+#    layers.MaxPooling2D((2, 2)),
 
     layers.Flatten(),
-    layers.Dense(128, activation='relu'),
-    layers.Dropout(0.4),
+    layers.Dense(64, activation='relu'),
+    layers.Dropout(0.3),
 
     layers.Dense(num_classes, activation='softmax')
 ])

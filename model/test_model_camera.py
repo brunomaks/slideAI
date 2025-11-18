@@ -61,6 +61,10 @@ try:
         prediction = loaded_model.predict(frame_array)
         inference_time = time.time() - start_time
 
+        for i in range(0, prediction.shape[1]):
+            cv2.putText(frame_flipped, str(f"Class: {i}: {prediction[0][i]:.8f}"), (340, 30 + i*25), 
+            cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
+
         predicted_class = np.argmax(prediction)
 
         cv2.putText(frame_flipped, str(predicted_class), (10, 30), 

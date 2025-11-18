@@ -5,15 +5,15 @@ import numpy as np
 # SETTINGS
 # -----------------------------
 
-INPUT_IMAGE = "real-images/five.jpg"
+INPUT_IMAGE = "real-images/2.jpeg"
 OUTPUT_MASK = "real-images/mask.png"
 
 # Target size
 SIZE = (50, 50)
 
 # Example: black color mask in HSV
-lower = np.array([0, 0, 0])      # lower HSV bound
-upper = np.array([180, 255, 55])   # upper HSV bound
+lower = np.array([0, 20, 50])      # lower HSV bound
+upper = np.array([255, 255, 255])   # upper HSV bound
 
 # -----------------------------
 # PROCESSING
@@ -23,10 +23,10 @@ upper = np.array([180, 255, 55])   # upper HSV bound
 img = cv2.imread(INPUT_IMAGE)
 
 # 2. Resize to 50×50 pixels
-img_small = cv2.resize(img, SIZE, interpolation=cv2.INTER_AREA)
+#img_small = cv2.resize(img, SIZE, interpolation=cv2.INTER_AREA)
 
 # 3. Convert to HSV (better for color masking)
-hsv = cv2.cvtColor(img_small, cv2.COLOR_BGR2HSV)
+hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
 
 # 4. Create mask
 mask = cv2.inRange(hsv, lower, upper)
