@@ -1,10 +1,9 @@
-import React, { useRef, useEffect, useState } from "react";
+import React, { useRef, useEffect } from "react";
 import axios from "axios";
 
 const WEBRTC_SERVER_URL = import.meta.env.VITE_WEBRTC_SERVER_URL || "http://localhost:8080/offer";
 
 export default function WebRTCClient({ stream }) {
-    const [connectionState, setConnectionState] = useState("disconnected");
     const pcRef = useRef(null);
 
     useEffect(() => {
@@ -20,10 +19,6 @@ export default function WebRTCClient({ stream }) {
                 stream.getTracks().forEach((track) => {
                     pc.addTrack(track);
                 });
-
-                pc.onconnectionstatechange = () => {
-                    setConnectionState(pc.connectionState);
-                };
 
                 const offer = await pc.createOffer();
                 await pc.setLocalDescription(offer);
@@ -43,7 +38,6 @@ export default function WebRTCClient({ stream }) {
                 console.log("WebRTC conn established");
             } catch (error) {
                 console.error("WebRTC error:", error);
-                setConnectionState("failed");
             }
         };
 
@@ -58,10 +52,6 @@ export default function WebRTCClient({ stream }) {
     }, [stream]);
 
     return (
-        <div style={{ padding: "9px", fontSize: "9px" }}>
-            <p>
-                WebRTC Status: {connectionState}
-            </p>
-        </div>
+        null
     );
 }

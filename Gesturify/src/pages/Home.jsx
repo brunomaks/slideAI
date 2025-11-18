@@ -1,9 +1,9 @@
-import VideoWrapper from "../components/VideoWrapper";
+import StreamsView from "../components/StreamsView";
 
 export default function Home() {
     return (
         <div className="home-page">
-            <VideoWrapper />
+            <StreamsView />
         </div>
     );
 }  
