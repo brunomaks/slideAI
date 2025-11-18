@@ -4,22 +4,6 @@ import numpy as np
 import cv2
 import time
 
-# loaded_model = tf.keras.models.load_model('gesture_cnn_model.h5')
-# loaded_model.summary()
-
-# test_data = tf.keras.preprocessing.image_dataset_from_directory(
-#     'images/test',
-#     color_mode='grayscale',
-#     image_size=(50, 50),
-#     batch_size=32
-# )
-
-# predictions = loaded_model.predict(test_data)
-# for i, prediction in enumerate(predictions):
-#     predicted_class = tf.argmax(prediction).numpy()
-#     print(f"Image {i}: Predicted class {predicted_class}")
-
-
 loaded_model = tf.keras.models.load_model('gesture_cnn_model.h5')
 loaded_model.summary()
 
@@ -36,7 +20,8 @@ skip_frames = 3  # Process every 3rd frame for better performance
 
 lower = np.array([0, 0, 0])      # lower HSV bound
 upper = np.array([180, 255, 55])   # upper HSV bound
-    
+
+classes = ['circle', 'five', 'index', 'peace', 'three', 'thumbs up']
 
 try:
     while True:
@@ -62,17 +47,16 @@ try:
         inference_time = time.time() - start_time
 
         for i in range(0, prediction.shape[1]):
-            cv2.putText(frame_flipped, str(f"Class: {i}: {prediction[0][i]:.8f}"), (340, 30 + i*25), 
+            cv2.putText(frame_flipped, str(f"{classes[i]}: {prediction[0][i]:.5f}"), (340, 30 + i*25), 
             cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
 
         predicted_class = np.argmax(prediction)
 
-        cv2.putText(frame_flipped, str(predicted_class), (10, 30), 
+        cv2.putText(frame_flipped, classes[predicted_class], (10, 30), 
                     cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
         cv2.putText(frame_flipped, f"Inference: {inference_time*1000:.1f}ms", 
                        (10, 90), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
-            
-        cv2.imshow('Processed frame', frame_hsv)
+        cv2.imshow('Processed frame', cv2.inRange(cv2.cvtColor(cv2.resize(cv2.flip(frame, 1), (300, 300)), cv2.COLOR_BGR2HSV), lower, upper))
         
         cv2.imshow('Webcam Feed', frame_flipped)
         
@@ -83,8 +67,6 @@ except KeyboardInterrupt:
 finally:
     cap.release()
     cv2.destroyAllWindows()
-
-
 
 img = Image.open('real-images/mask_five.png')
 

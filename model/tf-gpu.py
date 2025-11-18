@@ -4,7 +4,7 @@ from tensorflow.keras import layers, models
 
 IMG_SIZE = (50, 50)
 BATCH_SIZE = 32
-EPOCHS = 5
+EPOCHS = 10
 
 print(f"Platform: {platform.system()}")
 print(f"TensorFlow version: {tf.__version__}")
@@ -48,7 +48,7 @@ model = models.Sequential([
     layers.Conv2D(32, (3, 3), activation='relu'),
     layers.BatchNormalization(),
     layers.MaxPooling2D((2, 2)),
-#
+
 #    layers.Conv2D(128, (3, 3), activation='relu'),
 #    layers.BatchNormalization(),
 #    layers.MaxPooling2D((2, 2)),

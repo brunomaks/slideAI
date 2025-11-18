@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 
-INPUT_IMAGE = "real-images/2.jpeg"
+INPUT_IMAGE = "real-images/1.jpeg"
 OUTPUT_MASK = "real-images/mask.png"
 
 SIZE = (50, 50)

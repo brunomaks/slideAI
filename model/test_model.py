@@ -1,8 +1,6 @@
 import tensorflow as tf
 from PIL import Image
 import numpy as np
-import cv2
-import time
 
 loaded_model = tf.keras.models.load_model('gesture_cnn_model.h5')
 loaded_model.summary()
