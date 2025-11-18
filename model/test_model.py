@@ -4,94 +4,36 @@ import numpy as np
 import cv2
 import time
 
-# loaded_model = tf.keras.models.load_model('gesture_cnn_model.h5')
-# loaded_model.summary()
-
-# test_data = tf.keras.preprocessing.image_dataset_from_directory(
-#     'images/test',
-#     color_mode='grayscale',
-#     image_size=(50, 50),
-#     batch_size=32
-# )
-
-# predictions = loaded_model.predict(test_data)
-# for i, prediction in enumerate(predictions):
-#     predicted_class = tf.argmax(prediction).numpy()
-#     print(f"Image {i}: Predicted class {predicted_class}")
-
-
 loaded_model = tf.keras.models.load_model('gesture_cnn_model.h5')
 loaded_model.summary()
 
-cap = cv2.VideoCapture(0, cv2.CAP_V4L2)
+#test_data = tf.keras.preprocessing.image_dataset_from_directory(
+#    'images/test',
+#    shuffle=False,
+#    color_mode='grayscale',
+#    image_size=(50, 50),
+#    batch_size=32
+#)
+#predictions = loaded_model.predict(test_data)
+#for i, prediction in enumerate(predictions):
+#    predicted_class = tf.argmax(prediction).numpy()
+#    print(f"Image {i}: Predicted class {predicted_class}")
 
-if not cap.isOpened():
-    print("Could not open the camera")
-    exit()
+img = [Image.open('real-images/mask_five.png'), Image.open('real-images/mask_finger.png'), Image.open('real-images/mask_like.png')]
 
-fps_counter = 0
-fps_time = time.time()
-frame_count = 0
-skip_frames = 3  # Process every 3rd frame for better performance
-    
+for i in range(0, len(img)):
+    img_array = np.array(img[i])
 
-try:
-    while True:
-        ret, frame = cap.read()
-        frame_flipped = cv2.flip(frame, 1)
-        
-        if not ret:
-            print("Error: Can't receive frame")
-            break
+    img_array = np.expand_dims(img_array, axis=-1) # (50, 50, 1)
 
-        frame_count += 1
-        if frame_count % (skip_frames) != 0:
-            continue
+    img_array = img_array.reshape(1, 50, 50, 1)
 
-        # preprocessing
-        frame_resized = cv2.resize(frame_flipped, (50, 50))
-        frame_bw = cv2.cvtColor(frame_resized, cv2.COLOR_BGR2GRAY)
-        frame_array = frame_bw.reshape(1, 50, 50, 1)
+    print(img_array.shape)
 
-        start_time = time.time()
-        prediction = loaded_model.predict(frame_array)
-        inference_time = time.time() - start_time
+    prediction = loaded_model.predict(img_array)
 
-        predicted_class = np.argmax(prediction)
+    for i in range(0, prediction.shape[1]):
+        print(f"Class: {i}: {prediction[0][i]:.10f}")
 
-        cv2.putText(frame_flipped, str(predicted_class), (10, 30), 
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
-        cv2.putText(frame_flipped, f"Inference: {inference_time*1000:.1f}ms", 
-                       (10, 90), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
-            
-        cv2.imshow('Processed frame', frame_bw)
-        
-        cv2.imshow('Webcam Feed', frame_flipped)
-        
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
-except KeyboardInterrupt:
-    print("Stopping")
-finally:
-    cap.release()
-    cv2.destroyAllWindows()
-
-
-
-img = Image.open('real-images/ok.jpg').convert('L')
-
-img_array = np.array(img)
-
-img_array = np.expand_dims(img_array, axis=-1) # (50, 50, 1)
-
-img_array = img_array.reshape(1, 50, 50, 1)
-
-print(img_array.shape)
-
-prediction = loaded_model.predict(img_array)
-
-for i in range(0, prediction.shape[1]):
-    print(f"Class: {i}: {prediction[0][i]:.10f}")
-
-predicted_class = np.argmax(prediction)
-print(f"Predicted class {predicted_class}")
+    predicted_class = np.argmax(prediction)
+    print(f"Predicted class {predicted_class}")

@@ -4,7 +4,7 @@ from tensorflow.keras import layers, models
 
 IMG_SIZE = (50, 50)
 BATCH_SIZE = 32
-EPOCHS = 5
+EPOCHS = 10
 
 print(f"Platform: {platform.system()}")
 print(f"TensorFlow version: {tf.__version__}")
@@ -12,8 +12,9 @@ print("GPU available: ", tf.config.list_physical_devices('GPU'))
 
 train_data = tf.keras.preprocessing.image_dataset_from_directory(
     'images/train',
+    shuffle=False,
     color_mode='grayscale',
-    validation_split=0.1,
+    validation_split=0.2,
     subset='training',
     seed=123,
     image_size=IMG_SIZE,
@@ -22,8 +23,9 @@ train_data = tf.keras.preprocessing.image_dataset_from_directory(
 
 val_data = tf.keras.preprocessing.image_dataset_from_directory(
 	'images/train',
+    shuffle=False,
     color_mode='grayscale',
-    validation_split=0.1,
+    validation_split=0.2,
     subset='validation',
     seed=123,
     image_size=IMG_SIZE,
@@ -39,20 +41,18 @@ val_data = val_data.prefetch(buffer_size=tf.data.AUTOTUNE)
 model = models.Sequential([
     layers.experimental.preprocessing.Rescaling(1./255, input_shape=(IMG_SIZE[0], IMG_SIZE[1], 1)),
 
-    layers.Conv2D(32, (3, 3), activation='relu', padding='same'),
+    layers.Conv2D(32, (3, 3), activation='relu'),
     layers.BatchNormalization(),
     layers.MaxPooling2D((2, 2)),
+    layers.Dropout(0.3),
 
-    layers.Conv2D(32, (3, 3), activation='relu', padding='same'),
+    layers.Conv2D(64, (3, 3), activation='relu'),
     layers.BatchNormalization(),
     layers.MaxPooling2D((2, 2)),
-
-    layers.Conv2D(32, (3, 3), activation='relu', padding='same'),
-    layers.BatchNormalization(),
-    layers.MaxPooling2D((2, 2)),
+    layers.Dropout(0.3),
 
     layers.Flatten(),
-    layers.Dense(256, activation='relu'),
+    layers.Dense(128, activation='relu'),
     layers.Dropout(0.4),
 
     layers.Dense(num_classes, activation='softmax')
