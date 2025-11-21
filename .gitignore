@@ -1,1 +1,9 @@
-.env/
+__pycache__/
+*.pyc
+*.log
+*.sqlite3
+shared_artifacts/models/*.pkl
+shared_artifacts/data/*.sqlite
+.vscode/
+.idea/
+.DS_Store
