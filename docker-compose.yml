@@ -1,0 +1,47 @@
+services:
+  ml-training:
+    build: ./ml_service
+    container_name: ml-training
+    volumes:
+      - ./ml_service:/workspace
+      - ./shared_artifacts/models:/models
+      - ./shared_artifacts/data:/data
+    environment:
+      - CUDA_VISIBLE_DEVICES=0
+      - MODEL_OUTPUT_PATH=/models
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    profiles: ["training"]
+    command: python src/train.py --epochs 50 --set-active
+
+  ml-training-cpu:
+    build: ./ml_service
+    container_name: ml-training-cpu
+    volumes:
+      - ./ml_service:/workspace
+      - ./shared_artifacts/models:/models
+      - ./shared_artifacts/data:/data
+    environment:
+      - CUDA_VISIBLE_DEVICES=-1
+      - MODEL_OUTPUT_PATH=/models
+    profiles: ["training-cpu"]
+    command: python src/train.py --epochs 50 --set-active
+
+  web:
+    build: ./web_app
+    container_name: web
+    volumes:
+      - ./web_app:/app
+      - ./shared_artifacts/models:/models
+      - ./shared_artifacts/data:/data
+    ports:
+      - "8000:8000"
+    environment:
+      - DJANGO_SETTINGS_MODULE=config.settings.development
+      - MODEL_PATH=/models
+      - DATABASE_PATH=/data/database.sqlite
