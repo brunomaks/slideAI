@@ -39,10 +39,14 @@ def save_detected_hand(rgb_image, detection_result, save_file_path):
 
     # Crop the image by the bounding box
     cropped_img = annotated_image[box_y_l:box_y_r, box_x_l:box_x_r]
+
+    handedness_label = handedness[0].category_name.lower()
+    base_name, ext = os.path.splitext(save_file_path)
+    hand_save_path = f"{base_name}_{handedness_label}{ext}"
     
     # Save cropped image
     to_save_rgb = cv2.cvtColor(cropped_img, cv2.COLOR_BGR2RGB)
-    cv2.imwrite(save_file_path, to_save_rgb)
+    cv2.imwrite(hand_save_path, to_save_rgb)
 
 
 
@@ -65,7 +69,7 @@ for subdir, dirs, files in os.walk(input_path, topdown=True):
         if not os.path.isdir(os.path.join(output_path, dir)):
             os.makedirs(os.path.join(output_path, dir))
     for file in files:
-        if not file.endswith(".jpg"):
+        if not file.endswith((".jpg", ".jpeg")):
             continue
         file = os.path.relpath(os.path.join(subdir, file), input_path)
 # STEP 2: Load the input image.
