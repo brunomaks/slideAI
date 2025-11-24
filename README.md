@@ -69,10 +69,18 @@ This project follows a **microservices architecture** with separate containers f
 ### Optional (For GPU Training)
 
 - **NVIDIA GPU** with CUDA support
-- **NVIDIA Drivers** installed on host (Docker handles CUDA/cuDNN)
-  - Windows: [NVIDIA Driver Download](https://www.nvidia.com/Download/index.aspx)
-  - Linux: `sudo apt install nvidia-driver-535`
-  - WSL2: NVIDIA drivers on Windows host (not in WSL)
+- **NVIDIA Drivers** installed on host (Docker handles CUDA/cuDNN internally).
+
+  - Note: You do NOT need to install the NVIDIA CUDA Toolkit on the host.
+
+  - Linux: NVIDIA Container Toolkit (Required for Linux):
+
+    The nvidia-docker wrapper is deprecated. Please install the NVIDIA Container Toolkit directly:
+
+    ```bash
+    sudo apt-get install -y nvidia-container-toolkit
+    sudo systemctl restart docker
+    ```
 
 > **Note**: No Python installation required on host machine. Everything runs in Docker.
 
@@ -402,7 +410,7 @@ docker-compose run --rm web python manage.py migrate
 **Clear Docker cache:**
 
 ```bash
-docker-compose build --no-cache 
+docker-compose build --no-cache ml-training
 
 docker-compose build --no-cache web
 ```
@@ -512,8 +520,6 @@ This project is developed for academic purposes as part of DIT826 coursework at 
 - 📋 Kubernetes deployment testing
 - 📋 CI/CD pipeline setup
 - 📋 Final documentation
-
-**Last Updated**: November 20, 2025
 
 ---
 
