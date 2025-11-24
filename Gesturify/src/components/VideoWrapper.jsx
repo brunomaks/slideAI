@@ -1,6 +1,5 @@
 import React, { useState } from "react"
 import CameraStream from "./CameraStream"
-import WebRTCClient from "./WebRTCClient"
 import CameraOverlay from "./CameraOverlay"
 import "./VideoWrapper.css"
 
@@ -35,7 +34,6 @@ export default function VideoWrapper() {
                     onDisableCamera={handleDisableCamera}
                 />
             </div>
-            {stream && <WebRTCClient stream={stream} />}
         </div>
     )
 }

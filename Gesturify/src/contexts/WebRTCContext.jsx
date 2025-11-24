@@ -1,13 +1,19 @@
-import React, { useRef, useEffect } from "react";
+import React, { createContext, useContext, useRef, useEffect, useState } from "react";
 import axios from "axios";
+
+const WebRTCContext = createContext(null);
 
 const WEBRTC_SERVER_URL = import.meta.env.VITE_WEBRTC_SERVER_URL || "http://localhost:8080/offer";
 
-export default function WebRTCClient({ stream }) {
+export function WebRTCProvider({ children }) {
+    const [stream, setStream] = useState(null);
+    const [isConnected, setIsConnected] = useState(false);
     const pcRef = useRef(null);
 
     useEffect(() => {
-        if (!stream) return;
+        if (!stream) {
+            return;
+        }
 
         const setupWebRTC = async () => {
             try {
@@ -35,9 +41,11 @@ export default function WebRTCClient({ stream }) {
                     })
                 );
 
-                console.log("WebRTC conn established");
+                setIsConnected(true);
+                console.log("WebRTC connection established");
             } catch (error) {
                 console.error("WebRTC error:", error);
+                setIsConnected(false);
             }
         };
 
@@ -48,10 +56,40 @@ export default function WebRTCClient({ stream }) {
                 pcRef.current.close();
                 console.log("WebRTC closed");
             }
+            setIsConnected(false);
         };
     }, [stream]);
 
+    const connectStream = (mediaStream) => {
+        setStream(mediaStream);
+    };
+
+    const disconnectStream = () => {
+        if (pcRef.current) {
+            pcRef.current.close();
+            pcRef.current = null;
+        }
+        setStream(null);
+    };
+
+    const value = {
+        stream,
+        isConnected,
+        connectStream,
+        disconnectStream,
+    };
+
     return (
-        null
+        <WebRTCContext.Provider value={value}>
+            {children}
+        </WebRTCContext.Provider>
     );
+}
+
+export function useWebRTC() {
+    const context = useContext(WebRTCContext);
+    if (!context) {
+        throw new Error("useWebRTC must be used within a WebRTCProvider");
+    }
+    return context;
 }

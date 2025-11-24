@@ -1,4 +1,5 @@
 import React, { useRef, useEffect } from "react";
+import { useWebRTC } from "../contexts/WebRTCContext";
 
 const streamConfig = {
   fps: parseInt(import.meta.env.VITE_MAX_STREAM_FPS) || 24,
@@ -11,6 +12,7 @@ const streamConfig = {
 export default function CameraStream({ onStreamReady }) {
   const videoRef = useRef(null);
   const streamRef = useRef(null);
+  const { connectStream, disconnectStream } = useWebRTC();
 
   useEffect(() => {
     const startCamera = async () => {
@@ -27,6 +29,8 @@ export default function CameraStream({ onStreamReady }) {
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
           streamRef.current = stream;
+
+          connectStream(stream);
 
           if (onStreamReady) {
             onStreamReady(stream);
@@ -48,8 +52,9 @@ export default function CameraStream({ onStreamReady }) {
       if (streamRef.current) {
         streamRef.current.getTracks().forEach((track) => track.stop());
       }
+      disconnectStream();
     };
-  }, [onStreamReady]);
+  }, [onStreamReady, connectStream, disconnectStream]);
 
   return (
     <div className="camera-stream-wrapper">
