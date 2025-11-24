@@ -12,20 +12,14 @@ def grayscale_view(request):
     if request.method != "POST":
         return JsonResponse({"error": "POST an image file"}, status=400)
 
-    # read the uploaded file
-    if "image" not in request.FILES:
-        return JsonResponse({"error": "No image provided"}, status=400)
+    nparr = np.frombuffer(request.body, np.uint8)
+    img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
 
-    file = request.FILES["image"]
-
-    # read the uploaded file
-    file_bytes = np.asarray(bytearray(file.read()), dtype=np.uint8)
-    img = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
     # convert the file to grayscale
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
     # save the grayscale image to the output folder
-    filename = file.name
+    filename = "frame.jpg"
     path = os.path.join(settings.MEDIA_ROOT, filename)
     cv2.imwrite(path, gray)
 

@@ -2,59 +2,81 @@ from django.conf import settings
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 
+# receive rtc track from the web app
+import cv2
+import asyncio
+import json
+from aiortc import RTCPeerConnection, RTCSessionDescription, VideoStreamTrack
+from aiortc.contrib.media import MediaRecorder
+from av import VideoFrame
+
 import requests
 from dotenv import load_dotenv
 import os
 
-#csrf_exempt is needed since without it we get a 403 error when posting the request
+pcs = set()
+
 @csrf_exempt
-def main_view(request):
-    if request.method != "POST":
-        return JsonResponse({"error": "POST a frame request"}, status=400)
+async def main_view(request):
+    """Handle WebRTC offer from client"""
+    params = json.loads(request.body)
+    offer = RTCSessionDescription(sdp=params["sdp"], type=params["type"])
 
-    # read the uploaded file
-    if "frame" not in request.FILES:
-        return JsonResponse({"error": "No frame provided"}, status=400)
-    if "frame_number" not in request.POST:
-        return JsonResponse({"error": "No frame order number provided"}, status=400)
-
-    frame = request.FILES["frame"]
-    frame_number = request.POST["frame_number"]
-
-    # read the uploaded file
-    frame_bytes = frame.read()
-
-    # alternatively, if frame is sent as a url
-    # frame_body_response = requests.get(frame)
-    # files = {
-    #     "image": (f"frame{frame_number}.png", frame_body_response.content, "image/png")
-    # }
-
-    files = {
-        "image": (f"frame{frame_number}.png", frame_bytes, "image/png")
-    }
-
+    pc = RTCPeerConnection()
+    pcs.add(pc)
     # load environment variables
     load_dotenv()
     GRAYSCALE_URL = os.getenv('GRAYSCALE_URL')
     FLIP_URL = os.getenv('FLIP_URL')
-    HOST_URL = os.getenv('MAIN_URL')
+    HOST_URL = os.getenv('HOST_URL')
 
-    # post to grayscale service
-    grayscale_resp = requests.post(GRAYSCALE_URL, files=files)
+    @pc.on("track")
+    async def on_track(track):
+        print(f"Track received: {track.kind}")
 
-    # post to flip service
-    frame_to_flip_url = grayscale_resp.json().get("url")
-    frame_to_flip_name = grayscale_resp.json().get("filename")
+        if track.kind == "video":
+            print("Video track started - processing frames")
 
-    resp = requests.get(HOST_URL + frame_to_flip_url)
-    if resp.status_code != 200:
-        return JsonResponse({"error": "Could not load grayscale frame"}, status=500)
+            try:
+                while True:
+                    print("Receiving frame")
+                    frame = track.recv()
+                    # Convert frame to numpy array for display
+                    img = frame.to_ndarray(format="bgr24")
+                    print("image was converted to ndarray")
+                    # # post to grayscale service
+                    # grayscale_resp = requests.post(GRAYSCALE_URL, img)
 
-    files_to_flip = {
-        "image": (frame_to_flip_name, resp.content, "image/png")
-    }
+                    # _, encoded = cv2.imencode(".jpg", img)
 
-    flip_resp = requests.post(FLIP_URL, files=files_to_flip)
+                    # grayscale_resp = requests.post(
+                    #     GRAYSCALE_URL,
+                    #     data=encoded.tobytes(),
+                    #     headers={"Content-Type": "image/jpeg"}
+                    # )
 
-    return JsonResponse(flip_resp.json(), safe=False)
+                    # print(grayscale_resp.body)
+
+            except Exception as e:
+                print(f"Track ended or error: {e}")
+
+            @track.on("ended")
+            async def on_ended():
+                print("Video track ended")
+
+    @pc.on("connectionstatechange")
+    async def on_connectionstatechange():
+        print(f"Connection state: {pc.connectionState}")
+        if pc.connectionState == "failed" or pc.connectionState == "closed":
+            await pc.close()
+            pcs.discard(pc)
+
+    # Set remote description and create answer
+    await pc.setRemoteDescription(offer)
+    answer = await pc.createAnswer()
+    await pc.setLocalDescription(answer)
+
+    return JsonResponse({
+        "sdp": pc.localDescription.sdp,
+        "type": pc.localDescription.type
+    })
