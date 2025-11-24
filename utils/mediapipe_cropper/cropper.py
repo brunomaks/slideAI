@@ -59,7 +59,7 @@ for subdir, dirs, files in os.walk(input_path, topdown=True):
         if not os.path.isdir(os.path.join(output_path, dir)):
             os.makedirs(os.path.join(output_path, dir))
     for file in files:
-        if not file.endswith((".jpg", ".jpeg")):
+        if not file.endswith((".jpg", ".jpeg", ".png")):
             continue
         file = os.path.relpath(os.path.join(subdir, file), input_path)
 # STEP 2: Load the input image.
