@@ -7,10 +7,6 @@ from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
 
 MARGIN = 10  # pixels
-FONT_SIZE = 1
-FONT_THICKNESS = 1
-HANDEDNESS_TEXT_COLOR = (88, 205, 54) # vibrant green
-
 def save_detected_hand(rgb_image, detection_result, save_file_path):
   hand_landmarks_list = detection_result.hand_landmarks
   handedness_list = detection_result.handedness
@@ -20,12 +16,6 @@ def save_detected_hand(rgb_image, detection_result, save_file_path):
   for idx in range(len(hand_landmarks_list)):
     hand_landmarks = hand_landmarks_list[idx]
     handedness = handedness_list[idx]
-
-    # List the hand landmarks.
-    hand_landmarks_proto = landmark_pb2.NormalizedLandmarkList()
-    hand_landmarks_proto.landmark.extend([
-      landmark_pb2.NormalizedLandmark(x=landmark.x, y=landmark.y, z=landmark.z) for landmark in hand_landmarks
-    ])
 
     # Get the detected hand's bounding box.
     height, width, _ = annotated_image.shape
