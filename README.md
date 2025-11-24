@@ -11,7 +11,6 @@ A production-ready machine learning application built with Django and TensorFlow
 - [Architecture Overview](#️-architecture-overview)
 - [Prerequisites](#-prerequisites)
 - [Quick Start](#-quick-start)
-- [Project Structure](#-project-structure)
 - [Development Workflow](#-development-workflow)
 - [Deployment](#-deployment)
 - [Troubleshooting](#-troubleshooting)
@@ -20,7 +19,7 @@ A production-ready machine learning application built with Django and TensorFlow
 
 ---
 
-## 🏗️ Architecture Overview
+##  Architecture Overview
 
 This project follows a **microservices architecture** with separate containers for ML training and web serving:
 
@@ -133,69 +132,6 @@ docker-compose up web
 - **User Interface**: <http://localhost:8000>
 - **Admin Panel**: <http://localhost:8000/admin-panel/>
 - **Django Admin**: <http://localhost:8000/admin>
-
----
-
-## 📁 Project Structure
-
-```text
-team4/
-├── docker-compose.yml              # Multi-container orchestration
-├── .gitignore                      # Excludes models, cache, etc.
-├── README.md                       # This file
-├── weekly_plan.md                  # Course timeline and tasks
-│
-├── ml_service/                     # ML Training Container
-│   ├── Dockerfile                  # TensorFlow GPU/CPU image
-│   ├── requirements.txt            # ML dependencies
-│   ├── src/
-│   │   ├── train.py                # Main training pipeline (Req B, E)
-│   │   ├── model.py                # Model architecture
-│   │   ├── data_loader.py          # Data ingestion
-│   │   ├── data_validator.py       # Data validation (Req C)
-│   │   └── evaluator.py            # Model evaluation
-│   └── tests/
-│       └── test_data_validation.py # Unit tests (Req C)
-│
-├── web_app/                        # Django Web Application
-│   ├── Dockerfile                  # Python web server image
-│   ├── requirements.txt            # Django + ML dependencies
-│   ├── manage.py                   # Django CLI
-│   ├── config/                     # Django project settings
-│   │   ├── settings/
-│   │   │   ├── base.py             # Shared settings
-│   │   │   ├── development.py      # Dev environment
-│   │   │   └── production.py       # Prod environment
-│   │   ├── urls.py
-│   │   └── wsgi.py
-│   └── apps/
-│       ├── core/                   # Shared utilities
-│       │   └── services/
-│       │       └── model_service.py # ML model loading/inference
-│       ├── inference/              # End-user UI (Req D)
-│       │   ├── models.py           # Prediction logging
-│       │   ├── views.py            # Prediction endpoints
-│       │   ├── urls.py
-│       │   └── templates/
-│       └── admin_panel/            # Admin UI (Req F)
-│           ├── models.py           # Model version tracking
-│           ├── views.py            # Retraining interface
-│           ├── urls.py
-│           └── templates/
-│
-├── shared_artifacts/               # Shared between containers
-│   ├── models/                     # Model versioning (Req E)
-│   │   ├── active_model.txt        # Points to current model
-│   │   ├── model_v1.pkl            # Trained model artifacts
-│   │   └── .gitkeep
-│   └── data/
-│       └── database.sqlite         # SQLite database (Req A)
-│
-└── kubernetes/                     # Production deployment (Req G)
-    ├── web-deployment.yaml         # Web service K8s config
-    ├── ml-training-job.yaml        # Training job config
-    └── persistent-volume.yaml      # Shared storage
-```
 
 ---
 
