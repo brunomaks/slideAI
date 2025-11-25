@@ -72,13 +72,45 @@ This project follows a **microservices architecture** with separate containers f
 
   - Note: You do NOT need to install the NVIDIA CUDA Toolkit on the host.
 
-  - Linux: NVIDIA Container Toolkit (Required for Linux):
+  - Linux: 
 
-    The nvidia-docker wrapper is deprecated. Please install the NVIDIA Container Toolkit directly:
+    Make sure you have the nvidia driver installed by running
 
     ```bash
-    sudo apt-get install -y nvidia-container-toolkit
+    nvidia-smi
+    ``` 
+
+    Install NVIDIA Container Toolkit
+
+    Ubuntu:
+
+    ```bash
+    sudo apt-get install nvidia-container-toolkit
+    ```
+
+    Fedora:
+
+    ```bash
+    sudo dnf install nvidia-container-toolkit
+    ```
+
+    Generate CDI specification and verify it
+
+    ```bash
+    sudo nvidia-ctk cdi generate --output=/etc/cdi/nvidia.yaml
+    nvidia-ctk cdi list
+    ```
+
+    Restart the docker service
+
+    ```bash
     sudo systemctl restart docker
+    ```
+
+    Verify the setup by running nvidia-smi inside the container
+
+    ```bash
+    docker run --rm -it --device=nvidia.com/gpu=all ubuntu nvidia-smi
     ```
 
 > **Note**: No Python installation required on host machine. Everything runs in Docker.
