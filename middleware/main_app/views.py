@@ -1,3 +1,4 @@
+import aiohttp
 from django.conf import settings
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
@@ -37,28 +38,25 @@ async def main_view(request):
         if track.kind == "video":
             print("Video track started - processing frames")
 
-            try:
-                while True:
-                    print("Receiving frame")
-                    frame = await track.recv()
-                    # Convert frame to numpy array for display
-                    img = frame.to_ndarray(format="bgr24")
-                    print("image was converted to ndarray")
-                    # # post to grayscale service
-                    # grayscale_resp = requests.post(GRAYSCALE_URL, img)
+            async with aiohttp.ClientSession() as session:
+                try:
+                    while True:
+                        print("Receiving frame")
+                        frame = await track.recv()
+                        img = frame.to_ndarray(format="bgr24")
+                        print("image was converted to ndarray")
+                        var = cv2.imencode('.jpg', img)[1].tobytes()
+                        
+                        async with session.post(
+                            GRAYSCALE_URL,
+                            data=var,
+                            headers={"Content-Type": "image/jpeg"}
+                        ) as grayscale_resp:
+                            content = await grayscale_resp.read()
+                            print(content)
 
-                    # _, encoded = cv2.imencode(".jpg", img)
-
-                    # grayscale_resp = requests.post(
-                    #     GRAYSCALE_URL,
-                    #     data=encoded.tobytes(),
-                    #     headers={"Content-Type": "image/jpeg"}
-                    # )
-
-                    # print(grayscale_resp.body)
-
-            except Exception as e:
-                print(f"Track ended or error: {e}")
+                except Exception as e:
+                    print(f"Track ended or error: {e}")
 
             @track.on("ended")
             async def on_ended():

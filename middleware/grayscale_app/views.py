@@ -5,12 +5,15 @@ from django.views.decorators.csrf import csrf_exempt
 import cv2
 import numpy as np
 import os
+import time
 
 #csrf_exempt is needed since without it we get a 403 error when posting the request
 @csrf_exempt
 def grayscale_view(request):
     if request.method != "POST":
         return JsonResponse({"error": "POST an image file"}, status=400)
+    
+    print("Grayscale service received a request")
 
     nparr = np.frombuffer(request.body, np.uint8)
     img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
@@ -19,7 +22,7 @@ def grayscale_view(request):
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
     # save the grayscale image to the output folder
-    filename = "frame.jpg"
+    filename = "frame" + str(int(time.time_ns())) + ".jpg"
     path = os.path.join(settings.MEDIA_ROOT, filename)
     cv2.imwrite(path, gray)
 
