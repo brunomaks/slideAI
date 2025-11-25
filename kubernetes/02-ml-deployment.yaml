@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ml-training
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ml-training
+  template:
+    metadata:
+      labels:
+        app: ml-training
+    spec:
+      containers:
+        - name: ml-training
+          image: <your-username>/team4-ml:v1 # REPLACE THIS
+          command: ["python", "src/train.py"] # Or your entrypoint
+          resources:
+            limits:
+              nvidia.com/gpu: 1 # Requests 1 GPU
+          volumeMounts:
+            - mountPath: /models
+              name: shared-storage
+              subPath: models
+            - mountPath: /data
+              name: shared-storage
+              subPath: data
+      volumes:
+        - name: shared-storage
+          persistentVolumeClaim:
+            claimName: shared-data-pvc

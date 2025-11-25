@@ -19,7 +19,7 @@ A production-ready machine learning application built with Django and TensorFlow
 
 ---
 
-##  Architecture Overview
+## 🏗️ Architecture Overview
 
 This project follows a **microservices architecture** with separate containers for ML training and web serving:
 
@@ -259,11 +259,18 @@ docker push gcr.io/YOUR_PROJECT/ml-training:latest
 
 **3. Deploy to Kubernetes:**
 
+Build and push all 3 images.
+
+Replace <your-username>/... in the files with your actual image names.
+
+Run:
+
 ```bash
 # Apply configurations
-kubectl apply -f kubernetes/persistent-volume.yaml
-kubectl apply -f kubernetes/web-deployment.yaml
-kubectl apply -f kubernetes/ml-training-job.yaml
+kubectl apply -f kubernetes/01-storage.yaml
+kubectl apply -f kubernetes/02-ml-deployment.yaml
+kubectl apply -f kubernetes/03-web.yaml
+kubectl apply -f kubernetes/04-frontend.yaml
 
 # Check status
 kubectl get pods
