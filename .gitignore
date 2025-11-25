@@ -7,3 +7,5 @@ shared_artifacts/data/*.sqlite
 .vscode/
 .idea/
 .DS_Store
+utils/
+model/
