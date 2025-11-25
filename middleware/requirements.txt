@@ -4,3 +4,4 @@ opencv-python
 requests
 dotenv
 django-cors-headers
+uvicorn

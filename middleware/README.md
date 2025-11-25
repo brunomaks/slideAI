@@ -22,4 +22,5 @@
     ```
     python manage.py migrate
     python manage.py runserver 8001
+    python -m uvicorn hand_gesture_recognition.asgi:application --host 0.0.0.0 --port 8001 --reload
     ```

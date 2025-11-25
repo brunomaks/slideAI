@@ -82,6 +82,7 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'hand_gesture_recognition.wsgi.application'
+ASGI_APPLICATION = 'hand_gesture_recognition.asgi.application'
 
 
 # Database

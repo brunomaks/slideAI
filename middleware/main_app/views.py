@@ -40,7 +40,7 @@ async def main_view(request):
             try:
                 while True:
                     print("Receiving frame")
-                    frame = track.recv()
+                    frame = await track.recv()
                     # Convert frame to numpy array for display
                     img = frame.to_ndarray(format="bgr24")
                     print("image was converted to ndarray")
