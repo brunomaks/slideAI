@@ -451,18 +451,10 @@ See `DIT826-Individual_Contribution_Form.docx` for detailed breakdown.
 
 ## 📖 References
 
-### Course Materials
-
-- **Sculley et al.** - Hidden Technical Debt in Machine Learning Systems
-- **Amershi et al.** - Software Engineering for Machine Learning: A Case Study
-- **Breck et al.** - Data Validation for Machine Learning
-- **Zinkevich** - Rules of Machine Learning
-- **Hulten** - Building Intelligent Systems (Chapters 1-20)
-
 ### Technologies
 
-- [Django 4.2 Documentation](https://docs.djangoproject.com/)
-- [TensorFlow 2.15 Documentation](https://www.tensorflow.org/)
+- [Django Documentation](https://docs.djangoproject.com/)
+- [TensorFlow Documentation](https://www.tensorflow.org/)
 - [Docker Documentation](https://docs.docker.com/)
 - [Kubernetes Documentation](https://kubernetes.io/docs/)
 
