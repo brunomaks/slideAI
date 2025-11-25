@@ -115,7 +115,7 @@ docker-compose --profile training up
 docker-compose --profile training-cpu up
 ```
 
-### 4. Start Web Application
+### 4. Start Web + Frontend Application
 
 ```bash
 docker-compose up
@@ -142,6 +142,9 @@ docker-compose up web
 **Run specific services directly:**
 
 ```bash
+# Frontend & Web services only
+docker-compose up frontend
+
 # Web service only
 docker-compose up web
 
