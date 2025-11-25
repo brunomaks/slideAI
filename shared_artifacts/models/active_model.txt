@@ -1,1 +1,1 @@
-model_20251125_124427.pkl
+gesture_model_20251125_193254.keras

@@ -14,40 +14,47 @@ def train_model(args):
     BATCH_SIZE = args.batch_size
     EPOCHS = args.epochs
 
-    # Load dataset
-    train_data = tf.keras.utils.image_dataset_from_directory(
-        'images/train',
-        shuffle=True,
-        color_mode='grayscale',
-        validation_split=0.2,
-        subset="training",
-        seed=123,
-        image_size=IMG_SIZE,
-        batch_size=BATCH_SIZE
-    )
+    try:
+        # Load dataset
+        train_data = tf.keras.utils.image_dataset_from_directory(
+            'images/train',
+            shuffle=True,
+            color_mode='grayscale',
+            validation_split=0.2,
+            subset="training",
+            seed=123,
+            image_size=IMG_SIZE,
+            batch_size=BATCH_SIZE
+        )
 
-    val_data = tf.keras.utils.image_dataset_from_directory(
-        'images/train',
-        shuffle=True,
-        color_mode='grayscale',
-        validation_split=0.2,
-        subset="validation",
-        seed=123,
-        image_size=IMG_SIZE,
-        batch_size=BATCH_SIZE
-    )
+        val_data = tf.keras.utils.image_dataset_from_directory(
+            'images/train',
+            shuffle=True,
+            color_mode='grayscale',
+            validation_split=0.2,
+            subset="validation",
+            seed=123,
+            image_size=IMG_SIZE,
+            batch_size=BATCH_SIZE
+        )
 
-    num_classes = len(train_data.class_names)
-    print(f"Number of classes: {num_classes}")
-    print(f"Class names: {train_data.class_names}")
+        num_classes = len(train_data.class_names)
+        class_names = train_data.class_names
 
-    # Performance optimization
-    train_data = train_data.prefetch(buffer_size=tf.data.AUTOTUNE)
-    val_data = val_data.prefetch(buffer_size=tf.data.AUTOTUNE)
+        print(f"Number of classes: {num_classes}")
+        print(f"Class names: {class_names}")
 
+        # Performance optimization
+        train_data = train_data.prefetch(buffer_size=tf.data.AUTOTUNE)
+        val_data = val_data.prefetch(buffer_size=tf.data.AUTOTUNE)
+
+    except Exception as e:
+        print(f"❌ Error loading dataset: {e}")
+        return
+    
     # Build model
     model = models.Sequential([
-        layers.Rescaling(1./255, input_shape=IMG_SIZE + (1,)),
+        layers.Rescaling(1./255, input_shape=(IMG_SIZE[0], IMG_SIZE[1], 1)),
 
         layers.Conv2D(32, (3, 3), activation='relu'),
         layers.BatchNormalization(),
@@ -89,7 +96,7 @@ def train_model(args):
 
     # Save model with versioning
     version = args.version or datetime.now().strftime("%Y%m%d_%H%M%S")
-    model_path = Path(args.model_output_path) / f"gesture_model_{version}.h5"
+    model_path = Path(args.model_output_path) / f"gesture_model_{version}.keras"
     model_path.parent.mkdir(parents=True, exist_ok=True)
 
     model.save(model_path)
@@ -102,7 +109,7 @@ def train_model(args):
         'accuracy': test_accuracy,
         'loss': test_loss,
         'num_classes': num_classes,
-        'class_names': train_data.class_names,
+        'class_names': class_names,
         'img_size': IMG_SIZE,
         'batch_size': BATCH_SIZE,
         'epochs': EPOCHS,
@@ -114,8 +121,8 @@ def train_model(args):
 
     if args.set_active:
         active_path = Path(args.model_output_path) / "active_model.txt"
-        active_path.write_text(f"gesture_model_{version}.h5")
-        print(f"✅ Set as active model: gesture_model_{version}.h5")
+        active_path.write_text(f"gesture_model_{version}.keras")
+        print(f"✅ Set as active model: gesture_model_{version}.keras")
 
     return test_accuracy
 
@@ -123,7 +130,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Train a CNN model for gesture recognition.")
     parser.add_argument('--epochs', type=int, default=10, help='Number of training epochs')
     parser.add_argument('--batch-size', type=int, default=32, help='Batch size for training')
-    parser.add_argument('--img-size', type=int, default=64, help='Image size (width and height)')
+    parser.add_argument('--img-size', type=int, default=150, help='Image size (width and height)')
     parser.add_argument('--version', type=str, help='Model version identifier')
     parser.add_argument('--set-active', action='store_true', help='Set the trained model as active')
     parser.add_argument('--model-output-path', default='/models', help='Directory to save the trained model and metadata')
