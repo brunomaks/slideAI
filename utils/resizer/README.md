@@ -18,3 +18,12 @@ mkdir output
 ```
 4. Put images in 'input' folder and run 'resizer.py'.
 5. Expect resized images in 'output' folder.
+
+### Customization
+
+Optionally, you can you flags when running the script to adapt it for your needs:
+```
+python3 resizer.py -height 100 -width 200 -input "./input1/" -output "./my_output/"
+```
+
+

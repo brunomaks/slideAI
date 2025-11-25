@@ -1,9 +1,26 @@
 import numpy as np
 import cv2
+import argparse
+import os 
 
 
-NEW_WIDTH = 128
-NEW_HEIGHT = 128
+parser = argparse.ArgumentParser()
+
+#-h HEIGHT -w WIDTH -i INPUT -o OUTPUT 
+parser.add_argument("-height", "--height", dest = "height", default = 128, help="Output image height", type=int)
+parser.add_argument("-width", "--width", dest = "width", default = 128, help="Output image width", type=int)
+parser.add_argument("-input", "--input", dest = "input", default = "./input/", help="Path to input folder")
+parser.add_argument("-output", "--output", dest = "output", default = "./output/", help="Path to output folder")
+
+args = parser.parse_args()
+
+NEW_WIDTH = args.width
+NEW_HEIGHT = args.height
+input_path = args.input
+output_path = args.output
+
+
+
 
 def resize_and_save(image, save_file_path):
     
@@ -14,11 +31,6 @@ def resize_and_save(image, save_file_path):
     cv2.imwrite(save_file_path, resized_img)
 
 
-
-import os 
-
-input_path = "./input/"
-output_path = "./output/"
 
 
 
