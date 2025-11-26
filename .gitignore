@@ -15,3 +15,5 @@ ml_service/images/
 
 
 docker-compose.override.yml
+
+shared_artifacts/images

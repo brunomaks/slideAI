@@ -17,7 +17,7 @@ def train_model(args):
     try:
         # Load dataset
         train_data = tf.keras.utils.image_dataset_from_directory(
-            'images/train',
+            '../images/train',
             shuffle=True,
             color_mode='grayscale',
             validation_split=0.2,
@@ -28,7 +28,7 @@ def train_model(args):
         )
 
         val_data = tf.keras.utils.image_dataset_from_directory(
-            'images/train',
+            '../images/train',
             shuffle=True,
             color_mode='grayscale',
             validation_split=0.2,

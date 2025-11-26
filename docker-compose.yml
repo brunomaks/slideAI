@@ -6,10 +6,11 @@ services:
         - ./ml_service:/workspace
         - ./shared_artifacts/models:/models
         - ./shared_artifacts/data:/data
+        - ./shared_artifacts/images:/images
       environment:
         - MODEL_OUTPUT_PATH=/models
       profiles: ["training"]
-      command: python src/train.py --epochs 10 --set-active
+      command: python src/train.py --epochs 50 --set-active
 
   ml-training-cpu:
     build: ./ml_service
@@ -18,11 +19,12 @@ services:
       - ./ml_service:/workspace
       - ./shared_artifacts/models:/models
       - ./shared_artifacts/data:/data
+      - ./shared_artifacts/images:/images
     environment:
       - CUDA_VISIBLE_DEVICES=-1
       - MODEL_OUTPUT_PATH=/models
     profiles: ["training-cpu"]
-    command: python src/train.py --epochs 50 --set-active
+    command: python src/train.py --epochs 10 --set-active
 
   web:
     build: ./web_app
