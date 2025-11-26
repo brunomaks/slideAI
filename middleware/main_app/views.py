@@ -30,6 +30,7 @@ async def main_view(request):
     GRAYSCALE_URL = os.getenv('GRAYSCALE_URL')
     FLIP_URL = os.getenv('FLIP_URL')
     HOST_URL = os.getenv('HOST_URL')
+    DEBUG_SAVE = os.getenv('DEBUG_SAVE', 'false').lower() == 'true'
 
     @pc.on("track")
     async def on_track(track):
@@ -45,12 +46,12 @@ async def main_view(request):
                         frame = await track.recv()
                         img = frame.to_ndarray(format="bgr24")
                         print("image was converted to ndarray")
-                        var = cv2.imencode('.jpg', img)[1].tobytes()
+                        jpgImg = cv2.imencode('.jpg', img)[1].tobytes()
                         
                         async with session.post(
                             GRAYSCALE_URL,
-                            data=var,
-                            headers={"Content-Type": "image/jpeg"}
+                            data=jpgImg,
+                            headers={"Content-Type": "image/jpeg"} | ({"X-Debug-Save": "True"} if DEBUG_SAVE else {})
                         ) as grayscale_resp:
                             content = await grayscale_resp.read()
                             print(content)

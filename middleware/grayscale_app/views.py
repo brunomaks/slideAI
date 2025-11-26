@@ -1,5 +1,5 @@
 from django.conf import settings
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 # use opencv for image processing
 import cv2
@@ -21,15 +21,13 @@ def grayscale_view(request):
     # convert the file to grayscale
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
-    # save the grayscale image to the output folder
-    filename = "frame" + str(int(time.time_ns())) + ".jpg"
-    path = os.path.join(settings.MEDIA_ROOT, filename)
-    cv2.imwrite(path, gray)
+    # save to output folder if header is present
+    if request.headers.get('X-Debug-Save'):
+        print("Saving grayscale image to disk for debugging")
+        filename = "frame" + str(int(time.time_ns())) + ".jpg"
+        path = os.path.join(settings.MEDIA_ROOT, filename)
+        cv2.imwrite(path, gray)
 
-    file_url = settings.MEDIA_URL + filename
-    # return url to the updated file
-    return JsonResponse({
-            "message": "Grayscale image saved",
-            "filename": filename,
-            "url": file_url
-        })
+    # return the grayscale image
+    _, buffer = cv2.imencode('.jpg', gray)
+    return HttpResponse(buffer.tobytes(), content_type='image/jpeg')
