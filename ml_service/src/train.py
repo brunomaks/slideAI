@@ -1,13 +1,12 @@
 import tensorflow as tf
 from tensorflow.keras import layers, models
 import argparse
-import joblib
 from pathlib import Path
 from datetime import datetime
 
 
 def train_model(args):
-    print("🚀 Training CNN model...")
+    print("Training CNN model...")
     print ("GPU Available: ", tf.config.list_physical_devices('GPU'))
 
     IMG_SIZE = (args.img_size, args.img_size)
@@ -15,7 +14,6 @@ def train_model(args):
     EPOCHS = args.epochs
 
     try:
-        # Load dataset
         train_data = tf.keras.utils.image_dataset_from_directory(
             '../images/train',
             shuffle=True,
@@ -44,15 +42,14 @@ def train_model(args):
         print(f"Number of classes: {num_classes}")
         print(f"Class names: {class_names}")
 
-        # Performance optimization
+        # optimize dataset performance by prefetching
         train_data = train_data.prefetch(buffer_size=tf.data.AUTOTUNE)
         val_data = val_data.prefetch(buffer_size=tf.data.AUTOTUNE)
 
     except Exception as e:
-        print(f"❌ Error loading dataset: {e}")
+        print(f"Error loading dataset: {e}")
         return
     
-    # Build model
     model = models.Sequential([
         layers.Rescaling(1./255, input_shape=(IMG_SIZE[0], IMG_SIZE[1], 1)),
 
@@ -82,7 +79,7 @@ def train_model(args):
 
     model.summary()
 
-    # Train model
+    # model training
     history = model.fit(
         train_data,
         validation_data=val_data,
@@ -92,7 +89,7 @@ def train_model(args):
 
     # Evaluate model
     test_loss, test_accuracy = model.evaluate(val_data, verbose=2)
-    print(f"✅ Test Accuracy: {test_accuracy:.4f}")
+    print(f"Test Accuracy: {test_accuracy:.4f}")
 
     # Save model with versioning
     version = args.version or datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -101,28 +98,12 @@ def train_model(args):
 
     model.save(model_path)
 
-    metadata_path = Path(args.model_output_path) / f"model_metadata_{version}.pkl"
-
-    joblib.dump({
-        'model': model,
-        'version': version,
-        'accuracy': test_accuracy,
-        'loss': test_loss,
-        'num_classes': num_classes,
-        'class_names': class_names,
-        'img_size': IMG_SIZE,
-        'batch_size': BATCH_SIZE,
-        'epochs': EPOCHS,
-        'training_history': history.history
-    }, metadata_path)
-
-    print(f"✅ Model saved: {model_path}")
-    print(f"✅ Metadata saved: {metadata_path}")
+    print(f"Model saved: {model_path}")
 
     if args.set_active:
         active_path = Path(args.model_output_path) / "active_model.txt"
         active_path.write_text(f"gesture_model_{version}.keras")
-        print(f"✅ Set as active model: gesture_model_{version}.keras")
+        print(f"Set as active model: gesture_model_{version}.keras")
 
     return test_accuracy
 
