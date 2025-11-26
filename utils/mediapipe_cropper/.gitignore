@@ -1,0 +1,19 @@
+# Whitelist approach
+#
+# Ignore everything except directories:
+*
+!*/
+
+# Track the following top-level files:
+!/.gitignore
+
+
+!/README.md 
+!/hand_landmarker.task
+!/requirements.txt
+
+# Track following Python files:
+!/cropper.py
+
+
+

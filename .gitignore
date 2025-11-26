@@ -2,19 +2,19 @@ __pycache__/
 *.pyc
 *.log
 *.sqlite3
-shared_artifacts/models/*.pkl
-shared_artifacts/models/*.keras
-shared_artifacts/data/*.sqlite
-.vscode/
-.idea/
 .DS_Store
+docker-compose.override.yml
 
 # ignore directories
 utils/
 model/
 ml_service/images/
-
-
-docker-compose.override.yml
-
+shared_artifacts/models/*.pkl
+shared_artifacts/models/*.keras
+shared_artifacts/data/*.sqlite
 shared_artifacts/images
+.vscode/
+.idea/
+
+
+
