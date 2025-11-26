@@ -1,23 +1,16 @@
 services:
   ml-training:
-    build: ./ml_service
-    container_name: ml-training
-    volumes:
-      - ./ml_service:/workspace
-      - ./shared_artifacts/models:/models
-      - ./shared_artifacts/data:/data
-    environment:
-      - CUDA_VISIBLE_DEVICES=0
-      - MODEL_OUTPUT_PATH=/models
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: all
-              capabilities: [gpu]
-    profiles: ["training"]
-    command: python src/train.py --epochs 10 --set-active
+      build: ./ml_service
+      container_name: ml-training
+      volumes:
+        - ./ml_service:/workspace
+        - ./shared_artifacts/models:/models
+        - ./shared_artifacts/data:/data
+      environment:
+        - CUDA_VISIBLE_DEVICES=0
+        - MODEL_OUTPUT_PATH=/models
+      profiles: ["training"]
+      command: python src/train.py --epochs 10 --set-active
 
   ml-training-cpu:
     build: ./ml_service

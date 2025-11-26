@@ -8,7 +8,10 @@ shared_artifacts/data/*.sqlite
 .idea/
 .DS_Store
 
-# Yaro: ignore directories
+# ignore directories
 utils/
 model/
 ml_service/images/
+
+
+docker-compose.override.yml
