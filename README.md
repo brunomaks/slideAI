@@ -70,50 +70,69 @@ This project follows a **microservices architecture** with separate containers f
 - **NVIDIA GPU** with CUDA support
 - **NVIDIA Drivers** installed on host (Docker handles CUDA/cuDNN internally).
 
-  - Note: You do NOT need to install the NVIDIA CUDA Toolkit on the host.
-
-  - Linux: 
-
-    Make sure you have the nvidia driver installed by running
-
-    ```bash
-    nvidia-smi
-    ``` 
-
-    Install NVIDIA Container Toolkit
-
-    Ubuntu:
-
-    ```bash
-    sudo apt-get install nvidia-container-toolkit
-    ```
-
-    Fedora:
-
-    ```bash
-    sudo dnf install nvidia-container-toolkit
-    ```
-
-    Generate CDI specification and verify it
-
-    ```bash
-    sudo nvidia-ctk cdi generate --output=/etc/cdi/nvidia.yaml
-    nvidia-ctk cdi list
-    ```
-
-    Restart the docker service
-
-    ```bash
-    sudo systemctl restart docker
-    ```
-
-    Verify the setup by running nvidia-smi inside the container
-
-    ```bash
-    docker run --rm -it --device=nvidia.com/gpu=all ubuntu nvidia-smi
-    ```
+> **Note**: You do NOT need to install the NVIDIA CUDA Toolkit on the host.
 
 > **Note**: No Python installation required on host machine. Everything runs in Docker.
+
+- Linux: 
+
+Make sure you have the nvidia driver installed by running
+
+```bash
+nvidia-smi
+``` 
+
+Install NVIDIA Container Toolkit
+
+Ubuntu:
+
+```bash
+sudo apt-get install nvidia-container-toolkit
+```
+
+Fedora:
+
+```bash
+sudo dnf install nvidia-container-toolkit
+```
+
+Generate CDI specification and verify it
+
+```bash
+sudo nvidia-ctk cdi generate --output=/etc/cdi/nvidia.yaml
+nvidia-ctk cdi list
+```
+
+Restart the docker service
+
+```bash
+sudo systemctl restart docker
+```
+
+Verify the setup by running nvidia-smi inside the container
+
+```bash
+docker run --rm -it --device=nvidia.com/gpu=all ubuntu nvidia-smi
+```
+
+To enable GPU access and proper SELinux labeling for the ML training service, create a `docker-compose.override.yml` file with the following content:
+
+```yaml
+services:
+  ml-training:
+    devices:
+      - nvidia.com/gpu=all
+    volumes:
+      - ./ml_service:/workspace:Z
+      - ./shared_artifacts/models:/models:Z
+      - ./shared_artifacts/data:/data:Z
+      - ./shared_artifacts/images:/images:Z
+```
+### What this does:
+- **GPU Access**: Enables all available NVIDIA GPUs for the `ml-training` service using CDI specification
+- **SELinux Labels**: The `:Z` flag applies proper SELinux context labels to ensure the mounted volumes are accessible only from their respective containers
+
+> **Note**: The `:Z` flag modifies SELinux labels on your host system. Use with caution, especially when mounting system directories.
 
 ---
 
