@@ -7,7 +7,6 @@ services:
         - ./shared_artifacts/models:/models
         - ./shared_artifacts/data:/data
       environment:
-        - CUDA_VISIBLE_DEVICES=0
         - MODEL_OUTPUT_PATH=/models
       profiles: ["training"]
       command: python src/train.py --epochs 10 --set-active
