@@ -1,1 +1,5 @@
 .env/
+
+shared_artifacts/images
+shared_artifacts/images-old
+docker-compose.override.yml
