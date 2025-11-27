@@ -13,7 +13,6 @@ A production-ready machine learning application built with Django and TensorFlow
 - [Quick Start](#-quick-start)
 - [Development Workflow](#-development-workflow)
 - [Deployment](#-deployment)
-- [Troubleshooting](#-troubleshooting)
 - [Team](#-team-4)
 - [License](#-license)
 
@@ -74,7 +73,7 @@ This project follows a **microservices architecture** with separate containers f
 
 > **Note**: No Python installation required on host machine. Everything runs in Docker.
 
-- Windows 11:
+**Windows 11**:
 
 To enable GPU support on Windows, make sure that you have docker-compose.override.yml file created and filled with:
 
@@ -90,7 +89,7 @@ services:
             capabilities: [gpu] 
 ```
 
-- Linux: 
+**Linux**:
 
 Make sure you have the nvidia driver installed by running
 
@@ -373,72 +372,6 @@ See `kubernetes/README.md` for platform-specific instructions.
 
 ---
 
-## 🐛 Troubleshooting
-
-### Common Issues
-
-#### 1. GPU Not Detected
-
-**Symptoms:**
-
-```text
-⚠️  CPU Mode: Running on CPU
-```
-
-**Solutions:**
-
-- **Windows/WSL2**: Install NVIDIA drivers on Windows host (not in WSL)
-- **Linux**: Install nvidia-docker2: `sudo apt install nvidia-docker2`
-- **Verify**: `docker run --rm --gpus all nvidia/cuda:12.2.0-base-ubuntu22.04 nvidia-smi`
-
-#### 2. Port 8000 Already in Use
-
-**Solution:**
-
-```bash
-# Change port in docker-compose.yml
-ports:
-  - "8080:8000"  # Use port 8080 instead
-```
-
-#### 3. Permission Denied (Database/Models)
-
-**Linux:**
-
-```bash
-# Fix ownership
-sudo chown -R $USER:$USER shared_artifacts/
-```
-
-**Windows/macOS:**
-
-```bash
-# Remove and recreate
-rm -rf shared_artifacts/data/*.sqlite
-docker-compose run --rm web python manage.py migrate
-```
-
-#### 4. Container Fails to Build
-
-**Clear Docker cache:**
-
-```bash
-docker-compose build --no-cache ml-training
-
-docker-compose build --no-cache web
-```
-
-#### 5. Model Not Found Error
-
-**Check active model:**
-
-```bash
-cat shared_artifacts/models/active_model.txt
-
-# If missing, train a model:
-docker-compose --profile training-cpu up
-```
-
 ### Debug Mode
 
 **View container logs:**
@@ -458,33 +391,13 @@ docker-compose exec web bash
 docker-compose exec ml-training bash
 ```
 
----
-
-## 📚 Tech Stack Requirements
-
-| Requirement | Implementation | Location |
-|-------------|----------------|----------|
-| **A. SQLite Database** | Shared volume with Django ORM | `shared_artifacts/data/` |
-| **B. ML Pipeline** | TensorFlow training pipeline | `ml_service/src/train.py` |
-| **C. Data Validation** | Schema validation + unit tests | `ml_service/src/data_validator.py` |
-| **D. End-User Interface** | Django web UI for predictions | `web_app/apps/inference/` |
-| **E. Model Versioning** | Version tracking and rollback | `web_app/apps/admin_panel/models.py` |
-| **F. Admin Interface** | Dynamic retraining UI | `web_app/apps/admin_panel/` |
-| **G. Docker/K8s Deployment** | Multi-container + K8s configs | `docker-compose.yml`, `kubernetes/` |
-
----
-
 ## 👥 Team 4
 
 > To be updated
 
-### Individual Contributions
-
-See `DIT826-Individual_Contribution_Form.docx` for detailed breakdown.
-
----
-
 ## 📖 References
+
+> To be updated
 
 ### Technologies
 
@@ -498,34 +411,3 @@ See `DIT826-Individual_Contribution_Form.docx` for detailed breakdown.
 ## 📄 License
 
 This project is developed for academic purposes as part of DIT826 coursework at Chalmers University of Technology / University of Gothenburg.
-
-**Academic Integrity Notice**: Code developed for course requirements. Please consult course policy before reuse.
-
----
-
-## 🔄 Project Status
-
-**Current Phase**: Active Development (Week 1 of 7)
-
-### Completed
-
-- ✅ Docker multi-container setup
-- ✅ GPU/CPU training support
-- ✅ Basic Django application structure
-- ✅ Model versioning system
-
-### In Progress
-
-- 🔄 Data validation implementation
-- 🔄 Admin panel UI
-- 🔄 Model evaluation metrics
-
-### Planned
-
-- 📋 Kubernetes deployment testing
-- 📋 CI/CD pipeline setup
-- 📋 Final documentation
-
----
-
-Built with ❤️ for DIT826 - Software Engineering for Data-Intensive AI Applications
