@@ -74,6 +74,22 @@ This project follows a **microservices architecture** with separate containers f
 
 > **Note**: No Python installation required on host machine. Everything runs in Docker.
 
+- Windows 11:
+
+To enable GPU support on Windows, make sure that you have docker-compose.override.yml file created and filled with:
+
+```yaml
+services:
+  ml-training:
+    deploy:
+      resources:
+        reservations:
+          devices:
+            driver: nvidia
+            count: all
+            capabilities: [gpu] 
+```
+
 - Linux: 
 
 Make sure you have the nvidia driver installed by running
