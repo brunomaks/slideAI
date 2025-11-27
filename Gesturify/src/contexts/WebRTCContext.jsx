@@ -7,6 +7,7 @@ const WEBRTC_SERVER_URL = import.meta.env.VITE_WEBRTC_SERVER_URL || "http://loca
 
 export function WebRTCProvider({ children }) {
     const [stream, setStream] = useState(null);
+    const [remoteStream, setRemoteStream] = useState(null);
     const [isConnected, setIsConnected] = useState(false);
     const pcRef = useRef(null);
 
@@ -25,6 +26,13 @@ export function WebRTCProvider({ children }) {
                 stream.getTracks().forEach((track) => {
                     pc.addTrack(track);
                 });
+
+                pc.ontrack = (event) => {
+                    if (event.streams && event.streams[0]) {
+                        setRemoteStream(event.streams[0]);
+                        console.log("Remote stream received");
+                    }
+                };
 
                 const offer = await pc.createOffer();
                 await pc.setLocalDescription(offer);
@@ -57,6 +65,7 @@ export function WebRTCProvider({ children }) {
                 console.log("WebRTC closed");
             }
             setIsConnected(false);
+            setRemoteStream(null);
         };
     }, [stream]);
 
@@ -70,10 +79,12 @@ export function WebRTCProvider({ children }) {
             pcRef.current = null;
         }
         setStream(null);
+        setRemoteStream(null);
     };
 
     const value = {
         stream,
+        remoteStream,
         isConnected,
         connectStream,
         disconnectStream,
