@@ -1,5 +1,19 @@
-.env/
+*.pyc
+*.log
+*.sqlite3
+.DS_Store
+docker-compose.override.yml
 
+# ignore directories
+utils/
+model/
+ml_service/images/
+shared_artifacts/models/*.pkl
+shared_artifacts/models/*.keras
+shared_artifacts/data/*.sqlite
 shared_artifacts/images
 shared_artifacts/images-old
-docker-compose.override.yml
+.vscode/
+.idea/
+.env/
+__pycache__/
