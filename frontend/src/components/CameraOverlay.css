@@ -1,0 +1,53 @@
+.camera-overlay-controls {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 10;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.camera-overlay-enable {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(0, 0, 0, 0.7);
+    z-index: 10;
+}
+
+.camera-button {
+    padding: 8px 15px;
+    font-size: 10px;
+    font-weight: bold;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    box-shadow: 0 2px 3px rgba(0, 0, 0, 0.3);
+    transition: background-color 0.2s ease;
+}
+
+.camera-button-enable {
+    background-color: #4CAF50;
+}
+
+.camera-button-enable:hover {
+    background-color: #45a049;
+}
+
+.camera-button-disable {
+    padding: 5px 10px;
+    font-size: 10px;
+    background-color: #f44336;
+    border-radius: 3px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.camera-button-disable:hover {
+    background-color: #da190b;
+}

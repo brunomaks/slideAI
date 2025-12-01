@@ -1,0 +1,7 @@
+django>=4.2
+numpy
+opencv-python
+requests
+dotenv
+django-cors-headers
+uvicorn
