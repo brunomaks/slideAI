@@ -208,3 +208,15 @@ sketch
 .ionide
 
 # End of https://www.toptal.com/developers/gitignore/api/visualstudiocode,react,python
+
+# Project-specific ignores
+__pycache__/
+*.pyc
+*.log
+*.sqlite3
+.DS_Store
+docker-compose.override.yml
+
+# Ignore directories
+ml_service/images/
+shared_artifacts/
