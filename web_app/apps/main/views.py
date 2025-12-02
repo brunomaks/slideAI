@@ -7,7 +7,7 @@ from django.views.decorators.csrf import csrf_exempt
 import cv2
 import asyncio
 import json
-from aiortc import RTCPeerConnection, RTCSessionDescription, VideoStreamTrack
+from aiortc import RTCPeerConnection, RTCSessionDescription, VideoStreamTrack, RTCConfiguration
 from aiortc.contrib.media import MediaRecorder
 from av import VideoFrame
 
@@ -49,7 +49,9 @@ async def main_view(request):
     params = json.loads(request.body)
     offer = RTCSessionDescription(sdp=params["sdp"], type=params["type"])
 
-    pc = RTCPeerConnection()
+    config = RTCConfiguration(iceServers=[])
+    pc = RTCPeerConnection(configuration=config)
+
     pcs.add(pc)
     # load environment variables
     load_dotenv()

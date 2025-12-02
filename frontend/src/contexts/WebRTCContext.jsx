@@ -19,7 +19,7 @@ export function WebRTCProvider({ children }) {
         const setupWebRTC = async () => {
             try {
                 const pc = new RTCPeerConnection({
-                    iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
+                    iceServers: [],
                 });
 
                 pcRef.current = pc;

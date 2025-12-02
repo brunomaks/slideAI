@@ -34,13 +34,17 @@ services:
       - ./shared_artifacts/models:/models
       - ./shared_artifacts/data:/data
     ports:
-      - "8000:8000"
+      - "8001:8001"
     environment:
       - DJANGO_SETTINGS_MODULE=config.settings.development
       - MODEL_PATH=/models
       - DATABASE_PATH=/data/database.sqlite
       - ALLOWED_HOSTS=localhost,frontend
-  
+      - GRAYSCALE_URL='http://127.0.0.1:8001/grayscale/'
+      - FLIP_URL='http://127.0.0.1:8001/flip/'
+      - HOST_URL='http://127.0.0.1:8001/'
+      - DEBUG_SAVE='True'
+
   frontend:
     build: ./frontend
     ports:

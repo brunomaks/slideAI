@@ -1,4 +1,13 @@
-Django>=5.2.0
-djangorestframework>=3.16.0
-joblib>=1.5.0
-scikit-learn>=1.7.0
+Django
+djangorestframework
+joblib
+scikit-learn
+numpy
+opencv-python-headless
+requests
+python-dotenv
+django-cors-headers
+uvicorn
+aiortc
+aiohttp
+av
