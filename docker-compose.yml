@@ -10,7 +10,7 @@ services:
       environment:
         - MODEL_OUTPUT_PATH=/models
       profiles: ["training"]
-      command: python src/train.py --epochs 1 --set-active
+      command: python src/train.py --epochs 15 --set-active
 
   ml-training-cpu:
     build: ./ml_service
