@@ -5,7 +5,8 @@
 docker-compose.override.yml
 
 # ignore directories
-utils/
+utils/mediapipe_cropper
+utils/resizer
 model/
 ml_service/images/
 shared_artifacts/models/*.pkl

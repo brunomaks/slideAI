@@ -8,7 +8,7 @@ import os
 import argparse
 import tqdm
 
-MARGIN = 10  # pixels
+MARGIN = 20  # pixels
 
 def parse_args():
     parser = argparse.ArgumentParser()
