@@ -36,6 +36,15 @@ def train_model(args):
             batch_size=BATCH_SIZE
         )
 
+        test_data = tf.keras.utils.image_dataset_from_directory(
+            '/images/test',
+            shuffle=False,
+            color_mode='rgb',
+            seed=123,
+            image_size=IMG_SIZE,
+            batch_size=BATCH_SIZE
+        )
+
         # Inspect a batch of data
         for images, labels in train_data.take(1):
             print(f"Image batch shape: {images.shape}")
@@ -93,7 +102,10 @@ def train_model(args):
     )
 
     # Evaluate model
-    test_loss, test_accuracy = model.evaluate(val_data, verbose=2)
+    val_loss, val_accuracy = model.evaluate(val_data, verbose=2)
+    print(f"Validation Accuracy: {val_accuracy:.4f}")
+
+    test_loss, test_accuracy = model.evaluate(test_data, verbose=2)
     print(f"Test Accuracy: {test_accuracy:.4f}")
 
     # Save model with versioning

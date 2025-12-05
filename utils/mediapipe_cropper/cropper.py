@@ -58,12 +58,12 @@ def save_detected_hand(rgb_image, detection_result, save_file_path):
 
     if not hand_landmarks_list:
         fname = os.path.basename(save_file_path)
-        print(f"No hands detected in the image: {fname}. Skipping.")
+        # print(f"No hands detected in the image: {fname}. Skipping.")
         return
 
     if len(hand_landmarks_list) > 1:
         fname = os.path.basename(save_file_path)
-        print(f"Multiple hands detected in the image: {fname}. Skipping.")
+        # print(f"Multiple hands detected in the image: {fname}. Skipping.")
         return
 
     # Extract the first and only detected hand
@@ -85,14 +85,14 @@ def save_detected_hand(rgb_image, detection_result, save_file_path):
     box_y_max = min(box_y_max, height)
 
     if box_x_min >= box_x_max or box_y_min >= box_y_max:
-      print(f"Invalid bounding box dimensions for {os.path.basename(save_file_path)}. Skipping this hand.")
+      # print(f"Invalid bounding box dimensions for {os.path.basename(save_file_path)}. Skipping this hand.")
       return
 
     # Crop the image by the bounding box
     cropped_img = annotated_image[box_y_min:box_y_max, box_x_min:box_x_max]
 
     if cropped_img.size == 0:
-        print("Empty crop, skipping...")
+        # print("Empty crop, skipping...")
         return
 
     # Save cropped image
