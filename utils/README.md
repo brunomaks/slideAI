@@ -6,7 +6,7 @@
 python3 -m venv env
 ```
 
-2. Install required packages:
+2. Install required packages (find the requirements.txt in the root of the project):
 ```
 pip3 install -r requirements.txt
 ```

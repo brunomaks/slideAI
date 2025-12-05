@@ -1,4 +1,4 @@
-# Data-Intensive AI Application
+# Data-Intensive AI Applications
 
 ## Software Engineering for Data-Intensive AI Applications
 

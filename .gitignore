@@ -210,7 +210,6 @@ sketch
 # End of https://www.toptal.com/developers/gitignore/api/visualstudiocode,react,python
 
 # Project-specific ignores
-__pycache__/
 *.pyc
 *.log
 *.sqlite3
@@ -218,5 +217,15 @@ __pycache__/
 docker-compose.override.yml
 
 # Ignore directories
+utils/mediapipe_cropper
+utils/resizer
+model/
 ml_service/images/
-shared_artifacts/
+shared_artifacts/models/*.pkl
+shared_artifacts/models/*.keras
+shared_artifacts/data/*.sqlite
+shared_artifacts/images
+shared_artifacts/images-old
+.vscode/
+.idea/
+.env/
