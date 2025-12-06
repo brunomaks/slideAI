@@ -14,7 +14,6 @@ export default function SlidesView() {
     const slidesRef = useRef(null);
 
     const openPicker = () => fileInputRef.current?.click();
-
     const onFileChange = (e) => {
         const file = e.target.files?.[0];
         if (file) {
@@ -26,40 +25,46 @@ export default function SlidesView() {
     useEffect(() => {
         if (!fileURL) return;
 
+        let deck;
+
         const load = async () => {
             const pdf = await pdfjsLib.getDocument(fileURL).promise;
-            console.log(`PDF loaded with ${pdf.numPages} pages`);
             const slides = slidesRef.current;
-            slides.innerHTML = '';
+            slides.innerHTML = "";
 
             for (let i = 1; i <= pdf.numPages; i++) {
                 const page = await pdf.getPage(i);
                 const viewport = page.getViewport({ scale: 1.5 });
 
-                const canvas = document.createElement('canvas');
+                const canvas = document.createElement("canvas");
+                const ctx = canvas.getContext("2d");
                 canvas.width = viewport.width;
                 canvas.height = viewport.height;
-                const ctx = canvas.getContext('2d');
 
                 await page.render({ canvasContext: ctx, viewport }).promise;
 
-                const section = document.createElement('section');
+                const section = document.createElement("section");
                 section.appendChild(canvas);
-                console.log(`Page ${i} rendered`);
                 slides.appendChild(section);
             }
 
-            Reveal.initialize({
-                width: 960,
-                height: 700,
-                embedded: false,
-                hash: false,
+            deck = new Reveal({
                 controls: true,
                 progress: true,
+                hash: true,
+                width: 960,
+                height: 700,
             });
+
+            await deck.initialize();
+            deck.layout();
         };
 
         load();
+
+        return () => {
+            if (deck) deck.destroy();
+        };
     }, [fileURL]);
 
     return (
@@ -72,13 +77,9 @@ export default function SlidesView() {
                 onChange={onFileChange}
                 hidden={true}
             />
-
-            <button onClick={openPicker}>
-                Load PDF as Slides
-            </button>
-
-            <div>
-                <div className='slides' ref={slidesRef}></div>
+            <button onClick={openPicker}>Load PDF as Slides</button>
+            <div className="reveal">
+                <div className="slides" ref={slidesRef}></div>
             </div>
         </div>
     );

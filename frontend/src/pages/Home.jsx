@@ -4,7 +4,7 @@ import SlidesView from "../components/SlidesView";
 export default function Home() {
     return (
         <div className="home-page">
-            {/* <StreamsView /> */}
+            <StreamsView />
             <SlidesView />
         </div>
     );
