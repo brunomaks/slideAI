@@ -5,7 +5,7 @@ import Topbar from './components/TopBar'
 import { WebRTCProvider } from './contexts/WebRTCContext'
 
 function App() {
-  const [showLanding, setShowLanding] = useState(true);
+  const [showLanding, setShowLanding] = useState(false);
 
   const handleEnter = () => {
     setShowLanding(false);
