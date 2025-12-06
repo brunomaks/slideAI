@@ -1,6 +1,6 @@
 from django.apps import AppConfig
 
 
-class FlipAppConfig(AppConfig):
+class GrayscaleAppConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
-    name = 'flip_app'
+    name = 'apps.grayscale'

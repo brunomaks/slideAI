@@ -1,13 +1,9 @@
-Django
-djangorestframework
+fastapi
 joblib
-scikit-learn
 numpy
 opencv-python-headless
 requests
 python-dotenv
-django-cors-headers
 uvicorn
 aiortc
-aiohttp
 av
