@@ -19,7 +19,9 @@ export function WebRTCProvider({ children }) {
         const setupWebRTC = async () => {
             try {
                 const pc = new RTCPeerConnection({
-                    iceServers: [],
+                    iceServers: [
+                        { urls: 'stun:stun.l.google.com:19302' }
+                    ],
                 });
 
                 pcRef.current = pc;
@@ -37,9 +39,26 @@ export function WebRTCProvider({ children }) {
                 const offer = await pc.createOffer();
                 await pc.setLocalDescription(offer);
 
+                // WAIT for all client candidates to be gathered
+                const clientCandidates = [];
+                await new Promise((resolve) => {
+                    pc.onicecandidate = (event) => {
+                        if (event.candidate) {
+                            clientCandidates.push(event.candidate.toJSON());
+                        } else {
+                            // null candidate = gathering complete
+                            resolve();
+                        }
+                    };
+                    
+                    // Fallback timeout in case gathering takes too long
+                    setTimeout(resolve, 500);
+                });
+
                 const { data: answer } = await axios.post(WEBRTC_SERVER_URL, {
                     sdp: pc.localDescription.sdp,
                     type: pc.localDescription.type,
+                    candidates: clientCandidates
                 });
 
                 await pc.setRemoteDescription(
@@ -48,6 +67,12 @@ export function WebRTCProvider({ children }) {
                         type: answer.type,
                     })
                 );
+
+                if (answer.candidates) {
+                    for (const candidate in answer.candidates) {
+                        await pc.addIceCandidate(new RTCIceCandidate(candidate))
+                    }
+                }
 
                 setIsConnected(true);
                 console.log("WebRTC connection established");
@@ -62,6 +87,7 @@ export function WebRTCProvider({ children }) {
         return () => {
             if (pcRef.current) {
                 pcRef.current.close();
+                pcRef.current = null
                 console.log("WebRTC closed");
             }
             setIsConnected(false);
