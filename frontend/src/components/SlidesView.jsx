@@ -51,7 +51,7 @@ export default function SlidesView() {
             deck = new Reveal({
                 controls: true,
                 progress: true,
-                hash: true,
+                hash: false,
                 width: 960,
                 height: 700,
             });
@@ -69,15 +69,22 @@ export default function SlidesView() {
 
     return (
         <div className='w-full h-full p-4 flex flex-col'>
-            <h1 className='text-1xl font-bold'>Upload your slides</h1>
-            <input
-                type='file'
-                accept='application/pdf'
-                ref={fileInputRef}
-                onChange={onFileChange}
-                hidden={true}
-            />
-            <button onClick={openPicker}>Load PDF as Slides</button>
+            <div className='page'>
+                <div className='page-text'>
+                    <h1 className='title'>Upload your slides</h1>
+                    <h2 className='sub-title'>Go to your presentation maker software and export your slides as PDF.
+                        Upload your slides by pressing the button below and you are ready to go!</h2>
+                </div>
+                <input
+                    type='file'
+                    accept='application/pdf'
+                    ref={fileInputRef}
+                    onChange={onFileChange}
+                    hidden={true}
+                />
+                <button onClick={openPicker} className='upload-slides'>Load PDF as Slides</button>
+                <h2 className='hint-title'>hint: press F to enter fullscreen mode</h2>
+            </div>
             <div className="reveal">
                 <div className="slides" ref={slidesRef}></div>
             </div>
