@@ -54,6 +54,8 @@ def process_images(input_path, output_path):
 
 def save_detected_hand(rgb_image, detection_result, save_file_path):
     hand_landmarks_list = detection_result.hand_landmarks
+    handedness_list = detection_result.handedness
+
     annotated_image = np.copy(rgb_image)
 
     if not hand_landmarks_list:
@@ -68,6 +70,10 @@ def save_detected_hand(rgb_image, detection_result, save_file_path):
 
     # Extract the first and only detected hand
     hand_landmarks = hand_landmarks_list[0]
+    handedness = handedness_list[0][0]
+    handedness_label = handedness.category_name.lower()
+    base_name, ext = os.path.splitext(save_file_path)
+    hand_save_path = f"{base_name}_{handedness_label}{ext}"
 
     # Get the detected hand's bounding box.
     height, width, _ = annotated_image.shape
@@ -97,7 +103,7 @@ def save_detected_hand(rgb_image, detection_result, save_file_path):
 
     # Save cropped image
     to_save_rgb = cv2.cvtColor(cropped_img, cv2.COLOR_BGR2RGB)
-    cv2.imwrite(save_file_path, to_save_rgb)
+    cv2.imwrite(hand_save_path, to_save_rgb)
 
 if __name__ == "__main__":
     main()
