@@ -23,9 +23,9 @@ def grayscale_view(request):
 
     # save to output folder if header is present
     if request.headers.get('X-Debug-Save'):
-        print("Saving grayscale image to disk for debugging")
         filename = "frame" + "_grayscale_" + str(int(time.time_ns())) + ".jpg"
         path = os.path.join(settings.MEDIA_ROOT, filename)
+        print("Saving grayscale image to disk for debugging at path:", path)
         cv2.imwrite(path, gray)
 
     # return the grayscale image

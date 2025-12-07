@@ -69,6 +69,8 @@ async def main_view(request):
     print(f"FLIP_URL: {FLIP_URL}")
     print(f"HOST_URL: {HOST_URL}")
     print(f"DEBUG_SAVE: {DEBUG_SAVE}")
+    
+    os.makedirs(settings.MEDIA_ROOT, exist_ok=True)
 
     @pc.on("track")
     async def on_track(track):
@@ -82,15 +84,11 @@ async def main_view(request):
                     while True:
                         print("Receiving frame")
                         frame = await track.recv()
-                        img = frame.to_ndarray(format="bgr24")
-                        print("image was converted to ndarray")
-                        jpgImg = cv2.imencode('.jpg', img)[1].tobytes()
-                        
-                        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-                        flipped = cv2.flip(gray, 1)
-                            
-                        await return_track.add_frame(cv2.imencode('.jpg', flipped)[1].tobytes())
-                                                
+                        if frame:
+                            print("Frame received")
+                            asyncio.create_task(process_video_frame(frame, session, return_track, GRAYSCALE_URL, FLIP_URL, DEBUG_SAVE))
+                            print("Frame processing task created")
+
                 except Exception as e:
                     print(f"Track ended or error: {e}")
 
@@ -126,11 +124,6 @@ async def main_view(request):
     
     while pc.iceGatheringState != "complete":
         await asyncio.sleep(0.05)
-
-    # Set remote description and create answer
-    await pc.setRemoteDescription(offer)
-    answer = await pc.createAnswer()
-    await pc.setLocalDescription(answer)
 
     return JsonResponse({
         "sdp": pc.localDescription.sdp,
@@ -183,3 +176,20 @@ def parse_client_candidate(candidate_dict):
     print("Candidate object was created")
     
     return candidate
+
+async def process_video_frame(frame, session, return_track, GRAYSCALE_URL, FLIP_URL, DEBUG_SAVE):
+    img = frame.to_ndarray(format="bgr24")
+
+    jpgImg = cv2.imencode('.jpg', img)[1].tobytes()
+
+    headers = {}
+    if DEBUG_SAVE:
+        headers['X-Debug-Save'] = '1'
+
+    async with session.post(GRAYSCALE_URL, data=jpgImg, headers=headers) as gray_response:
+        grayJpg = await gray_response.read()
+
+    async with session.post(FLIP_URL, data=grayJpg, headers=headers) as flip_response:
+        flippedJpg = await flip_response.read()
+
+    await return_track.add_frame(flippedJpg)
