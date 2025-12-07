@@ -45,23 +45,6 @@ services:
       - HOST_URL='http://127.0.0.1:8001/'
       - DEBUG_SAVE='True'
 
-  web-copy:
-    build: ./web_app-copy
-    container_name: web-fastapi
-    volumes:
-      - ./web_app-copy:/app
-      - ./shared_artifacts/models:/models
-      - ./shared_artifacts/data:/data
-    ports:
-      - "8001:8001"
-    environment:
-      - MODEL_PATH=/models
-      - DATABASE_PATH=/data/database.sqlite
-      - ALLOWED_HOSTS=localhost,frontend
-      - GRAYSCALE_URL='http://127.0.0.1:8001/grayscale/'
-      - FLIP_URL='http://127.0.0.1:8001/flip/'
-      - HOST_URL='http://127.0.0.1:8001/'
-
   frontend:
     build: ./frontend
     ports:
