@@ -52,8 +52,6 @@ async def main_view(request):
 
     config = RTCConfiguration(iceServers=[])
     pc = RTCPeerConnection(configuration=config)
-    signaling_state_change = asyncio.Future()
-
 
     pcs.add(pc)
     # load environment variables
@@ -87,8 +85,11 @@ async def main_view(request):
                         img = frame.to_ndarray(format="bgr24")
                         print("image was converted to ndarray")
                         jpgImg = cv2.imencode('.jpg', img)[1].tobytes()
-
-                        await return_track.add_frame(jpgImg)
+                        
+                        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+                        flipped = cv2.flip(gray, 1)
+                            
+                        await return_track.add_frame(cv2.imencode('.jpg', flipped)[1].tobytes())
                                                 
                 except Exception as e:
                     print(f"Track ended or error: {e}")
@@ -104,20 +105,14 @@ async def main_view(request):
             await pc.close()
             pcs.discard(pc)
             
-    # Set remote description (client's offer)
-    offer_sdp = RTCSessionDescription(sdp=request.sdp, type=request.type)
-    await pc.setRemoteDescription(offer_sdp)
+    await pc.setRemoteDescription(offer)
 
-    print(len(request.candidates))
+    print(f'Number of Candidates: {len(params["candidates"])}')
 
-    for candidate in request.candidates:
+    for candidate in params["candidates"]:
         parsed = parse_client_candidate(candidate)
         if parsed is not None:
             await pc.addIceCandidate(parsed)
-
-    # ensure the signaling state changed before creating answer
-    await signaling_state_change
-    print(f"Current state: {pc.signalingState}")
     
     # Create answer
     answer = await pc.createAnswer()
@@ -131,12 +126,6 @@ async def main_view(request):
     
     while pc.iceGatheringState != "complete":
         await asyncio.sleep(0.05)
-            
-    # Handle signalling connection state change
-    @pc.on("signalingstatechange")
-    async def on_signalingstatechange():
-        if pc.signalingState == "have-remote-offer":
-            signaling_state_change.set_result("have-remote-offer")
 
     # Set remote description and create answer
     await pc.setRemoteDescription(offer)

@@ -3,7 +3,7 @@ import axios from "axios";
 
 const WebRTCContext = createContext(null);
 
-const WEBRTC_SERVER_URL = import.meta.env.VITE_WEBRTC_SERVER_URL || "http://localhost:8001/offer";
+const WEBRTC_SERVER_URL = import.meta.env.VITE_WEBRTC_SERVER_URL || "http://localhost:8001/offer/";
 
 export function WebRTCProvider({ children }) {
     const [stream, setStream] = useState(null);
