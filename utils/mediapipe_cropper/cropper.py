@@ -7,7 +7,7 @@ from mediapipe.tasks.python import vision
 import argparse
 import tqdm
 
-MARGIN = 20  # pixels
+MARGIN = 150  # pixels
 
 def main():
     args = parse_args()
