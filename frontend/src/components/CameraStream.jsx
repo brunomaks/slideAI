@@ -54,7 +54,7 @@ export default function CameraStream({ onStreamReady }) {
       }
       disconnectStream();
     };
-  }, [onStreamReady, connectStream, disconnectStream]);
+  }, []);
 
   return (
     <div className="camera-stream-wrapper">
