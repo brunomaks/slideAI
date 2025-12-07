@@ -21,9 +21,9 @@ def flip_view(request):
 
     # save the flipped image to the output folder if header is there
     if request.headers.get('X-Debug-Save'):
-        print("Saving flipped image to disk for debugging")
         filename = "frame" + "_flip_" + str(int(time.time_ns())) + ".jpg"
         path = os.path.join(settings.MEDIA_ROOT, filename)
+        print("Saving flipped image to disk for debugging at path:", path)
         cv2.imwrite(path, flipped)
 
     # return the flipped image

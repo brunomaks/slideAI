@@ -231,3 +231,5 @@ shared_artifacts/images-old
 .vscode/
 .idea/
 .env/
+
+media/

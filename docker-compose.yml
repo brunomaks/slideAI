@@ -33,6 +33,7 @@ services:
       - ./web_app:/app
       - ./shared_artifacts/models:/models
       - ./shared_artifacts/data:/data
+      - ./media:/app/media
     ports:
       - "8001:8001"
     environment:
@@ -40,10 +41,10 @@ services:
       - MODEL_PATH=/models
       - DATABASE_PATH=/data/database.sqlite
       - ALLOWED_HOSTS=localhost,frontend
-      - GRAYSCALE_URL='http://127.0.0.1:8001/grayscale/'
-      - FLIP_URL='http://127.0.0.1:8001/flip/'
-      - HOST_URL='http://127.0.0.1:8001/'
-      - DEBUG_SAVE='True'
+      - GRAYSCALE_URL=http://127.0.0.1:8001/grayscale/
+      - FLIP_URL=http://127.0.0.1:8001/flip/
+      - HOST_URL=http://127.0.0.1:8001/
+      - DEBUG_SAVE=True
 
   frontend:
     build: ./frontend
