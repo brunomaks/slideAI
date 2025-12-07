@@ -7,13 +7,14 @@ from django.views.decorators.csrf import csrf_exempt
 import cv2
 import asyncio
 import json
-from aiortc import RTCPeerConnection, RTCSessionDescription, VideoStreamTrack, RTCConfiguration
+from aiortc import RTCPeerConnection, RTCSessionDescription, VideoStreamTrack, RTCConfiguration, RTCIceCandidate
 from aiortc.contrib.media import MediaRecorder
 from av import VideoFrame
 
 import requests
 from dotenv import load_dotenv
 import os
+import re
 import numpy as np
 
 class ProcessedVideoTrack(VideoStreamTrack):
@@ -51,6 +52,8 @@ async def main_view(request):
 
     config = RTCConfiguration(iceServers=[])
     pc = RTCPeerConnection(configuration=config)
+    signaling_state_change = asyncio.Future()
+
 
     pcs.add(pc)
     # load environment variables
@@ -84,22 +87,8 @@ async def main_view(request):
                         img = frame.to_ndarray(format="bgr24")
                         print("image was converted to ndarray")
                         jpgImg = cv2.imencode('.jpg', img)[1].tobytes()
-                        
-                        async with session.post(
-                            GRAYSCALE_URL,
-                            data=jpgImg,
-                            headers={"Content-Type": "image/jpeg"} | ({"X-Debug-Save": "True"} if DEBUG_SAVE else {})
-                        ) as grayscale_resp:
-                            grayscaled_content = await grayscale_resp.read()
 
-                        async with session.post(
-                            FLIP_URL,
-                            data=grayscaled_content,
-                            headers={"Content-Type": "image/jpeg"} | ({"X-Debug-Save": "True"} if DEBUG_SAVE else {})
-                        ) as flip_resp:
-                            flipped_content = await flip_resp.read()
-                            
-                        await return_track.add_frame(flipped_content)
+                        await return_track.add_frame(jpgImg)
                                                 
                 except Exception as e:
                     print(f"Track ended or error: {e}")
@@ -114,6 +103,40 @@ async def main_view(request):
         if pc.connectionState == "failed" or pc.connectionState == "closed":
             await pc.close()
             pcs.discard(pc)
+            
+    # Set remote description (client's offer)
+    offer_sdp = RTCSessionDescription(sdp=request.sdp, type=request.type)
+    await pc.setRemoteDescription(offer_sdp)
+
+    print(len(request.candidates))
+
+    for candidate in request.candidates:
+        parsed = parse_client_candidate(candidate)
+        if parsed is not None:
+            await pc.addIceCandidate(parsed)
+
+    # ensure the signaling state changed before creating answer
+    await signaling_state_change
+    print(f"Current state: {pc.signalingState}")
+    
+    # Create answer
+    answer = await pc.createAnswer()
+    await pc.setLocalDescription(answer)
+
+    server_candidates = []
+    @pc.on("icecandidate")
+    def on_candidate(candidate):
+        if candidate:
+            server_candidates.append(candidate.toJSON())
+    
+    while pc.iceGatheringState != "complete":
+        await asyncio.sleep(0.05)
+            
+    # Handle signalling connection state change
+    @pc.on("signalingstatechange")
+    async def on_signalingstatechange():
+        if pc.signalingState == "have-remote-offer":
+            signaling_state_change.set_result("have-remote-offer")
 
     # Set remote description and create answer
     await pc.setRemoteDescription(offer)
@@ -122,5 +145,52 @@ async def main_view(request):
 
     return JsonResponse({
         "sdp": pc.localDescription.sdp,
-        "type": pc.localDescription.type
+        "type": pc.localDescription.type,
+        "candidates": server_candidates
     })
+
+def parse_client_candidate(candidate_dict):
+    """
+    Parse client candidate dictionary into aiortc.RTCIceCandidate parameters
+    
+    Input format:
+    {
+        'candidate': 'candidate:0 1 UDP 2122055935 192.168.10.60 48393 typ host',
+        'sdpMLineIndex': 0,
+        'sdpMid': '0',
+        'usernameFragment': '9c9437c2'
+    }
+    """
+    candidate_str = candidate_dict['candidate']
+
+    # Parse the candidate string using regex
+    # Format: candidate:foundation component transport priority ip port typ type
+    pattern = r'candidate:(\S+) (\d+) (\S+) (\d+) (\S+) (\d+) typ (\S+)'
+    match = re.match(pattern, candidate_str)
+    
+    if not match:
+        # raise ValueError(f"Invalid candidate format: {candidate_str}")
+        print(f"Invalid candidate format: {candidate_str}")
+        return None
+
+    foundation, component, transport, priority, ip, port, cand_type = match.groups()
+    
+    # Convert types
+    component = int(component)
+    priority = int(priority)
+    port = int(port)
+    
+    candidate = RTCIceCandidate(
+        component=component,
+        foundation=foundation,
+        ip=ip,
+        port=port,
+        priority=priority,
+        protocol=transport,  # Note: parameter name is 'protocol' not 'transport'
+        type=cand_type,
+        sdpMid=candidate_dict['sdpMid'],
+        sdpMLineIndex=candidate_dict['sdpMLineIndex'])
+
+    print("Candidate object was created")
+    
+    return candidate
