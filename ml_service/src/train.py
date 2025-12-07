@@ -128,7 +128,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Train a CNN model for gesture recognition.")
     parser.add_argument('--epochs', type=int, default=10, help='Number of training epochs')
     parser.add_argument('--batch-size', type=int, default=32, help='Batch size for training')
-    parser.add_argument('--img-size', type=int, default=128, help='Image size (width and height)')
+    parser.add_argument('--img-size', type=int, default=96, help='Image size (width and height)')
     parser.add_argument('--version', type=str, help='Model version identifier')
     parser.add_argument('--set-active', action='store_true', help='Set the trained model as active')
     parser.add_argument('--model-output-path', default='/models', help='Directory to save the trained model and metadata')
