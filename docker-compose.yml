@@ -33,7 +33,7 @@ services:
       - ./web_app:/app
       - ./shared_artifacts/models:/models
       - ./shared_artifacts/data:/data
-      - ./media:/app/media
+      - ./web_app/media:/app/media
     ports:
       - "8001:8001"
     environment:

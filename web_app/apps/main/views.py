@@ -69,6 +69,8 @@ async def main_view(request):
     print(f"FLIP_URL: {FLIP_URL}")
     print(f"HOST_URL: {HOST_URL}")
     print(f"DEBUG_SAVE: {DEBUG_SAVE}")
+    
+    os.makedirs(settings.MEDIA_ROOT, exist_ok=True)
 
     @pc.on("track")
     async def on_track(track):
@@ -191,8 +193,3 @@ async def process_video_frame(frame, session, return_track, GRAYSCALE_URL, FLIP_
         flippedJpg = await flip_response.read()
 
     await return_track.add_frame(flippedJpg)
-    
-    """ gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    flipped = cv2.flip(gray, 1)
-        
-    await return_track.add_frame(cv2.imencode('.jpg', flipped)[1].tobytes()) """
