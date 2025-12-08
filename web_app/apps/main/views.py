@@ -199,10 +199,13 @@ async def process_video_frame(frame, session, return_track, CROP_URL, FLIP_URL, 
     if DEBUG_SAVE:
         headers['X-Debug-Save'] = '1'
 
-    # async with session.post(CROP_URL, data=jpgImg, headers=headers) as crop_response:
-    #     croppedJpg = await crop_response.read()
 
     async with session.post(FLIP_URL, data=jpgImg, headers=headers) as flip_response:
         flippedJpg = await flip_response.read()
+
+    # inference
+    async with session.post(CROP_URL, data=jpgImg, headers=headers) as crop_response:
+        prediction = await crop_response.read()
+        print(prediction)
 
     await return_track.add_frame(flippedJpg)

@@ -44,7 +44,7 @@ services:
       - DATABASE_PATH=/data/database.sqlite
       - ALLOWED_HOSTS=localhost,frontend
       # - GRAYSCALE_URL=http://127.0.0.1:8001/grayscale/
-      - CROP_URL=http://host.docker.internal:8002/crop/
+      - CROP_URL=http://host.docker.internal:8002/inference/
       - FLIP_URL=http://127.0.0.1:8001/flip/
       - HOST_URL=http://127.0.0.1:8001/
       - DEBUG_SAVE=True
