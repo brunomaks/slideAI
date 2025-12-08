@@ -46,7 +46,7 @@ function drawLandmarks(ctx, landmarks, style) {
 
 let handLandmarker = undefined;
 
-let runningMode = "IMAGE";
+let runningMode = "VIDEO";
 
 const createHandLandmarker = async () => {
     const vision = await FilesetResolver.forVisionTasks(
