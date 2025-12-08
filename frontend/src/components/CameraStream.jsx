@@ -27,12 +27,13 @@ export default function CameraStream({ onStreamReady }) {
                     audio: false,
                 });
 
-                if (videoRef.current) {
-                    videoRef.current.srcObject = rawStream;
-                    rawStreamRef.current = rawStream;
 
-                    //TODO: mediapipe
-                    const croppedStream = CropperProvider(rawStream);
+                //TODO: mediapipe
+                const croppedStream = CropperProvider(rawStream);
+
+                if (videoRef.current) {
+                    videoRef.current.srcObject = croppedStream;
+                    rawStreamRef.current = rawStream;
 
                     connectStream(croppedStream);
 
