@@ -1,69 +1,73 @@
 import React, { useRef, useEffect } from "react";
 import { useWebRTC } from "../contexts/WebRTCContext";
+import { CropperProvider } from "../contexts/MediaPipeCropper";
 
 const streamConfig = {
-  fps: parseInt(import.meta.env.VITE_MAX_STREAM_FPS) || 24,
-  width: parseInt(import.meta.env.VITE_MAX_STREAM_WIDTH) || 1280,
-  height: parseInt(import.meta.env.VITE_MAX_STREAM_HEIGHT) || 720,
-  bitrate: parseInt(import.meta.env.VITE_MAX_STREAM_BITRATE) || 2500000,
-  delay: parseInt(import.meta.env.VITE_ORIGINAL_STREAM_VIEW_DELAY_MS) || 2000,
+    fps: parseInt(import.meta.env.VITE_MAX_STREAM_FPS) || 24,
+    width: parseInt(import.meta.env.VITE_MAX_STREAM_WIDTH) || 1280,
+    height: parseInt(import.meta.env.VITE_MAX_STREAM_HEIGHT) || 720,
+    bitrate: parseInt(import.meta.env.VITE_MAX_STREAM_BITRATE) || 2500000,
+    delay: parseInt(import.meta.env.VITE_ORIGINAL_STREAM_VIEW_DELAY_MS) || 2000,
 };
 
 export default function CameraStream({ onStreamReady }) {
-  const videoRef = useRef(null);
-  const streamRef = useRef(null);
-  const { connectStream, disconnectStream } = useWebRTC();
+    const videoRef = useRef(null);
+    const rawStreamRef = useRef(null);
+    const { connectStream, disconnectStream } = useWebRTC();
 
-  useEffect(() => {
-    const startCamera = async () => {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: {
-            width: { max: streamConfig.width },
-            height: { max: streamConfig.height },
-            frameRate: { max: streamConfig.fps },
-          },
-          audio: false,
-        });
+    useEffect(() => {
+        const startCamera = async () => {
+            try {
+                const rawStream = await navigator.mediaDevices.getUserMedia({
+                    video: {
+                        width: { max: streamConfig.width },
+                        height: { max: streamConfig.height },
+                        frameRate: { max: streamConfig.fps },
+                    },
+                    audio: false,
+                });
 
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-          streamRef.current = stream;
+                if (videoRef.current) {
+                    videoRef.current.srcObject = rawStream;
+                    rawStreamRef.current = rawStream;
 
-          connectStream(stream);
+                    //TODO: mediapipe
+                    const croppedStream = CropperProvider(rawStream);
 
-          if (onStreamReady) {
-            onStreamReady(stream);
-          }
-        }
-      } catch (error) {
-        console.error("Camera access error:", error);
-        if (error.name === "NotAllowedError" || error.name === "PermissionDeniedError") {
-          alert("Camera access was denied. Please allow camera permissions to use this feature.");
-        } else {
-          alert(`Camera error: ${error.message}`);
-        }
-      }
-    };
+                    connectStream(croppedStream);
 
-    startCamera();
+                    if (onStreamReady) {
+                        onStreamReady(croppedStream);
+                    }
+                }
+            } catch (error) {
+                console.error("Camera access error:", error);
+                if (error.name === "NotAllowedError" || error.name === "PermissionDeniedError") {
+                    alert("Camera access was denied. Please allow camera permissions to use this feature.");
+                } else {
+                    alert(`Camera error: ${error.message}`);
+                }
+            }
+        };
 
-    return () => {
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach((track) => track.stop());
-      }
-      disconnectStream();
-    };
-  }, []);
+        startCamera();
 
-  return (
-    <div className="camera-stream-wrapper">
-      <video
-        ref={videoRef}
-        autoPlay
-        playsInline
-        disablePictureInPicture
-      />
-    </div>
-  );
+        return () => {
+            if (rawStreamRef.current) {
+                rawStreamRef.current.getTracks().forEach((track) => track.stop());
+            }
+            disconnectStream();
+        };
+    }, []);
+
+    return (
+        <div className="camera-stream-wrapper">
+            <video
+                ref={videoRef}
+                autoPlay
+                playsInline
+                disablePictureInPicture
+            />
+        </div>
+    );
 }
