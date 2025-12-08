@@ -36,6 +36,17 @@ export function WebRTCProvider({ children }) {
                     }
                 };
 
+                pc.ondatachannel = (event) => {
+                    const channel = event.channel;
+                    console.log("JS received channel", channel.label);
+
+                    channel.onmessage = (e) => {
+                        console.log("JS received (serverChannel):", e.data);
+                    };
+
+                    channel.send("Hello server!");
+                };
+
                 const offer = await pc.createOffer();
                 await pc.setLocalDescription(offer);
 

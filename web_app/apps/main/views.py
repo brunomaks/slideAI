@@ -54,6 +54,19 @@ async def main_view(request):
     pc = RTCPeerConnection(configuration=config)
 
     pcs.add(pc)
+
+    data_channel = pc.createDataChannel("Server_channel")
+
+    @data_channel.on("open")
+    def on_open():
+        print("DataChannel open")
+        data_channel.send("Hello from server!")
+
+    @data_channel.on("message")
+    def on_message(message):
+        print("Client sent:", message)
+
+
     # load environment variables
     load_dotenv()
     CROP_URL = os.getenv('CROP_URL')
@@ -186,10 +199,10 @@ async def process_video_frame(frame, session, return_track, CROP_URL, FLIP_URL, 
     if DEBUG_SAVE:
         headers['X-Debug-Save'] = '1'
 
-    async with session.post(CROP_URL, data=jpgImg, headers=headers) as crop_response:
-        croppedJpg = await crop_response.read()
+    # async with session.post(CROP_URL, data=jpgImg, headers=headers) as crop_response:
+    #     croppedJpg = await crop_response.read()
 
-    async with session.post(FLIP_URL, data=croppedJpg, headers=headers) as flip_response:
+    async with session.post(FLIP_URL, data=jpgImg, headers=headers) as flip_response:
         flippedJpg = await flip_response.read()
 
     await return_track.add_frame(flippedJpg)
