@@ -15,9 +15,8 @@ def flip_view(request):
     
     if request.method != "POST":
         return JsonResponse({"error": "POST an image file"}, status=400)
-    
-    size = int(request.headers.get('X-Resize-Size', 94))
-    
+
+    size = 96 
     # STEP 1: Load the input image. 
     nparr = np.frombuffer(request.body, np.uint8)
     img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)

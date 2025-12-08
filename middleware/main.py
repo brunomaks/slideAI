@@ -81,8 +81,8 @@ def process_image(img):
     confidence = np.max(prediction) * 100
 
     return {
-        predicted_class: predicted_class,
-        confidence: confidence
+        "predicted_class": int(predicted_class),
+        "confidence": float(confidence)
     }
 
 @app.get("/health")
