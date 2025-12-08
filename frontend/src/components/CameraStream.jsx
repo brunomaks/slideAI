@@ -32,7 +32,7 @@ export default function CameraStream({ onStreamReady }) {
                 const croppedStream = CropperProvider(rawStream);
 
                 if (videoRef.current) {
-                    videoRef.current.srcObject = croppedStream;
+                    videoRef.current.srcObject = rawStream;
                     rawStreamRef.current = rawStream;
 
                     connectStream(croppedStream);
