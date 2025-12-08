@@ -44,6 +44,8 @@ class ProcessedVideoTrack(VideoStreamTrack):
 
 pcs = set()
 
+data_channel = None
+
 @csrf_exempt
 async def main_view(request):
     """Handle WebRTC offer from client"""
@@ -55,16 +57,17 @@ async def main_view(request):
 
     pcs.add(pc)
 
-    data_channel = pc.createDataChannel("Server_channel")
 
-    @data_channel.on("open")
-    def on_open():
-        print("DataChannel open")
-        data_channel.send("Hello from server!")
+    @pc.on("datachannel")
+    def on_datachannel(channel):
+        print("DataChannel received:", channel.label)
+        global data_channel
+        data_channel = channel
 
-    @data_channel.on("message")
-    def on_message(message):
-        print("Client sent:", message)
+        @channel.on("message")
+        def on_message(message):
+            print("Received message:", message)
+
 
 
     # load environment variables
@@ -206,6 +209,11 @@ async def process_video_frame(frame, session, return_track, CROP_URL, FLIP_URL, 
     # inference
     async with session.post(CROP_URL, data=flippedJpg, headers=headers) as crop_response:
         prediction = await crop_response.json()
-        print(prediction)
+
+    if data_channel and data_channel.readyState == "open":
+        data_channel.send(str(prediction))
+        print("Sent to channel: ", str(prediction))
+    else:
+        print("Channel not ready")
 
     await return_track.add_frame(flippedJpg)

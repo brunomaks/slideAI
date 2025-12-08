@@ -36,15 +36,16 @@ export function WebRTCProvider({ children }) {
                     }
                 };
 
-                pc.ondatachannel = (event) => {
-                    const channel = event.channel;
-                    console.log("JS received channel", channel.label);
+                let dataChannel = pc.createDataChannel("MyApp Channel");
+                    dataChannel.addEventListener("open", (event) => {
+                        setInterval(() => {
+                            dataChannel.send("HELLO-WORLD!!!");
+                        }, 500);
+                    }
+                );
 
-                    channel.onmessage = (e) => {
-                        console.log("JS received (serverChannel):", e.data);
-                    };
-
-                    channel.send("Hello server!");
+                dataChannel.onmessage = (event) => {
+                    console.log("Received:", event.data);
                 };
 
                 const offer = await pc.createOffer();
