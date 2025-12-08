@@ -36,12 +36,15 @@ services:
       - ./web_app/media:/app/media
     ports:
       - "8001:8001"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     environment:
       - DJANGO_SETTINGS_MODULE=config.settings.development
       - MODEL_PATH=/models
       - DATABASE_PATH=/data/database.sqlite
       - ALLOWED_HOSTS=localhost,frontend
-      - GRAYSCALE_URL=http://127.0.0.1:8001/grayscale/
+      # - GRAYSCALE_URL=http://127.0.0.1:8001/grayscale/
+      - CROP_URL=http://host.docker.internal:8002/crop/
       - FLIP_URL=http://127.0.0.1:8001/flip/
       - HOST_URL=http://127.0.0.1:8001/
       - DEBUG_SAVE=True

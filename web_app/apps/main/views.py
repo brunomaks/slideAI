@@ -56,7 +56,7 @@ async def main_view(request):
     pcs.add(pc)
     # load environment variables
     load_dotenv()
-    GRAYSCALE_URL = os.getenv('GRAYSCALE_URL')
+    CROP_URL = os.getenv('CROP_URL')
     FLIP_URL = os.getenv('FLIP_URL')
     HOST_URL = os.getenv('HOST_URL')
     DEBUG_SAVE = os.getenv('DEBUG_SAVE', 'false').lower() == 'true'
@@ -65,7 +65,7 @@ async def main_view(request):
     pc.addTrack(return_track)
 
     print("Configuration as follows:")
-    print(f"GRAYSCALE_URL: {GRAYSCALE_URL}")
+    print(f"CROP_URL: {CROP_URL}")
     print(f"FLIP_URL: {FLIP_URL}")
     print(f"HOST_URL: {HOST_URL}")
     print(f"DEBUG_SAVE: {DEBUG_SAVE}")
@@ -86,7 +86,7 @@ async def main_view(request):
                         frame = await track.recv()
                         if frame:
                             print("Frame received")
-                            asyncio.create_task(process_video_frame(frame, session, return_track, GRAYSCALE_URL, FLIP_URL, DEBUG_SAVE))
+                            asyncio.create_task(process_video_frame(frame, session, return_track, CROP_URL, FLIP_URL, DEBUG_SAVE))
                             print("Frame processing task created")
 
                 except Exception as e:
@@ -177,7 +177,7 @@ def parse_client_candidate(candidate_dict):
     
     return candidate
 
-async def process_video_frame(frame, session, return_track, GRAYSCALE_URL, FLIP_URL, DEBUG_SAVE):
+async def process_video_frame(frame, session, return_track, CROP_URL, FLIP_URL, DEBUG_SAVE):
     img = frame.to_ndarray(format="bgr24")
 
     jpgImg = cv2.imencode('.jpg', img)[1].tobytes()
@@ -186,10 +186,10 @@ async def process_video_frame(frame, session, return_track, GRAYSCALE_URL, FLIP_
     if DEBUG_SAVE:
         headers['X-Debug-Save'] = '1'
 
-    async with session.post(GRAYSCALE_URL, data=jpgImg, headers=headers) as gray_response:
-        grayJpg = await gray_response.read()
+    async with session.post(CROP_URL, data=jpgImg, headers=headers) as crop_response:
+        croppedJpg = await crop_response.read()
 
-    async with session.post(FLIP_URL, data=grayJpg, headers=headers) as flip_response:
+    async with session.post(FLIP_URL, data=croppedJpg, headers=headers) as flip_response:
         flippedJpg = await flip_response.read()
 
     await return_track.add_frame(flippedJpg)
