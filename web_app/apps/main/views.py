@@ -72,7 +72,7 @@ async def main_view(request):
 
     # load environment variables
     load_dotenv()
-    CROP_URL = os.getenv('CROP_URL')
+    INFERENCE_URL = os.getenv('INFERENCE_URL')
     FLIP_URL = os.getenv('FLIP_URL')
     HOST_URL = os.getenv('HOST_URL')
     DEBUG_SAVE = os.getenv('DEBUG_SAVE', 'false').lower() == 'true'
@@ -81,7 +81,7 @@ async def main_view(request):
     pc.addTrack(return_track)
 
     print("Configuration as follows:")
-    print(f"CROP_URL: {CROP_URL}")
+    print(f"INFERENCE_URL: {INFERENCE_URL}")
     print(f"FLIP_URL: {FLIP_URL}")
     print(f"HOST_URL: {HOST_URL}")
     print(f"DEBUG_SAVE: {DEBUG_SAVE}")
@@ -102,7 +102,7 @@ async def main_view(request):
                         frame = await track.recv()
                         if frame:
                             print("Frame received")
-                            asyncio.create_task(process_video_frame(frame, session, return_track, CROP_URL, FLIP_URL, DEBUG_SAVE))
+                            asyncio.create_task(process_video_frame(frame, session, return_track, INFERENCE_URL, FLIP_URL, DEBUG_SAVE))
                             print("Frame processing task created")
 
                 except Exception as e:
@@ -193,7 +193,7 @@ def parse_client_candidate(candidate_dict):
     
     return candidate
 
-async def process_video_frame(frame, session, return_track, CROP_URL, FLIP_URL, DEBUG_SAVE):
+async def process_video_frame(frame, session, return_track, INFERENCE_URL, FLIP_URL, DEBUG_SAVE):
     img = frame.to_ndarray(format="bgr24")
 
     jpgImg = cv2.imencode('.jpg', img)[1].tobytes()
@@ -207,8 +207,8 @@ async def process_video_frame(frame, session, return_track, CROP_URL, FLIP_URL, 
         flippedJpg = await flip_response.read()
 
     # inference
-    async with session.post(CROP_URL, data=flippedJpg, headers=headers) as crop_response:
-        prediction = await crop_response.json()
+    async with session.post(INFERENCE_URL, data=flippedJpg, headers=headers) as inference_response:
+        prediction = await inference_response.json()
 
     if data_channel and data_channel.readyState == "open":
         data_channel.send(str(prediction))

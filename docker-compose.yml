@@ -26,6 +26,14 @@ services:
     profiles: ["training-cpu"]
     command: python src/train.py --epochs 10 --set-active
 
+  ml-inference:
+    build: ./inference
+    container_name: ml-inference
+    volumes:
+      - ./shared_artifacts/models:/models
+    environment:
+      - MODEL_PATH=/models
+
   web:
     build: ./web_app
     container_name: web
@@ -43,11 +51,12 @@ services:
       - MODEL_PATH=/models
       - DATABASE_PATH=/data/database.sqlite
       - ALLOWED_HOSTS=localhost,frontend
-      # - GRAYSCALE_URL=http://127.0.0.1:8001/grayscale/
-      - CROP_URL=http://host.docker.internal:8002/inference/
+      - INFERENCE_URL=http://ml-inference:8002/inference/
       - FLIP_URL=http://127.0.0.1:8001/flip/
       - HOST_URL=http://127.0.0.1:8001/
       - DEBUG_SAVE=True
+    depends_on:
+      - ml-inference
 
   frontend:
     build: ./frontend

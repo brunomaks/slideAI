@@ -5,10 +5,12 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 import numpy as np
 import cv2
-
+import os
 
 CLASSES = ["left", "like", "right", "stop"]
-MODEL_PATH = Path("../shared_artifacts/models/gesture_model_20251209_114609.keras")
+
+base_path = os.getenv('MODEL_PATH', '')
+MODEL_PATH = Path(base_path) / "gesture_model_20251209_114609.keras"
 
 
 def load_model(path: Path):
@@ -77,8 +79,3 @@ async def inference(request: Request):
 @app.get("/health")
 async def health():
     return {"status": "ok", "service": "hand-detection"}
-
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8002)
