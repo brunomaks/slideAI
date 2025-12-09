@@ -1,93 +1,83 @@
-from fastapi import FastAPI, Request, HTTPException, Header
+from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import JSONResponse
-import cv2
-import numpy as np
 from tensorflow import keras
-from pathlib import Path
 from contextlib import asynccontextmanager
+from pathlib import Path
+import numpy as np
+import cv2
 
 
-MARGIN = 20  # px
-_model = None
+CLASSES = ["left", "like", "right", "stop"]
+MODEL_PATH = Path("../shared_artifacts/models/gesture_model_20251209_114609.keras")
+
+
+def load_model(path: Path):
+    if not path.exists():
+        raise FileNotFoundError(f"Model file not found: {path}")
+
+    model = keras.models.load_model(path)
+    print(f"Model loaded successfully from {path}")
+    print("Input shape:", model.input_shape)
+    return model
+
+
+def predict(model, img: np.ndarray) -> dict:
+    img_batch = np.expand_dims(img, axis=0)
+
+    prediction = model.predict(img_batch, verbose=0)
+    predicted_idx = int(np.argmax(prediction))
+    confidence = float(np.max(prediction) * 100)
+
+    return {
+        "predicted_class": CLASSES[predicted_idx],
+        "confidence": confidence,
+    }
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    global _model
-    """
-    Lifespan event handler - runs on startup and shutdown
-    """
     print("Loading ML model...")
     try:
-        model_path = Path('../shared_artifacts/models') / 'gesture_model_20251206_201021.keras'
-        
-        if not model_path.exists():
-            raise FileNotFoundError(f"Model file not found: {model_path}")
-        
-        _model = keras.models.load_model(model_path)
-        print(_model.input_shape)
-        print(f"Model loaded successfully from {model_path}")
+        app.state.model = load_model(MODEL_PATH)
     except Exception as e:
-        print(f"ERROR loading model: {e}")
+        print("ERROR loading model:", e)
         raise
-    
-    yield  # App runs here
-    
-    # Shutdown: Clean up
-    print("Shutting down... Unloading model")
-    _model = None
+
+    yield
+
+    print("Shutting down... unloading model")
+    app.state.model = None
+
 
 app = FastAPI(lifespan=lifespan)
 
+
 @app.post("/inference")
 async def inference(request: Request):
-    """
-    Process an image to detect and crop a single hand.
-    """
-    
     body = await request.body()
 
-    nparr = np.frombuffer(body, np.uint8)
+    # decode image
+    arr = np.frombuffer(body, np.uint8)
+    img = cv2.imdecode(arr, cv2.IMREAD_COLOR)
 
-    img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-
-    print("IMAGE SHAPE:")
-    print(img.shape)
-    
     if img is None:
         raise HTTPException(status_code=400, detail="Invalid image data")
-    
-    prediction = process_image(img)
 
-    
-    if prediction is None:
-        raise HTTPException(status_code=400, detail="Could not make a prediction")
-    
-    return JSONResponse(content=prediction)
+    if app.state.model is None:
+        raise HTTPException(status_code=500, detail="Model not loaded")
 
+    try:
+        result = predict(app.state.model, img)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Inference failed: {e}")
 
-def process_image(img):
-    """
-    Process image to detect hand landmarks and crop to hand bounding box.
-    
-    Returns:
-        Cropped image in RGB format, or None if processing failed
-    """
-    # STEP 1: Load the input image
+    return JSONResponse(content=result)
 
-    img_batch = np.expand_dims(img, axis=0)
-
-    prediction = _model.predict(img_batch, verbose=0)
-    predicted_class = np.argmax(prediction)
-    confidence = np.max(prediction) * 100
-
-    return {
-        "predicted_class": int(predicted_class),
-        "confidence": float(confidence)
-    }
 
 @app.get("/health")
-async def root():
-    return {"status": "ok", "service": "hand detection"}
+async def health():
+    return {"status": "ok", "service": "hand-detection"}
+
 
 if __name__ == "__main__":
     import uvicorn
