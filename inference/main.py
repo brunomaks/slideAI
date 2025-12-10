@@ -9,6 +9,7 @@ import os
 
 CLASSES = ["left", "like", "right", "stop"]
 
+# ENSURE THE CORRECT MODEL NAME EXISTS IN shared_artifacts/models
 base_path = os.getenv('MODEL_PATH', '')
 MODEL_PATH = Path(base_path) / "gesture_model_20251209_114609.keras"
 

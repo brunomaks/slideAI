@@ -12,11 +12,10 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'apps.core',
     'corsheaders',
+    'apps.core',
     'apps.main',
     'apps.resize',
-
 ]
 
 ALLOWED_HOSTS = []

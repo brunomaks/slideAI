@@ -1,41 +1,44 @@
 from django.conf import settings
 from django.http import JsonResponse, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
-# use opencv for image processing
 import cv2
 import numpy as np
 import os
 import time
 
-#csrf_exempt is needed since without it we get a 403 error when posting the request
+from apps.core.utils import encode_jpg, decode_jpg
+
+SIZE = 96 # 96x96
+
 @csrf_exempt
 def resize_view(request):
     if request.method != "POST":
         return JsonResponse({"error": "POST an image file"}, status=400)
 
-    size = 96 
-    # STEP 1: Load the input image. 
-    nparr = np.frombuffer(request.body, np.uint8)
-    img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+    try:
+        img = decode_jpg(request.body)
+    except ValueError as e:
+        return JsonResponse({"error": f"Invalid image data: {str(e)}"}, status=400)
 
-    # STEP 2: Resize and save the image
-    resized = resize(img, size)
-    
-    # save the resized image to the output folder if header is there
-    if request.headers.get('X-Debug-Save'):
-        filename = "frame" + "_resize_" + str(int(time.time_ns())) + ".jpg"
-        path = os.path.join(settings.MEDIA_ROOT, filename)
-        print("Saving resized image to disk for debugging at path:", path)
-        cv2.imwrite(path, resized)
+    resized = resize_to_square(img, SIZE)
 
-    # return the flipped image
-    _, buffer = cv2.imencode('.jpg', resized)
-    return HttpResponse(buffer.tobytes(), content_type='image/jpeg')
+    if request.headers.get("X-Debug-Save"):
+        debug_save_image(resized)
 
-def resize(img, size):
+    try:
+        jpg_bytes = encode_jpg(resized)
+    except ValueError as e:
+        return JsonResponse({"error": f"Failed to encode image: {str(e)}"}, status=500)
+
+    return HttpResponse(jpg_bytes, content_type="image/jpeg")
+
+def resize_to_square(img, size: int):
     h, w = img.shape[:2]
+
+    # scale resizing
     scale = size / max(h, w)
     new_w, new_h = int(w * scale), int(h * scale)
+
     resized = cv2.resize(img, (new_w, new_h))
 
     # compute padding
@@ -44,9 +47,13 @@ def resize(img, size):
     left = (size - new_w) // 2
     right = size - new_w - left
 
-    padded = cv2.copyMakeBorder(
+    return cv2.copyMakeBorder(
         resized, top, bottom, left, right,
-        cv2.BORDER_CONSTANT, value=[0,0,0]
+        cv2.BORDER_CONSTANT, value=[0, 0, 0]
     )
 
-    return padded
+
+def debug_save_image(img):
+    filename = f"frame_resize_{time.time_ns()}.jpg"
+    path = os.path.join(settings.MEDIA_ROOT, filename)
+    cv2.imwrite(path, img)
