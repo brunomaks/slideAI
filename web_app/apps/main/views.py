@@ -8,13 +8,10 @@ import cv2
 import asyncio
 import json
 from aiortc import RTCPeerConnection, RTCSessionDescription, VideoStreamTrack, RTCConfiguration, RTCIceCandidate
-from aiortc.contrib.media import MediaRecorder
 from av import VideoFrame
 
-import requests
-from dotenv import load_dotenv
-import os
 import re
+import os
 import numpy as np
 
 class ProcessedVideoTrack(VideoStreamTrack):
@@ -71,9 +68,8 @@ async def main_view(request):
 
 
     # load environment variables
-    load_dotenv()
     INFERENCE_URL = os.getenv('INFERENCE_URL')
-    FLIP_URL = os.getenv('FLIP_URL')
+    RESIZE_URL = os.getenv('RESIZE_URL')
     HOST_URL = os.getenv('HOST_URL')
     DEBUG_SAVE = os.getenv('DEBUG_SAVE', 'false').lower() == 'true'
     
@@ -82,7 +78,7 @@ async def main_view(request):
 
     print("Configuration as follows:")
     print(f"INFERENCE_URL: {INFERENCE_URL}")
-    print(f"FLIP_URL: {FLIP_URL}")
+    print(f"RESIZE_URL: {RESIZE_URL}")
     print(f"HOST_URL: {HOST_URL}")
     print(f"DEBUG_SAVE: {DEBUG_SAVE}")
     
@@ -102,7 +98,7 @@ async def main_view(request):
                         frame = await track.recv()
                         if frame:
                             print("Frame received")
-                            asyncio.create_task(process_video_frame(frame, session, return_track, INFERENCE_URL, FLIP_URL, DEBUG_SAVE))
+                            asyncio.create_task(process_video_frame(frame, session, return_track, INFERENCE_URL, RESIZE_URL, DEBUG_SAVE))
                             print("Frame processing task created")
 
                 except Exception as e:
@@ -193,7 +189,7 @@ def parse_client_candidate(candidate_dict):
     
     return candidate
 
-async def process_video_frame(frame, session, return_track, INFERENCE_URL, FLIP_URL, DEBUG_SAVE):
+async def process_video_frame(frame, session, return_track, INFERENCE_URL, RESIZE_URL, DEBUG_SAVE):
     img = frame.to_ndarray(format="bgr24")
 
     jpgImg = cv2.imencode('.jpg', img)[1].tobytes()
@@ -203,11 +199,11 @@ async def process_video_frame(frame, session, return_track, INFERENCE_URL, FLIP_
         headers['X-Debug-Save'] = '1'
 
     # resizing
-    async with session.post(FLIP_URL, data=jpgImg, headers=headers) as flip_response:
-        flippedJpg = await flip_response.read()
+    async with session.post(RESIZE_URL, data=jpgImg, headers=headers) as resized_response:
+        resizedJpg = await resized_response.read()
 
     # inference
-    async with session.post(INFERENCE_URL, data=flippedJpg, headers=headers) as inference_response:
+    async with session.post(INFERENCE_URL, data=resizedJpg, headers=headers) as inference_response:
         prediction = await inference_response.json()
 
     if data_channel and data_channel.readyState == "open":
@@ -216,4 +212,4 @@ async def process_video_frame(frame, session, return_track, INFERENCE_URL, FLIP_
     else:
         print("Channel not ready")
 
-    await return_track.add_frame(flippedJpg)
+    await return_track.add_frame(resizedJpg)

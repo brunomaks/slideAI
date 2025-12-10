@@ -1,6 +1,6 @@
 from django.apps import AppConfig
 
 
-class FlipAppConfig(AppConfig):
+class ResizeAppConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
-    name = 'apps.flip'
+    name = 'apps.resize'

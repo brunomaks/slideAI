@@ -52,9 +52,9 @@ services:
       - DATABASE_PATH=/data/database.sqlite
       - ALLOWED_HOSTS=localhost,frontend
       - INFERENCE_URL=http://ml-inference:8002/inference/
-      - FLIP_URL=http://127.0.0.1:8001/flip/
+      - RESIZE_URL=http://127.0.0.1:8001/resize/
       - HOST_URL=http://127.0.0.1:8001/
-      - DEBUG_SAVE=True
+      - DEBUG_SAVE=False
     depends_on:
       - ml-inference
 

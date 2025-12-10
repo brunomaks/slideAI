@@ -6,13 +6,10 @@ import cv2
 import numpy as np
 import os
 import time
-import tqdm
 
 #csrf_exempt is needed since without it we get a 403 error when posting the request
 @csrf_exempt
-def flip_view(request):
-    print("Flip service received a request")
-    
+def resize_view(request):
     if request.method != "POST":
         return JsonResponse({"error": "POST an image file"}, status=400)
 
@@ -22,7 +19,7 @@ def flip_view(request):
     img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
 
     # STEP 2: Resize and save the image
-    resized = resize_and_save(img, size)
+    resized = resize(img, size)
     
     # save the resized image to the output folder if header is there
     if request.headers.get('X-Debug-Save'):
@@ -35,7 +32,7 @@ def flip_view(request):
     _, buffer = cv2.imencode('.jpg', resized)
     return HttpResponse(buffer.tobytes(), content_type='image/jpeg')
 
-def resize_and_save(img, size):
+def resize(img, size):
     h, w = img.shape[:2]
     scale = size / max(h, w)
     new_w, new_h = int(w * scale), int(h * scale)

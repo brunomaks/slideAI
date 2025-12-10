@@ -15,8 +15,7 @@ INSTALLED_APPS = [
     'apps.core',
     'corsheaders',
     'apps.main',
-    'apps.grayscale',
-    'apps.flip',
+    'apps.resize',
 
 ]
 
