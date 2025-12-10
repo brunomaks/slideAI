@@ -34,9 +34,6 @@ export function CropperProvider(inputStream) {
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d', { willReadFrequently: true });
 
-    canvas.width = settings.width;
-    canvas.height = settings.height;
-
     let animationId;
     let lastVideoTime = -1;
     let results = undefined;
@@ -89,6 +86,9 @@ export function CropperProvider(inputStream) {
 
                     const cropWidth = boxXMax - boxXMin;
                     const cropHeight = boxYMax - boxYMin;
+
+                    canvas.width = cropWidth;
+                    canvas.height = cropHeight;
 
                     // Crop using drawImage
                     ctx.drawImage(
