@@ -9,6 +9,7 @@ export function WebRTCProvider({ children }) {
     const [stream, setStream] = useState(null);
     const [remoteStream, setRemoteStream] = useState(null);
     const [isConnected, setIsConnected] = useState(false);
+    const [prediction, setPrediction] = useState(null)
     const pcRef = useRef(null);
 
     useEffect(() => {
@@ -19,7 +20,9 @@ export function WebRTCProvider({ children }) {
         const setupWebRTC = async () => {
             try {
                 const pc = new RTCPeerConnection({
-                    iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
+                    iceServers: [
+                        { urls: 'stun:stun.l.google.com:19302' }
+                    ],
                 });
 
                 pcRef.current = pc;
@@ -34,12 +37,43 @@ export function WebRTCProvider({ children }) {
                     }
                 };
 
+                let dataChannel = pc.createDataChannel("MyApp Channel");
+                    dataChannel.addEventListener("open", (event) => {
+                        setInterval(() => {
+                            dataChannel.send("Hello World!");
+                        }, 500);
+                    }
+                );
+
+
+                dataChannel.onmessage = (event) => {
+                    setPrediction(event.data)
+                    console.log("Received:", event.data);
+                };
+
                 const offer = await pc.createOffer();
                 await pc.setLocalDescription(offer);
+
+                // WAIT for all client candidates to be gathered
+                const clientCandidates = [];
+                await new Promise((resolve) => {
+                    pc.onicecandidate = (event) => {
+                        if (event.candidate) {
+                            clientCandidates.push(event.candidate.toJSON());
+                        } else {
+                            // null candidate = gathering complete
+                            resolve();
+                        }
+                    };
+                    
+                    // Fallback timeout in case gathering takes too long
+                    setTimeout(resolve, 500);
+                });
 
                 const { data: answer } = await axios.post(WEBRTC_SERVER_URL, {
                     sdp: pc.localDescription.sdp,
                     type: pc.localDescription.type,
+                    candidates: clientCandidates
                 });
 
                 await pc.setRemoteDescription(
@@ -48,6 +82,12 @@ export function WebRTCProvider({ children }) {
                         type: answer.type,
                     })
                 );
+
+                if (answer.candidates) {
+                    for (const candidate in answer.candidates) {
+                        await pc.addIceCandidate(new RTCIceCandidate(candidate))
+                    }
+                }
 
                 setIsConnected(true);
                 console.log("WebRTC connection established");
@@ -62,6 +102,7 @@ export function WebRTCProvider({ children }) {
         return () => {
             if (pcRef.current) {
                 pcRef.current.close();
+                pcRef.current = null
                 console.log("WebRTC closed");
             }
             setIsConnected(false);
@@ -86,6 +127,7 @@ export function WebRTCProvider({ children }) {
         stream,
         remoteStream,
         isConnected,
+        prediction,
         connectStream,
         disconnectStream,
     };

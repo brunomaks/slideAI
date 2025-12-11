@@ -1,6 +1,8 @@
 # Created by https://www.toptal.com/developers/gitignore/api/visualstudiocode,react,python
 # Edit at https://www.toptal.com/developers/gitignore?templates=visualstudiocode,react,python
 
+.fastapi
+
 ### Python ###
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -230,3 +232,4 @@ shared_artifacts/images-old
 .idea/
 .env/
 .vite/
+media/
