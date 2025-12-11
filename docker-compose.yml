@@ -26,6 +26,14 @@ services:
     profiles: ["training-cpu"]
     command: python src/train.py --epochs 10 --set-active
 
+  ml-inference:
+    build: ./inference
+    container_name: ml-inference
+    volumes:
+      - ./shared_artifacts/models:/models
+    environment:
+      - MODEL_PATH=/models
+
   web:
     build: ./web_app
     container_name: web
@@ -36,15 +44,19 @@ services:
       - ./web_app/media:/app/media
     ports:
       - "8001:8001"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     environment:
       - DJANGO_SETTINGS_MODULE=config.settings.development
       - MODEL_PATH=/models
       - DATABASE_PATH=/data/database.sqlite
       - ALLOWED_HOSTS=localhost,frontend
-      - GRAYSCALE_URL=http://127.0.0.1:8001/grayscale/
-      - FLIP_URL=http://127.0.0.1:8001/flip/
+      - INFERENCE_URL=http://ml-inference:8002/inference/
+      - RESIZE_URL=http://127.0.0.1:8001/resize/
       - HOST_URL=http://127.0.0.1:8001/
-      - DEBUG_SAVE=True
+      - DEBUG_SAVE=False
+    depends_on:
+      - ml-inference
 
   frontend:
     build: ./frontend
