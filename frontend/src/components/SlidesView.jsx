@@ -43,7 +43,7 @@ export default function SlidesView() {
 
             for (let i = 1; i <= pdf.numPages; i++) {
                 const page = await pdf.getPage(i);
-                const viewport = page.getViewport({ scale: 1.5 });
+                const viewport = page.getViewport({ scale: 2.5 });
 
                 const canvas = document.createElement("canvas");
                 const ctx = canvas.getContext("2d");
@@ -61,8 +61,12 @@ export default function SlidesView() {
                 controls: true,
                 progress: true,
                 hash: false,
-                width: 960,
-                height: 700,
+                center: false,
+                width: '100%',
+                height: '100%',
+                margin: 0,
+                minScale: 1,
+                maxScale: 1,
                 backgroundTransition: 'none',
                 transition: 'none'
             });
@@ -106,17 +110,18 @@ export default function SlidesView() {
             )}
 
             {fileURL && (
-                <div className="reveal-container">
+                <>
                     {!uiVisible && (
                         <button className="exit-button" onClick={exitPreview}>
                             Exit Preview
                         </button>
                     )}
-
-                    <div className="reveal">
-                        <div className="slides" ref={slidesRef}></div>
+                    <div className="reveal-container">
+                        <div className="reveal">
+                            <div className="slides" ref={slidesRef}></div>
+                        </div>
                     </div>
-                </div>
+                </>
             )}
         </div>
     );
