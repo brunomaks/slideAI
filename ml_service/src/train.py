@@ -1,6 +1,6 @@
 import tensorflow as tf
 from tensorflow.keras import layers, models
-from tensorflow.keras import Precision, Recall, Accuracy
+from tensorflow.keras.metrics import Precision, Recall, Accuracy
 import argparse
 from pathlib import Path
 from datetime import datetime
@@ -19,7 +19,7 @@ def train_model(args):
             '/images/train',
             shuffle=True,
             color_mode="rgb",
-            validation_split=0.2,
+            validation_split=0.1,
             subset="training",
             seed=123,
             image_size=IMG_SIZE,
@@ -30,7 +30,7 @@ def train_model(args):
             '/images/train',
             shuffle=True,
             color_mode='rgb',
-            validation_split=0.2,
+            validation_split=0.1,
             subset="validation",
             seed=123,
             image_size=IMG_SIZE,
@@ -61,6 +61,7 @@ def train_model(args):
         # optimize dataset performance by prefetching
         train_data = train_data.prefetch(buffer_size=tf.data.AUTOTUNE)
         val_data = val_data.prefetch(buffer_size=tf.data.AUTOTUNE)
+        test_data = test_data.prefetch(buffer_size=tf.data.AUTOTUNE)
 
     except Exception as e:
         print(f"Error loading dataset: {e}")
@@ -69,29 +70,49 @@ def train_model(args):
     model = models.Sequential([
         layers.Rescaling(1./255, input_shape=(IMG_SIZE[0], IMG_SIZE[1], 3)),
 
-        layers.Conv2D(32, (3, 3), activation='relu'),
+        layers.Conv2D(32, (3, 3), padding='same'),
         layers.BatchNormalization(),
-
-        layers.Conv2D(64, (3, 3), activation='relu'),
+        layers.Activation('relu'),
+        layers.Conv2D(32, (3, 3), padding='same'),
         layers.BatchNormalization(),
-
-        layers.Conv2D(64, (3, 3), activation='relu'),
-        layers.BatchNormalization(),
+        layers.Activation('relu'),
         layers.MaxPooling2D((2, 2)),
+        layers.Dropout(0.25),
 
+        layers.Conv2D(64, (3, 3), padding='same'),
+        layers.BatchNormalization(),
+        layers.Activation('relu'),
+        layers.Conv2D(64, (3, 3), padding='same'),
+        layers.BatchNormalization(),
+        layers.Activation('relu'),
+        layers.MaxPooling2D((2, 2)),
+        layers.Dropout(0.25),
+
+        layers.Conv2D(128, (3, 3), padding='same'),
+        layers.BatchNormalization(),
+        layers.Activation('relu'),
+        layers.Conv2D(128, (3, 3), padding='same'),
+        layers.BatchNormalization(),
+        layers.Activation('relu'),
+        layers.MaxPooling2D((2, 2)),
+        layers.Dropout(0.25),
+        
         layers.Flatten(),
-
-        layers.Dense(128, activation='relu'),
-        layers.Dropout(0.4),
+        layers.Dense(256),
+        layers.BatchNormalization(),
+        layers.Activation('relu'),
+        layers.Dropout(0.5),
+        layers.Dense(128),
+        layers.BatchNormalization(),
+        layers.Activation('relu'),
+        layers.Dropout(0.5),
         layers.Dense(num_classes, activation='softmax')
     ])
 
     model.compile(
         optimizer=tf.keras.optimizers.Adam(learning_rate=0.001),
         loss='sparse_categorical_crossentropy',
-        metrics=['accuracy',
-                 Precision('precision'),
-                 Recall('recall')]
+        metrics=['accuracy']
     )
 
     model.summary()
