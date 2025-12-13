@@ -9,7 +9,7 @@ export function WebRTCProvider({ children }) {
     const [stream, setStream] = useState(null);
     const [remoteStream, setRemoteStream] = useState(null);
     const [isConnected, setIsConnected] = useState(false);
-    const [prediction, setPrediction] = useState(null)
+    const [prediction, setPrediction] = useState(null);
     const pcRef = useRef(null);
 
     useEffect(() => {
@@ -38,17 +38,19 @@ export function WebRTCProvider({ children }) {
                 };
 
                 let dataChannel = pc.createDataChannel("MyApp Channel");
-                    dataChannel.addEventListener("open", (event) => {
-                        setInterval(() => {
-                            dataChannel.send("Hello World!");
-                        }, 500);
-                    }
+                dataChannel.addEventListener("open", (event) => {
+                    setInterval(() => {
+                        dataChannel.send("Hello World!");
+                    }, 500);
+                }
                 );
 
 
                 dataChannel.onmessage = (event) => {
-                    setPrediction(event.data)
-                    console.log("Received:", event.data);
+                    const jsonString = event.data.replace(/'/g, '"');
+                    const parsedData = JSON.parse(jsonString);
+                    setPrediction(parsedData);
+                    console.log("Received:", parsedData);
                 };
 
                 const offer = await pc.createOffer();
@@ -65,7 +67,7 @@ export function WebRTCProvider({ children }) {
                             resolve();
                         }
                     };
-                    
+
                     // Fallback timeout in case gathering takes too long
                     setTimeout(resolve, 500);
                 });

@@ -4,6 +4,8 @@ import * as pdfjsLib from 'pdfjs-dist';
 import 'reveal.js/dist/reveal.css';
 import './SlidesView.css';
 
+import { useWebRTC } from '../contexts/WebRTCContext.jsx';
+
 import workerSrc from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
 
@@ -11,6 +13,10 @@ export default function SlidesView() {
     const [fileURL, setFileURL] = useState(null);
     const fileInputRef = useRef(null);
     const slidesRef = useRef(null);
+    const deckRef = useRef(null);
+    const revealRootRef = useRef(null);
+
+    const { prediction } = useWebRTC();
 
     const [uiVisible, setUiVisible] = useState(true);
 
@@ -57,8 +63,8 @@ export default function SlidesView() {
                 slides.appendChild(section);
             }
 
-            deck = new Reveal({
-                controls: true,
+            deck = new Reveal(revealRootRef.current, {
+                controls: false,
                 progress: true,
                 hash: false,
                 center: false,
@@ -72,6 +78,8 @@ export default function SlidesView() {
             });
 
             await deck.initialize();
+            deckRef.current = deck
+
             deck.layout();
         };
 
@@ -81,6 +89,33 @@ export default function SlidesView() {
             if (deck) deck.destroy();
         };
     }, [fileURL]);
+
+    useEffect(() => {
+        console.log("Effect triggered, deckRef:", !!deckRef.current, "prediction:", prediction)
+        if (!deckRef.current || !prediction) {
+            console.log("Early return: missing deck or prediction")
+            return
+        }
+        if (!deckRef.current.isReady()) {
+            console.log("Early return: deck not ready")
+            return
+        }
+
+        console.log("Slide change:", prediction.predicted_class)
+
+        console.log("Reveal indices:", deckRef.current.getIndices())
+
+        switch (prediction.predicted_class) {
+            case "right":
+                deckRef.current.next()
+                break
+            case "left":
+                deckRef.current.prev()
+                break
+            default:
+                break
+        }
+    }, [prediction?.predicted_class])
 
     return (
         <div className="slides-view-wrapper">
@@ -116,10 +151,8 @@ export default function SlidesView() {
                             Exit Preview
                         </button>
                     )}
-                    <div className="reveal-container">
-                        <div className="reveal">
-                            <div className="slides" ref={slidesRef}></div>
-                        </div>
+                    <div className="reveal" ref={revealRootRef}>
+                        <div className="slides" ref={slidesRef}></div>
                     </div>
                 </>
             )}
