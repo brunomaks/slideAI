@@ -89,3 +89,94 @@ class ModelVersion(BaseModel):
         status = "ACTIVE" if self.is_active else "INACTIVE"
         return f"{self.version_id} ({status}) - Acc: {self.test_accuracy:.2%}"
 
+
+class Prediction(BaseModel):
+    """Log all predictions made by the system."""
+    session_id = models.CharField(max_length=100, db_index=True, blank=True)
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    
+    # Model info
+    model_version = models.ForeignKey(
+        ModelVersion, 
+        on_delete=models.SET_NULL, 
+        null=True,
+        related_name='predictions'
+    )
+    
+    # Prediction details
+    predicted_class = models.CharField(max_length=50)
+    confidence = models.FloatField()
+    all_probabilities = models.JSONField(null=True, blank=True)  # Store all class probabilities
+    
+    # Input metadata
+    image_width = models.IntegerField(null=True, blank=True)
+    image_height = models.IntegerField(null=True, blank=True)
+    
+    # Performance tracking
+    inference_time_ms = models.FloatField(null=True, blank=True)
+    
+    # Optional feedback
+    user_feedback = models.CharField(
+        max_length=20, 
+        choices=[('correct', 'Correct'), ('incorrect', 'Incorrect'), ('unknown', 'Unknown')],
+        default='unknown',
+        blank=True
+    )
+    correct_label = models.CharField(max_length=50, blank=True)
+
+    class Meta:
+        db_table = 'predictions'
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['session_id', 'created_at']),
+            models.Index(fields=['model_version', 'created_at']),
+        ]
+
+    def __str__(self):
+        return f"{self.predicted_class} ({self.confidence:.1%}) at {self.created_at}"
+
+
+class TrainingRun(BaseModel):
+    """Track model training runs and their outcomes."""
+    run_id = models.CharField(max_length=100, unique=True)
+    model_version = models.OneToOneField(
+        ModelVersion, 
+        on_delete=models.CASCADE,
+        related_name='training_run',
+        null=True,
+        blank=True
+    )
+    
+    # Status tracking
+    status = models.CharField(
+        max_length=20,
+        choices=[
+            ('pending', 'Pending'),
+            ('running', 'Running'),
+            ('completed', 'Completed'),
+            ('failed', 'Failed'),
+            ('cancelled', 'Cancelled')
+        ],
+        default='pending',
+        db_index=True
+    )
+    
+    # Training details
+    started_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+    started_at = models.DateTimeField(null=True, blank=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+    
+    # Configuration
+    config = models.JSONField(default=dict)  # Store all hyperparameters
+    
+    # Results
+    final_metrics = models.JSONField(null=True, blank=True)
+    error_message = models.TextField(blank=True)
+    logs = models.TextField(blank=True)
+
+    class Meta:
+        db_table = 'training_runs'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Training Run {self.run_id} - {self.status}"
