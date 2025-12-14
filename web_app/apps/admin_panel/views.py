@@ -11,7 +11,7 @@ import shutil
 from pathlib import Path
 
 from apps.core.models import ModelVersion, Prediction, TrainingRun, ImageMetadata
-
+from .services.model_manager import ModelManager
 
 
 def is_staff_or_superuser(user):
@@ -76,4 +76,17 @@ def dashboard(request):
     }
     
     return render(request, 'admin_panel/dashboard.html', context)
+
+
+@login_required
+@user_passes_test(is_staff_or_superuser)
+def models_list(request):
+    """List all model versions."""
+    models = ModelVersion.objects.all()
+    
+    context = {
+        'models': models,
+    }
+    
+    return render(request, 'admin_panel/models_list.html', context)
 

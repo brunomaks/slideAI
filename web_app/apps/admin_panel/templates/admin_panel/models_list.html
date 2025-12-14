@@ -1,0 +1,54 @@
+{% extends 'admin_panel/base.html' %}
+
+{% block title %}Model Versions{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+    <h1>Model Versions</h1>
+</div>
+
+{% if models %}
+<div class="card">
+    <table>
+        <thead>
+            <tr>
+                <th>Version ID</th>
+                <th>Status</th>
+                <th>Test Accuracy</th>
+                <th>Trained</th>
+                <th>Epochs</th>
+                <th>Dataset Size</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for model in models %}
+            <tr>
+                <td>
+                    <strong>{{ model.version_id }}</strong>
+                    {% if model.is_active %}
+                    <span class="badge badge-success" style="margin-left: 0.5rem;">ACTIVE</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if model.is_active %}
+                    <span class="badge badge-success">Deployed</span>
+                    {% else %}
+                    <span class="badge badge-secondary">Inactive</span>
+                    {% endif %}
+                </td>
+                <td><strong>{{ model.test_accuracy|floatformat:2 }}%</strong></td>
+                <td>{{ model.training_date|date:"Y-m-d H:i" }}</td>
+                <td>{{ model.epochs }}</td>
+                <td>{{ model.train_dataset_size }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="card">
+    <p>No models found. <a href="{% url 'admin_panel:start_training' %}">Train your first model</a>.</p>
+</div>
+{% endif %}
+{% endblock %}

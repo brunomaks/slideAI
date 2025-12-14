@@ -304,7 +304,8 @@
 
     <nav class="nav">
         <div class="nav-content">
-            <a href="{% url 'admin_panel:dashboard' %}" {% if request.resolver_match.url_name == 'dashboard' %}class="active"{% endif %}>Dashboard</a>
+                <a href="{% url 'admin_panel:dashboard' %}" class="{% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">Dashboard</a>
+                <a href="{% url 'admin_panel:models_list' %}" class="{% if 'models' in request.resolver_match.url_name %}active{% endif %}">Models</a>
         </div>
     </nav>
 
