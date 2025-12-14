@@ -11,8 +11,9 @@ import shutil
 from pathlib import Path
 
 from apps.core.models import ModelVersion, Prediction, TrainingRun, ImageMetadata
-from .forms import DataUploadForm
+from .forms import DataUploadForm, TrainingConfigForm
 from .services.model_manager import ModelManager
+from .services.training_service import TrainingService
 from .services.data_uploader import DataUploader
 
 
