@@ -90,3 +90,40 @@ def models_list(request):
     
     return render(request, 'admin_panel/models_list.html', context)
 
+
+@login_required
+@user_passes_test(is_staff_or_superuser)
+def model_detail(request, model_id):
+    """View details of a specific model."""
+    model = get_object_or_404(ModelVersion, id=model_id)
+    
+    # Get predictions made by this model
+    predictions = model.predictions.order_by('-created_at')[:100]
+    prediction_count = model.predictions.count()
+    avg_confidence = model.predictions.aggregate(avg=Avg('confidence'))['avg'] or 0
+    
+    # Get class distribution
+    class_dist = model.predictions.values('predicted_class').annotate(
+        count=Count('id')
+    ).order_by('-count')
+    
+    # Calculate percentages
+    class_dist_with_percentage = []
+    for item in class_dist:
+        percentage = (item['count'] * 100 / prediction_count) if prediction_count > 0 else 0
+        class_dist_with_percentage.append({
+            'predicted_class': item['predicted_class'],
+            'count': item['count'],
+            'percentage': round(percentage, 1)
+        })
+    
+    context = {
+        'model': model,
+        'predictions': predictions,
+        'prediction_count': prediction_count,
+        'avg_confidence': avg_confidence,
+        'class_dist': class_dist_with_percentage,
+    }
+    
+    return render(request, 'admin_panel/model_detail.html', context)
+

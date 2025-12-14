@@ -14,4 +14,5 @@ urlpatterns = [
 
     # Model Management (minimal)
     path('models/', views.models_list, name='models_list'),
+    path('models/<int:model_id>/', views.model_detail, name='model_detail'),
 ]

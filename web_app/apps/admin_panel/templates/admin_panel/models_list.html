@@ -41,6 +41,10 @@
                 <td>{{ model.training_date|date:"Y-m-d H:i" }}</td>
                 <td>{{ model.epochs }}</td>
                 <td>{{ model.train_dataset_size }}</td>
+                <td>
+                    <a href="{% url 'admin_panel:model_detail' model.id %}" class="btn btn-primary"
+                        style="padding: 0.25rem 0.5rem; font-size: 0.8rem;">View</a>
+                </td>
             </tr>
             {% endfor %}
         </tbody>
