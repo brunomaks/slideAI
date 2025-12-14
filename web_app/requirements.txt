@@ -4,6 +4,7 @@ joblib
 scikit-learn
 numpy
 opencv-python-headless
+Pillow
 requests
 python-dotenv
 django-cors-headers
