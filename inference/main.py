@@ -58,6 +58,7 @@ app = FastAPI(lifespan=lifespan)
 @app.post("/inference")
 async def inference(request: Request):
     body = await request.body()
+    # after this line nothing is async
 
     # decode image
     arr = np.frombuffer(body, np.uint8)
@@ -78,5 +79,5 @@ async def inference(request: Request):
 
 
 @app.get("/health")
-async def health():
-    return {"status": "ok", "service": "hand-detection"}
+def health():
+    return {"status": "ok", "service": "ml-inference"}

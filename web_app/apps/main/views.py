@@ -14,6 +14,8 @@ from av import VideoFrame
 
 from apps.core.utils import encode_jpg, decode_jpg
 
+import time
+
 
 INFERENCE_URL = os.getenv('INFERENCE_URL')
 RESIZE_URL = os.getenv('RESIZE_URL')
@@ -22,30 +24,87 @@ DEBUG_SAVE = os.getenv('DEBUG_SAVE', 'false').lower() == 'true'
 class ProcessedVideoTrack(VideoStreamTrack):
     def __init__(self):
         super().__init__()
-        self.queue = asyncio.Queue(5)
-
+        self.queue = asyncio.Queue(1)
+        
+        # Debugging counters
+        self.frames_added = 0
+        self.frames_received = 0
+        self.frames_dropped = 0
+        self.last_log_time = time.time()
+        
     async def recv(self):
+        recv_start = time.time()
+        
+        # Measure queue wait time
+        queue_wait_start = time.time()
         frame = await self.queue.get()
+        queue_wait_time = time.time() - queue_wait_start
+        
+        # Add timestamps
         pts, time_base = await self.next_timestamp()
         frame.pts = pts
         frame.time_base = time_base
+        
+        self.frames_received += 1
+        recv_time = time.time() - recv_start
+        
+        # Log every 30 frames
+        if self.frames_received % 30 == 0:
+            print(f"[RECV] Total received: {self.frames_received}, "
+                  f"Queue wait: {queue_wait_time*1000:.1f}ms, "
+                  f"Total recv time: {recv_time*1000:.1f}ms, "
+                  f"Queue size: {self.queue.qsize()}")
+        
         return frame
-
+    
     async def add_frame(self, jpg_bytes):
+        add_start = time.time()
+        
+        # Check if queue is full
+        if self.queue.full():
+            self.frames_dropped += 1
+            # Log drops
+            if self.frames_dropped % 10 == 0:
+                print(f"[ADD] ⚠️  Dropped {self.frames_dropped} frames so far")
+            return
+        
+        # Measure decode time
+        decode_start = time.time()
         img = decode_jpg(jpg_bytes)
+        decode_time = time.time() - decode_start
+        
         if img is None:
             return
-
+        
+        # Measure frame conversion time
+        convert_start = time.time()
         frame = VideoFrame.from_ndarray(img, format="bgr24")
-
-        if self.queue.full():
-            try:
-                self.queue.get_nowait()
-            except asyncio.QueueEmpty:
-                pass
-
+        convert_time = time.time() - convert_start
+        
+        # Measure queue put time
+        put_start = time.time()
         await self.queue.put(frame)
-
+        put_time = time.time() - put_start
+        
+        self.frames_added += 1
+        total_add_time = time.time() - add_start
+        
+        # Log stats every second
+        now = time.time()
+        if now - self.last_log_time >= 1.0:
+            fps_added = self.frames_added / (now - self.last_log_time)
+            fps_received = self.frames_received / (now - self.last_log_time)
+            
+            print(f"\n[STATS] Add FPS: {fps_added:.1f}, Recv FPS: {fps_received:.1f}, "
+                  f"Dropped: {self.frames_dropped}, Queue: {self.queue.qsize()}")
+            print(f"[TIMING] Decode: {decode_time*1000:.1f}ms, "
+                  f"Convert: {convert_time*1000:.1f}ms, "
+                  f"Put: {put_time*1000:.1f}ms, "
+                  f"Total add: {total_add_time*1000:.1f}ms\n")
+            
+            self.last_log_time = now
+            self.frames_added = 0
+            self.frames_received = 0
 
 def parse_client_candidate(candidate_dict):
     pattern = r'candidate:(\S+) (\d+) (\S+) (\d+) (\S+) (\d+) typ (\S+)'
