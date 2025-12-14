@@ -2,7 +2,8 @@ from django.contrib import admin
 from django.urls import path, include
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
+    path('django-admin/', admin.site.urls),  # Django built-in admin (development only)
+    path('admin/', include('apps.admin_panel.urls')),
     path('offer/', include('apps.main.urls')),
     path('resize/', include('apps.resize.urls')),
 ]
