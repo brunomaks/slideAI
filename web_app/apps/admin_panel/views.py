@@ -286,3 +286,38 @@ def start_training(request):
     }
     return render(request, 'admin_panel/start_training.html', context)
 
+
+@login_required
+@user_passes_test(is_staff_or_superuser)
+def training_status(request):
+    """List recent training runs with status and allow refresh."""
+    service = TrainingService()
+    runs = TrainingRun.objects.order_by('-created_at')[:20]
+
+    # Optionally refresh statuses for running/pending runs
+    for run in runs:
+        if run.status in ['running', 'pending']:
+            try:
+                service.check_training_status(run)
+            except Exception:
+                pass
+
+    context = {
+        'runs': runs,
+    }
+    return render(request, 'admin_panel/training_status.html', context)
+
+
+@login_required
+@user_passes_test(is_staff_or_superuser)
+def cancel_training(request, run_id):
+    """Cancel a specific training run."""
+    run = get_object_or_404(TrainingRun, id=run_id)
+    try:
+        service = TrainingService()
+        service.cancel_training(run)
+        messages.success(request, f"Cancelled training: {run.run_id}")
+    except Exception as e:
+        messages.error(request, f"Failed to cancel training: {e}")
+    return redirect('admin_panel:training_status')
+

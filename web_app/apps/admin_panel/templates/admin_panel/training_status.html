@@ -1,0 +1,60 @@
+{% extends 'admin_panel/base.html' %}
+
+{% block title %}Training Status{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>Training Runs</h2>
+    {% if runs %}
+    <table>
+        <thead>
+            <tr>
+                <th>Run ID</th>
+                <th>Status</th>
+                <th>Started</th>
+                <th>Completed</th>
+                <th>Model Version</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for run in runs %}
+            <tr>
+                <td><strong>{{ run.run_id }}</strong></td>
+                <td>
+                    {% if run.status == 'completed' %}
+                    <span class="badge badge-success">Completed</span>
+                    {% elif run.status == 'running' %}
+                    <span class="badge badge-info">Running</span>
+                    {% elif run.status == 'pending' %}
+                    <span class="badge badge-secondary">Pending</span>
+                    {% elif run.status == 'failed' %}
+                    <span class="badge badge-secondary">Failed</span>
+                    {% else %}
+                    <span class="badge badge-secondary">{{ run.status }}</span>
+                    {% endif %}
+                </td>
+                <td>{{ run.started_at|date:"Y-m-d H:i" }}</td>
+                <td>{{ run.completed_at|date:"Y-m-d H:i" }}</td>
+                <td>
+                    {% if run.model_version %}
+                        <a href="{% url 'admin_panel:model_detail' run.model_version.id %}">{{ run.model_version.version_id }}</a>
+                    {% else %}-{% endif %}
+                </td>
+                <td>
+                    {% if run.status == 'running' %}
+                    <form method="post" action="{% url 'admin_panel:cancel_training' run.id %}" style="display:inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;">Cancel</button>
+                    </form>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p>No training runs yet.</p>
+    {% endif %}
+</div>
+{% endblock %}
