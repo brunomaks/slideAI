@@ -92,24 +92,18 @@ export default function SlidesView() {
 
     useEffect(() => {
         console.log("Effect triggered, deckRef:", !!deckRef.current, "prediction:", prediction)
-        if (!deckRef.current || !prediction) {
-            console.log("Early return: missing deck or prediction")
-            return
-        }
-        if (!deckRef.current.isReady()) {
-            console.log("Early return: deck not ready")
-            return
-        }
+        if (!deckRef.current || !prediction) return
+        if (!deckRef.current.isReady()) return
 
         console.log("Slide change:", prediction.predicted_class)
 
         console.log("Reveal indices:", deckRef.current.getIndices())
 
         switch (prediction.predicted_class) {
-            case "right":
+            case "left":
                 deckRef.current.next()
                 break
-            case "left":
+            case "right":
                 deckRef.current.prev()
                 break
             default:
