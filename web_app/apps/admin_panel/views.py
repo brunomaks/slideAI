@@ -159,6 +159,29 @@ def deploy_model(request, model_id):
 
 @login_required
 @user_passes_test(is_staff_or_superuser)
+def rollback_model(request, model_id):
+    """Rollback to a previous model version."""
+    model = get_object_or_404(ModelVersion, id=model_id)
+    
+    if request.method == 'POST':
+        try:
+            ModelManager.rollback_to_model(model, request.user)
+            messages.success(request, f'Rolled back to model {model.version_id}!')
+            return redirect('admin_panel:models_list')
+        except Exception as e:
+            messages.error(request, f'Rollback failed: {str(e)}')
+            return redirect('admin_panel:models_list')
+    
+    context = {
+        'model': model,
+    }
+    
+    return render(request, 'admin_panel/rollback_model.html', context)
+
+
+
+@login_required
+@user_passes_test(is_staff_or_superuser)
 def upload_data(request):
     """Upload new labeled training data."""
     if request.method == 'POST':
