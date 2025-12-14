@@ -5,4 +5,109 @@
 {% block content %}
 <h1 style="margin-bottom: 2rem;">Dashboard</h1>
 
+<div class="stats-grid">
+    <div class="stat-card">
+        <h3>Predictions (24h)</h3>
+        <div class="value">{{ predictions_24h }}</div>
+        <div class="change">Avg Confidence: {{ avg_confidence_24h|floatformat:1 }}%</div>
+    </div>
+
+    <div class="stat-card">
+        <h3>Active Model</h3>
+        <div class="value" style="font-size: 1.2rem;">
+            {% if active_model %}
+            {{ active_model.version_id|truncatechars:20 }}
+            {% else %}
+            None
+            {% endif %}
+        </div>
+        <div class="change">
+            {% if active_model %}
+            Accuracy: {{ active_model.test_accuracy|floatformat:2 }}%
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <h3>Total Models</h3>
+        <div class="value">{{ total_models }}</div>
+        <div class="change">
+            <a href="{% url 'admin_panel:models_list' %}">View all →</a>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <h3>Training Data</h3>
+        <div class="value">{{ train_images|add:test_images }}</div>
+        <div class="change">Train: {{ train_images }} | Test: {{ test_images }}</div>
+    </div>
+</div>
+
+
+
+<div class="card">
+    <h2>Prediction Distribution (Last 24h)</h2>
+    {% if class_distribution %}
+    <table>
+        <thead>
+            <tr>
+                <th>Gesture</th>
+                <th>Count</th>
+                <th>Percentage</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in class_distribution %}
+            <tr>
+                <td><strong>{{ item.predicted_class }}</strong></td>
+                <td>{{ item.count }}</td>
+                <td>{{ item.percentage }}%</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p>No predictions in the last 24 hours.</p>
+    {% endif %}
+</div>
+
+<div class="card">
+    <h2>Recent Predictions</h2>
+    {% if recent_predictions %}
+    <table>
+        <thead>
+            <tr>
+                <th>Time</th>
+                <th>Gesture</th>
+                <th>Confidence</th>
+                <th>Model</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for pred in recent_predictions %}
+            <tr>
+                <td>{{ pred.created_at|date:"Y-m-d H:i:s" }}</td>
+                <td><strong>{{ pred.predicted_class }}</strong></td>
+                <td>{{ pred.confidence|floatformat:1 }}%</td>
+                <td>{{ pred.model_version.version_id|truncatechars:30|default:"Unknown" }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    {% else %}
+    <p>No predictions yet.</p>
+    {% endif %}
+</div>
+
+
+
+<div class="card">
+    <h2>Quick Actions</h2>
+    <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+        <a href="{% url 'admin_panel:upload_data' %}" class="btn btn-primary">Upload Data</a>
+        <a href="{% url 'admin_panel:models_list' %}" class="btn btn-primary">Manage Models</a>
+    </div>
+</div>
+
 {% endblock %}
