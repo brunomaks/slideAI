@@ -14,15 +14,17 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            background: #f5f5f5;
-            color: #333;
+            background: linear-gradient(135deg, #0f0f19 0%, #1a1a2e 50%, #16213e 100%);
+            color: #e0e0e0;
         }
 
         .header {
-            background: #2c3e50;
+            background: rgba(15, 15, 25, 0.95);
+            backdrop-filter: blur(10px);
             color: white;
             padding: 1rem 2rem;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.3);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         .header-content {
@@ -35,7 +37,12 @@
 
         .header h1 {
             font-size: 1.5rem;
-            font-weight: 600;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: 0.5px;
         }
 
         .user-info {
@@ -45,9 +52,11 @@
         }
 
         .nav {
-            background: #34495e;
+            background: rgba(26, 26, 46, 0.8);
+            backdrop-filter: blur(10px);
             padding: 0;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
         }
 
         .nav-content {
@@ -58,16 +67,19 @@
         }
 
         .nav a {
-            color: white;
+            color: #b0b0b0;
             text-decoration: none;
             padding: 1rem 1.5rem;
             display: block;
-            transition: background 0.2s;
+            transition: all 0.3s ease;
+            border-bottom: 2px solid transparent;
         }
 
         .nav a:hover,
         .nav a.active {
-            background: #2c3e50;
+            background: rgba(102, 126, 234, 0.1);
+            color: #fff;
+            border-bottom-color: #667eea;
         }
 
         .container {
@@ -77,17 +89,20 @@
         }
 
         .card {
-            background: white;
-            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
             padding: 1.5rem;
             margin-bottom: 1.5rem;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
         }
 
         .card h2 {
             margin-bottom: 1rem;
-            color: #2c3e50;
+            color: #e0e0e0;
             font-size: 1.25rem;
+            font-weight: 600;
         }
 
         .btn {
@@ -102,39 +117,46 @@
         }
 
         .btn-primary {
-            background: #3498db;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
+            border: 1px solid rgba(102, 126, 234, 0.3);
         }
 
         .btn-primary:hover {
-            background: #2980b9;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            transform: translateY(-1px);
         }
 
         .btn-success {
-            background: #27ae60;
-            color: white;
+            background: rgba(39, 174, 96, 0.2);
+            color: #27ae60;
+            border: 1px solid rgba(39, 174, 96, 0.4);
         }
 
         .btn-success:hover {
-            background: #229954;
+            background: rgba(39, 174, 96, 0.3);
+            box-shadow: 0 4px 15px rgba(39, 174, 96, 0.3);
         }
 
         .btn-danger {
-            background: #e74c3c;
-            color: white;
+            background: rgba(231, 76, 60, 0.2);
+            color: #e74c3c;
+            border: 1px solid rgba(231, 76, 60, 0.4);
         }
 
         .btn-danger:hover {
-            background: #c0392b;
+            background: rgba(231, 76, 60, 0.3);
+            box-shadow: 0 4px 15px rgba(231, 76, 60, 0.3);
         }
 
         .btn-secondary {
-            background: #95a5a6;
-            color: white;
+            background: rgba(149, 165, 166, 0.2);
+            color: #95a5a6;
+            border: 1px solid rgba(149, 165, 166, 0.4);
         }
 
         .btn-secondary:hover {
-            background: #7f8c8d;
+            background: rgba(149, 165, 166, 0.3);
         }
 
         table {
@@ -146,17 +168,18 @@
         table td {
             padding: 0.75rem;
             text-align: left;
-            border-bottom: 1px solid #ecf0f1;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            color: #e0e0e0;
         }
 
         table th {
-            background: #f8f9fa;
+            background: rgba(102, 126, 234, 0.1);
             font-weight: 600;
-            color: #2c3e50;
+            color: #667eea;
         }
 
         table tr:hover {
-            background: #f8f9fa;
+            background: rgba(102, 126, 234, 0.05);
         }
 
         .badge {
@@ -168,28 +191,21 @@
         }
 
         .badge-success {
-            background: #d4edda;
-            color: #155724;
-        }
-
-        .badge-warning {
-            background: #fff3cd;
-            color: #856404;
-        }
-
-        .badge-danger {
-            background: #f8d7da;
-            color: #721c24;
+            background: rgba(39, 174, 96, 0.2);
+            color: #27ae60;
+            border: 1px solid rgba(39, 174, 96, 0.4);
         }
 
         .badge-info {
-            background: #d1ecf1;
-            color: #0c5460;
+            background: rgba(102, 126, 234, 0.2);
+            color: #667eea;
+            border: 1px solid rgba(102, 126, 234, 0.4);
         }
 
         .badge-secondary {
-            background: #e2e3e5;
-            color: #383d41;
+            background: rgba(149, 165, 166, 0.2);
+            color: #95a5a6;
+            border: 1px solid rgba(149, 165, 166, 0.4);
         }
 
         .alert {
@@ -199,21 +215,15 @@
         }
 
         .alert-success {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
+            background: rgba(39, 174, 96, 0.1);
+            color: #27ae60;
+            border: 1px solid rgba(39, 174, 96, 0.3);
         }
 
         .alert-error {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-
-        .alert-info {
-            background: #d1ecf1;
-            color: #0c5460;
-            border: 1px solid #bee5eb;
+            background: rgba(231, 76, 60, 0.1);
+            color: #e74c3c;
+            border: 1px solid rgba(231, 76, 60, 0.3);
         }
 
         .form-group {
@@ -224,7 +234,7 @@
             display: block;
             margin-bottom: 0.5rem;
             font-weight: 600;
-            color: #2c3e50;
+            color: #e0e0e0;
         }
 
         .form-group input,
@@ -232,9 +242,19 @@
         .form-group textarea {
             width: 100%;
             padding: 0.5rem;
-            border: 1px solid #ddd;
+            border: 1px solid rgba(255, 255, 255, 0.2);
             border-radius: 4px;
             font-size: 0.9rem;
+            background: rgba(255, 255, 255, 0.05);
+            color: #e0e0e0;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
         }
 
         .form-group input[type="checkbox"] {
@@ -245,7 +265,7 @@
         .form-group small {
             display: block;
             margin-top: 0.25rem;
-            color: #7f8c8d;
+            color: #95a5a6;
             font-size: 0.85rem;
         }
 
@@ -257,35 +277,59 @@
         }
 
         .stat-card {
-            background: white;
+            background: rgba(102, 126, 234, 0.05);
+            backdrop-filter: blur(10px);
             padding: 1.5rem;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            border-radius: 12px;
+            border: 1px solid rgba(102, 126, 234, 0.2);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.3);
         }
 
         .stat-card h3 {
             font-size: 0.9rem;
-            color: #7f8c8d;
+            color: #b0b0b0;
             margin-bottom: 0.5rem;
+            font-weight: 500;
         }
 
         .stat-card .value {
             font-size: 2rem;
             font-weight: 700;
-            color: #2c3e50;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
 
         .stat-card .change {
             font-size: 0.85rem;
             margin-top: 0.5rem;
+            color: #95a5a6;
         }
 
-        .stat-card .change.positive {
-            color: #27ae60;
+        a {
+            color: #667eea;
+            text-decoration: none;
+            transition: color 0.2s ease;
         }
 
-        .stat-card .change.negative {
-            color: #e74c3c;
+        a:hover {
+            color: #fff;
+        }
+
+        h1,
+        h2,
+        h3,
+        h4,
+        h5,
+        h6 {
+            color: #e0e0e0;
         }
     </style>
     {% block extra_css %}{% endblock %}
@@ -302,13 +346,16 @@
         </div>
     </div>
 
-        <nav class="nav">
-            <div class="nav-content">
-                <a href="{% url 'admin_panel:dashboard' %}" class="{% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">Dashboard</a>
-                <a href="{% url 'admin_panel:models_list' %}" class="{% if 'models' in request.resolver_match.url_name %}active{% endif %}">Models</a>
-                <a href="{% url 'admin_panel:upload_data' %}" class="{% if 'data' in request.resolver_match.url_name or 'upload' in request.resolver_match.url_name %}active{% endif %}">Data</a>
-            </div>
-        </nav>
+    <nav class="nav">
+        <div class="nav-content">
+            <a href="{% url 'admin_panel:dashboard' %}"
+                class="{% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">Dashboard</a>
+            <a href="{% url 'admin_panel:models_list' %}"
+                class="{% if 'models' in request.resolver_match.url_name %}active{% endif %}">Models</a>
+            <a href="{% url 'admin_panel:upload_data' %}"
+                class="{% if 'data' in request.resolver_match.url_name or 'upload' in request.resolver_match.url_name %}active{% endif %}">Data</a>
+        </div>
+    </nav>
 
     <div class="container">
         {% if messages %}
