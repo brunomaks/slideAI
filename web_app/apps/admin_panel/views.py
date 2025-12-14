@@ -243,3 +243,26 @@ def view_images(request):
     
     return render(request, 'admin_panel/view_images.html', context)
 
+
+@login_required
+@user_passes_test(is_staff_or_superuser)
+def start_training(request):
+    """Start a new training run."""
+    if request.method == 'POST':
+        form = TrainingConfigForm(request.POST)
+        if form.is_valid():
+            try:
+                service = TrainingService()
+                training_run = service.start_training(form.cleaned_data, request.user)
+                messages.success(request, f"Training started: {training_run.run_id}")
+                return redirect('admin_panel:dashboard')
+            except Exception as e:
+                messages.error(request, f"Failed to start training: {e}")
+    else:
+        form = TrainingConfigForm()
+
+    context = {
+        'form': form,
+    }
+    return render(request, 'admin_panel/start_training.html', context)
+

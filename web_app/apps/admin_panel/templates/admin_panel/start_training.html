@@ -1,0 +1,42 @@
+{% extends 'admin_panel/base.html' %}
+
+{% block title %}Start Training{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>Start New Training</h2>
+    <form method="post">
+        {% csrf_token %}
+        <div class="form-group">
+            {{ form.version_name.label_tag }}
+            {{ form.version_name }}
+            <small>{{ form.version_name.help_text }}</small>
+        </div>
+        <div class="form-group">
+            {{ form.description.label_tag }}
+            {{ form.description }}
+        </div>
+        <div class="form-group">
+            {{ form.epochs.label_tag }}
+            {{ form.epochs }}
+        </div>
+        <div class="form-group">
+            {{ form.batch_size.label_tag }}
+            {{ form.batch_size }}
+        </div>
+        <div class="form-group">
+            {{ form.learning_rate.label_tag }}
+            {{ form.learning_rate }}
+        </div>
+        <div class="form-group">
+            {{ form.image_size.label_tag }}
+            {{ form.image_size }}
+        </div>
+        <div class="form-group">
+            {{ form.validation_split.label_tag }}
+            {{ form.validation_split }}
+        </div>
+        <button type="submit" class="btn btn-primary">Start Training</button>
+    </form>
+</div>
+{% endblock %}
