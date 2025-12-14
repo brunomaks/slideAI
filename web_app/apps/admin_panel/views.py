@@ -11,7 +11,9 @@ import shutil
 from pathlib import Path
 
 from apps.core.models import ModelVersion, Prediction, TrainingRun, ImageMetadata
+from .forms import DataUploadForm
 from .services.model_manager import ModelManager
+from .services.data_uploader import DataUploader
 
 
 def is_staff_or_superuser(user):
@@ -126,4 +128,35 @@ def model_detail(request, model_id):
     }
     
     return render(request, 'admin_panel/model_detail.html', context)
+
+
+@login_required
+@user_passes_test(is_staff_or_superuser)
+def upload_data(request):
+    """Upload new labeled training data."""
+    if request.method == 'POST':
+        form = DataUploadForm(request.POST, request.FILES)
+        if form.is_valid():
+            try:
+                uploader = DataUploader()
+                result = uploader.handle_upload(
+                    request.FILES['data_file'],
+                    form.cleaned_data['dataset_type'],
+                    form.cleaned_data.get('label')
+                )
+                messages.success(
+                    request, 
+                    f"Successfully uploaded {result['count']} images for {result['dataset_type']} dataset."
+                )
+                return redirect('admin_panel:view_images')
+            except Exception as e:
+                messages.error(request, f'Upload failed: {str(e)}')
+    else:
+        form = DataUploadForm()
+    
+    context = {
+        'form': form,
+    }
+    
+    return render(request, 'admin_panel/upload_data.html', context)
 

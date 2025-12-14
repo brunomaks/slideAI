@@ -302,12 +302,13 @@
         </div>
     </div>
 
-    <nav class="nav">
-        <div class="nav-content">
+        <nav class="nav">
+            <div class="nav-content">
                 <a href="{% url 'admin_panel:dashboard' %}" class="{% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">Dashboard</a>
                 <a href="{% url 'admin_panel:models_list' %}" class="{% if 'models' in request.resolver_match.url_name %}active{% endif %}">Models</a>
-        </div>
-    </nav>
+                <a href="{% url 'admin_panel:upload_data' %}" class="{% if 'data' in request.resolver_match.url_name or 'upload' in request.resolver_match.url_name %}active{% endif %}">Data</a>
+            </div>
+        </nav>
 
     <div class="container">
         {% if messages %}
