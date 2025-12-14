@@ -160,3 +160,36 @@ def upload_data(request):
     
     return render(request, 'admin_panel/upload_data.html', context)
 
+
+@login_required
+@user_passes_test(is_staff_or_superuser)
+def view_images(request):
+    """View uploaded images by label."""
+    label_filter = request.GET.get('label', '')
+    dataset_type = request.GET.get('dataset_type', 'train')
+    
+    images_query = ImageMetadata.objects.filter(dataset_type=dataset_type)
+    
+    if label_filter:
+        images_query = images_query.filter(label=label_filter)
+    
+    images = images_query.order_by('-created_at')[:100]
+    
+    # Get available labels
+    labels = ImageMetadata.objects.values_list('label', flat=True).distinct().order_by('label')
+    
+    # Get stats by label
+    label_stats = ImageMetadata.objects.filter(dataset_type=dataset_type).values('label').annotate(
+        count=Count('id')
+    ).order_by('label')
+    
+    context = {
+        'images': images,
+        'labels': labels,
+        'label_stats': label_stats,
+        'selected_label': label_filter,
+        'dataset_type': dataset_type,
+    }
+    
+    return render(request, 'admin_panel/view_images.html', context)
+

@@ -1,0 +1,93 @@
+{% extends 'admin_panel/base.html' %}
+
+{% block title %}Uploaded Images{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+    <h1>Uploaded Images</h1>
+    <a href="{% url 'admin_panel:upload_data' %}" class="btn btn-primary">Upload More Data</a>
+</div>
+
+<div class="card">
+    <h2>Filter Images</h2>
+    <form method="get" style="display: flex; gap: 1rem; align-items: end;">
+        <div class="form-group" style="flex: 1;">
+            <label for="label">Gesture Label</label>
+            <select name="label" id="label">
+                <option value="">All Labels</option>
+                {% for label in labels %}
+                <option value="{{ label }}" {% if selected_label == label %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group" style="flex: 1;">
+            <label for="dataset_type">Dataset Type</label>
+            <select name="dataset_type" id="dataset_type">
+                <option value="train" {% if dataset_type == 'train' %}selected{% endif %}>Training</option>
+                <option value="test" {% if dataset_type == 'test' %}selected{% endif %}>Test</option>
+                <option value="validation" {% if dataset_type == 'validation' %}selected{% endif %}>Validation</option>
+            </select>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Filter</button>
+    </form>
+</div>
+
+<div class="card">
+    <h2>Dataset Statistics ({{ dataset_type|title }})</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Gesture Label</th>
+                <th>Image Count</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for stat in label_stats %}
+            <tr>
+                <td><strong>{{ stat.label }}</strong></td>
+                <td>{{ stat.count }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="2">No images found</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% if images %}
+<div class="card">
+    <h2>Images (Showing first 100)</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Filename</th>
+                <th>Label</th>
+                <th>Dimensions</th>
+                <th>Source</th>
+                <th>Uploaded</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for image in images %}
+            <tr>
+                <td>{{ image.filename }}</td>
+                <td><span class="badge badge-info">{{ image.label }}</span></td>
+                <td>{{ image.width }}x{{ image.height }}</td>
+                <td>{{ image.source_dataset }}</td>
+                <td>{{ image.created_at|date:"Y-m-d H:i" }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="card">
+    <p>No images found. <a href="{% url 'admin_panel:upload_data' %}">Upload some data</a>.</p>
+</div>
+{% endif %}
+
+{% endblock %}

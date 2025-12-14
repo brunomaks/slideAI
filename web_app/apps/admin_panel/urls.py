@@ -17,4 +17,5 @@ urlpatterns = [
     path('models/<int:model_id>/', views.model_detail, name='model_detail'),
     # Data Upload
     path('data/upload/', views.upload_data, name='upload_data'),
+    path('data/images/', views.view_images, name='view_images'),
 ]
