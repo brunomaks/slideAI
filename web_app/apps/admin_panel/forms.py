@@ -69,3 +69,17 @@ class TrainingConfigForm(forms.Form):
         label='Validation Split Ratio'
     )
 
+
+class ModelDeploymentForm(forms.Form):
+    """Form for deploying a model version."""
+    confirm = forms.BooleanField(
+        required=True,
+        label='I confirm this deployment',
+        help_text='This will replace the currently active model'
+    )
+    notes = forms.CharField(
+        widget=forms.Textarea(attrs={'rows': 2}),
+        required=False,
+        label='Deployment Notes'
+    )
+

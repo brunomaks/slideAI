@@ -15,6 +15,7 @@ urlpatterns = [
     # Model Management (minimal)
     path('models/', views.models_list, name='models_list'),
     path('models/<int:model_id>/', views.model_detail, name='model_detail'),
+    path('models/<int:model_id>/deploy/', views.deploy_model, name='deploy_model'),
     # Data Upload
     path('data/upload/', views.upload_data, name='upload_data'),
     path('data/images/', views.view_images, name='view_images'),

@@ -11,7 +11,7 @@ import shutil
 from pathlib import Path
 
 from apps.core.models import ModelVersion, Prediction, TrainingRun, ImageMetadata
-from .forms import DataUploadForm, TrainingConfigForm
+from .forms import DataUploadForm, TrainingConfigForm, ModelDeploymentForm
 from .services.model_manager import ModelManager
 from .services.training_service import TrainingService
 from .services.data_uploader import DataUploader
@@ -129,6 +129,32 @@ def model_detail(request, model_id):
     }
     
     return render(request, 'admin_panel/model_detail.html', context)
+
+
+@login_required
+@user_passes_test(is_staff_or_superuser)
+def deploy_model(request, model_id):
+    """Deploy a model version as the active model."""
+    model = get_object_or_404(ModelVersion, id=model_id)
+    
+    if request.method == 'POST':
+        form = ModelDeploymentForm(request.POST)
+        if form.is_valid():
+            try:
+                ModelManager.deploy_model(model, request.user, form.cleaned_data.get('notes', ''))
+                messages.success(request, f'Model {model.version_id} deployed successfully!')
+                return redirect('admin_panel:models_list')
+            except Exception as e:
+                messages.error(request, f'Deployment failed: {str(e)}')
+    else:
+        form = ModelDeploymentForm()
+    
+    context = {
+        'model': model,
+        'form': form,
+    }
+    
+    return render(request, 'admin_panel/deploy_model.html', context)
 
 
 @login_required

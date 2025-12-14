@@ -44,6 +44,12 @@
                 <td>
                     <a href="{% url 'admin_panel:model_detail' model.id %}" class="btn btn-primary"
                         style="padding: 0.25rem 0.5rem; font-size: 0.8rem;">View</a>
+                    {% if not model.is_active %}
+                    <a href="{% url 'admin_panel:deploy_model' model.id %}" class="btn btn-success"
+                        style="padding: 0.25rem 0.5rem; font-size: 0.8rem;">Deploy</a>
+                    {% else %}
+                    <span class="badge badge-info">Current</span>
+                    {% endif %}
                 </td>
             </tr>
             {% endfor %}
