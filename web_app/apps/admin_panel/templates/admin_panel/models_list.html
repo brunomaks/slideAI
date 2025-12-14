@@ -55,6 +55,9 @@
             {% endfor %}
         </tbody>
     </table>
+    <div style="margin-top: 1rem;">
+        <a href="{% url 'admin_panel:compare_models' %}" class="btn btn-primary">Compare Models</a>
+    </div>
 </div>
 {% else %}
 <div class="card">

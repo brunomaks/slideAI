@@ -246,6 +246,26 @@ def view_images(request):
 
 @login_required
 @user_passes_test(is_staff_or_superuser)
+def compare_models(request):
+    """Compare active model with a selected candidate model."""
+    active_model = ModelVersion.objects.filter(is_active=True).first()
+    candidate_id = request.GET.get('candidate')
+    candidate = None
+    models = ModelVersion.objects.all().order_by('-created_at')
+
+    if candidate_id:
+        candidate = get_object_or_404(ModelVersion, id=candidate_id)
+
+    context = {
+        'active_model': active_model,
+        'candidate': candidate,
+        'models': models,
+    }
+    return render(request, 'admin_panel/compare_models.html', context)
+
+
+@login_required
+@user_passes_test(is_staff_or_superuser)
 def start_training(request):
     """Start a new training run."""
     if request.method == 'POST':
