@@ -113,7 +113,7 @@ export function CropperProvider(inputStream) {
         processFrame();
     });
 
-    const outputStream = canvas.captureStream(settings.frameRate || 2);
+    const outputStream = canvas.captureStream(settings.frameRate || 5);
 
     outputStream.cleanup = () => {
         cancelAnimationFrame(animationId);
