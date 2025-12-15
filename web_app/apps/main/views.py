@@ -186,13 +186,13 @@ async def main_view(request):
                 try:
                     while True:
                         frame = await track.recv()
-                        asyncio.create_task(
-                            process_video_frame(
+                        await process_video_frame(
                                 frame, session, return_track,
                                 INFERENCE_URL, RESIZE_URL, DEBUG_SAVE,
                                 data_channel_container["channel"]
                             )
-                        )
+                except asyncio.CancelledError:
+                    pass
                 except Exception as e:
                     print(f"Track processing ended: {e}")
 
@@ -203,7 +203,7 @@ async def main_view(request):
     @pc.on("connectionstatechange")
     async def on_connectionstatechange():
         print(f"Connection state changed: {pc.connectionState}")
-        if pc.connectionState in ("failed", "closed"):
+        if pc.connectionState in ("failed", "closed", "disconnected"):
             await pc.close()
             
     await pc.setRemoteDescription(offer)
