@@ -1,0 +1,62 @@
+{% extends 'admin_panel/base.html' %}
+
+{% block title %}Compare Models{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>Select Candidate Model</h2>
+    <form method="get" action="{% url 'admin_panel:compare_models' %}">
+        <div class="form-group">
+            <label for="candidate">Candidate</label>
+            <select id="candidate" name="candidate">
+                <option value="">-- Choose model --</option>
+                {% for m in models %}
+                <option value="{{ m.id }}" {% if candidate and candidate.id == m.id %}selected{% endif %}>
+                    {{ m.version_id }}{% if m.is_active %} (active){% endif %}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary">Compare</button>
+    </form>
+</div>
+
+<div class="card">
+    <h2>Comparison</h2>
+    {% if active_model and candidate %}
+    <table>
+        <thead>
+            <tr>
+                <th>Metric</th>
+                <th>Active ({{ active_model.version_id }})</th>
+                <th>Candidate ({{ candidate.version_id }})</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Test Accuracy</td>
+                <td>{{ active_model.test_accuracy|default:"-" }}%</td>
+                <td>{{ candidate.test_accuracy|default:"-" }}%</td>
+            </tr>
+            <tr>
+                <td>Epochs</td>
+                <td>{{ active_model.epochs|default:"-" }}</td>
+                <td>{{ candidate.epochs|default:"-" }}</td>
+            </tr>
+            <tr>
+                <td>Batch Size</td>
+                <td>{{ active_model.batch_size|default:"-" }}</td>
+                <td>{{ candidate.batch_size|default:"-" }}</td>
+            </tr>
+            <tr>
+                <td>Image Size</td>
+                <td>{{ active_model.image_size|default:"-" }}</td>
+                <td>{{ candidate.image_size|default:"-" }}</td>
+            </tr>
+        </tbody>
+    </table>
+    {% else %}
+    <p>Select a candidate model to compare against the active model.</p>
+    {% endif %}
+</div>
+{% endblock %}

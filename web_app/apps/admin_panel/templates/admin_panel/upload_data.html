@@ -1,0 +1,24 @@
+{% extends 'admin_panel/base.html' %}
+
+{% block title %}Upload Data{% endblock %}
+
+{% block content %}
+<h1 style="margin-bottom: 2rem;">Upload Training Data</h1>
+
+
+<div class="card">
+    <h2>Upload Form</h2>
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        <div class="form-group">
+            {{ form.data_file.label_tag }}
+            {{ form.data_file }}
+            <small>{{ form.data_file.help_text }}</small>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Upload Data</button>
+        <a href="{% url 'admin_panel:view_images' %}" class="btn btn-secondary">View Uploaded Images</a>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,184 @@
+{% extends 'admin_panel/base.html' %}
+
+{% block title %}Model Details{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+    <h1>Model Details</h1>
+    <div>
+        <a href="{% url 'admin_panel:models_list' %}" class="btn btn-secondary">Back to Models</a>
+        {% if not model.is_active %}
+        <a href="{% url 'admin_panel:deploy_model' model.id %}" class="btn btn-success">Deploy This Model</a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="card">
+    <h2>Model Information</h2>
+    <table>
+        <tr>
+            <th style="width: 30%;">Version ID</th>
+            <td><strong>{{ model.version_id }}</strong></td>
+        </tr>
+        <tr>
+            <th>Status</th>
+            <td>
+                {% if model.is_active %}
+                <span class="badge badge-success">ACTIVE</span>
+                {% else %}
+                <span class="badge badge-secondary">Inactive</span>
+                {% endif %}
+            </td>
+        </tr>
+        <tr>
+            <th>Model File</th>
+            <td>{{ model.model_file }}</td>
+        </tr>
+        <tr>
+            <th>Framework</th>
+            <td>{{ model.framework }}</td>
+        </tr>
+        <tr>
+            <th>Training Date</th>
+            <td>{{ model.training_date|date:"Y-m-d H:i:s" }}</td>
+        </tr>
+        <tr>
+            <th>Trained By</th>
+            <td>{{ model.trained_by.username|default:"System" }}</td>
+        </tr>
+        {% if model.is_active %}
+        <tr>
+            <th>Deployed Date</th>
+            <td>{{ model.deployment_date|date:"Y-m-d H:i:s" }}</td>
+        </tr>
+        <tr>
+            <th>Deployed By</th>
+            <td>{{ model.deployed_by.username|default:"System" }}</td>
+        </tr>
+        {% endif %}
+    </table>
+</div>
+
+<div class="card">
+    <h2>Performance Metrics</h2>
+    <div class="stats-grid">
+        <div class="stat-card">
+            <h3>Test Accuracy</h3>
+            <div class="value">{{ model.test_accuracy|floatformat:2 }}%</div>
+        </div>
+        <div class="stat-card">
+            <h3>Validation Accuracy</h3>
+            <div class="value">{{ model.validation_accuracy|floatformat:2|default:"N/A" }}%</div>
+        </div>
+        <div class="stat-card">
+            <h3>Training Accuracy</h3>
+            <div class="value">{{ model.train_accuracy|floatformat:2|default:"N/A" }}%</div>
+        </div>
+        <div class="stat-card">
+            <h3>Predictions Made</h3>
+            <div class="value">{{ prediction_count }}</div>
+            <div class="change">Avg Confidence: {{ avg_confidence|floatformat:1 }}%</div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <h2>Training Configuration</h2>
+    <table>
+        <tr>
+            <th style="width: 30%;">Epochs</th>
+            <td>{{ model.epochs }}</td>
+        </tr>
+        <tr>
+            <th>Batch Size</th>
+            <td>{{ model.batch_size }}</td>
+        </tr>
+        <tr>
+            <th>Learning Rate</th>
+            <td>{{ model.learning_rate|default:"N/A" }}</td>
+        </tr>
+        <tr>
+            <th>Image Size</th>
+            <td>{{ model.image_size }}x{{ model.image_size }}</td>
+        </tr>
+        <tr>
+            <th>Training Dataset Size</th>
+            <td>{{ model.train_dataset_size }} images</td>
+        </tr>
+        <tr>
+            <th>Test Dataset Size</th>
+            <td>{{ model.test_dataset_size|default:"N/A" }} images</td>
+        </tr>
+        <tr>
+            <th>Validation Dataset Size</th>
+            <td>{{ model.validation_dataset_size|default:"N/A" }} images</td>
+        </tr>
+    </table>
+</div>
+
+{% if class_dist %}
+<div class="card">
+    <h2>Prediction Distribution by Class</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Gesture Class</th>
+                <th>Predictions</th>
+                <th>Percentage</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in class_dist %}
+            <tr>
+                <td><strong>{{ item.predicted_class }}</strong></td>
+                <td>{{ item.count }}</td>
+                <td>{{ item.percentage }}%</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+{% if model.description %}
+<div class="card">
+    <h2>Description</h2>
+    <p>{{ model.description }}</p>
+</div>
+{% endif %}
+
+{% if model.notes %}
+<div class="card">
+    <h2>Notes</h2>
+    <pre style="white-space: pre-wrap;">{{ model.notes }}</pre>
+</div>
+{% endif %}
+
+<div class="card">
+    <h2>Recent Predictions</h2>
+    {% if predictions %}
+    <table>
+        <thead>
+            <tr>
+                <th>Time</th>
+                <th>Predicted Class</th>
+                <th>Confidence</th>
+                <th>Inference Time</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for pred in predictions|slice:":20" %}
+            <tr>
+                <td>{{ pred.created_at|date:"Y-m-d H:i:s" }}</td>
+                <td><strong>{{ pred.predicted_class }}</strong></td>
+                <td>{{ pred.confidence|floatformat:1 }}%</td>
+                <td>{{ pred.inference_time_ms|floatformat:1|default:"N/A" }} ms</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p>No predictions yet with this model.</p>
+    {% endif %}
+</div>
+{% endblock %}

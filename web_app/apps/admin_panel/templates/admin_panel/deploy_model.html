@@ -1,0 +1,52 @@
+{% extends 'admin_panel/base.html' %}
+
+{% block title %}Deploy Model{% endblock %}
+
+{% block content %}
+<h1 style="margin-bottom: 2rem;">Deploy Model: {{ model.version_id }}</h1>
+
+<div class="card">
+    <h2>Deployment Confirmation</h2>
+    <p style="margin: 1rem 0;">You are about to deploy this model as the active production model.</p>
+
+    <table style="margin: 1.5rem 0;">
+        <tr>
+            <th>Version ID</th>
+            <td>{{ model.version_id }}</td>
+        </tr>
+        <tr>
+            <th>Test Accuracy</th>
+            <td><strong>{{ model.test_accuracy|floatformat:2 }}%</strong></td>
+        </tr>
+        <tr>
+            <th>Training Date</th>
+            <td>{{ model.training_date|date:"Y-m-d H:i:s" }}</td>
+        </tr>
+        <tr>
+            <th>Epochs</th>
+            <td>{{ model.epochs }}</td>
+        </tr>
+        <tr>
+            <th>Dataset Size</th>
+            <td>{{ model.train_dataset_size }} training images</td>
+        </tr>
+    </table>
+
+    <form method="post">
+        {% csrf_token %}
+
+        <div class="form-group">
+            {{ form.confirm }}
+            {{ form.confirm.label_tag }}
+        </div>
+
+        <div class="form-group">
+            {{ form.notes.label_tag }}
+            {{ form.notes }}
+        </div>
+
+        <button type="submit" class="btn btn-success">Deploy Model</button>
+        <a href="{% url 'admin_panel:models_list' %}" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>
+{% endblock %}
