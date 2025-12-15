@@ -189,14 +189,10 @@ def upload_data(request):
         if form.is_valid():
             try:
                 uploader = DataUploader()
-                result = uploader.handle_upload(
-                    request.FILES['data_file'],
-                    form.cleaned_data['dataset_type'],
-                    form.cleaned_data.get('label')
-                )
+                counts = uploader.handle_upload(request.FILES['data_file'])
                 messages.success(
                     request, 
-                    f"Successfully uploaded {result['count']} images for {result['dataset_type']} dataset."
+                    f"Successfully uploaded {counts['train']} train and {counts['test']} test images."
                 )
                 return redirect('admin_panel:view_images')
             except Exception as e:

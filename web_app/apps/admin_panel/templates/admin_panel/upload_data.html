@@ -5,16 +5,6 @@
 {% block content %}
 <h1 style="margin-bottom: 2rem;">Upload Training Data</h1>
 
-<div class="card">
-    <h2>Upload Instructions</h2>
-    <ul style="margin-left: 1.5rem; margin-top: 1rem; line-height: 1.8;">
-        <li><strong>ZIP Upload:</strong> Create a ZIP file with folders named by gesture labels (e.g., "like", "stop").
-            Each folder contains images for that gesture.</li>
-        <li><strong>CSV Upload:</strong> CSV file with columns: filename, label, file_path, width, height</li>
-        <li>Supported image formats: JPG, JPEG, PNG</li>
-        <li>Images will be validated before being added to the database</li>
-    </ul>
-</div>
 
 <div class="card">
     <h2>Upload Form</h2>
@@ -25,17 +15,6 @@
             {{ form.data_file.label_tag }}
             {{ form.data_file }}
             <small>{{ form.data_file.help_text }}</small>
-        </div>
-
-        <div class="form-group">
-            {{ form.dataset_type.label_tag }}
-            {{ form.dataset_type }}
-        </div>
-
-        <div class="form-group">
-            {{ form.label.label_tag }}
-            {{ form.label }}
-            <small>{{ form.label.help_text }}</small>
         </div>
 
         <button type="submit" class="btn btn-primary">Upload Data</button>
