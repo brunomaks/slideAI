@@ -15,6 +15,8 @@ export default function SlidesView() {
     const slidesRef = useRef(null);
     const deckRef = useRef(null);
     const revealRootRef = useRef(null);
+    const [lastGestureTime, setLastGestureTime] = useState(0);
+    const COOLDOWN_MS = 1500; 
 
     const { prediction } = useWebRTC();
 
@@ -98,6 +100,13 @@ export default function SlidesView() {
         console.log("Slide change:", prediction.predicted_class)
 
         console.log("Reveal indices:", deckRef.current.getIndices())
+
+        const now = Date.now();
+        if (prediction.predicted_class === 'left' || prediction.predicted_class === 'right') {
+            if (now - lastGestureTime < COOLDOWN_MS) return;
+            setLastGestureTime(now);
+        }
+
 
         switch (prediction.predicted_class) {
             case "left":
