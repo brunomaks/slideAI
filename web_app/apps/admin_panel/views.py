@@ -266,6 +266,40 @@ def compare_models(request):
 
 @login_required
 @user_passes_test(is_staff_or_superuser)
+def performance_overview(request):
+    """Assess current model performance."""
+    days = int(request.GET.get('days', 1))
+    days = max(1, min(days, 30))
+    since = timezone.now() - timedelta(days=days)
+
+    active_model = ModelVersion.objects.filter(is_active=True).first()
+
+    preds_qs = Prediction.objects.filter(created_at__gte=since)
+    total_preds = preds_qs.count()
+    avg_conf = preds_qs.aggregate(avg=Avg('confidence'))['avg'] or 0
+
+    class_dist = preds_qs.values('predicted_class').annotate(count=Count('id')).order_by('-count')
+    dist = []
+    for item in class_dist:
+        pct = (item['count'] * 100 / total_preds) if total_preds else 0
+        dist.append({
+            'predicted_class': item['predicted_class'],
+            'count': item['count'],
+            'percentage': round(pct, 1)
+        })
+
+    context = {
+        'active_model': active_model,
+        'days': days,
+        'total_preds': total_preds,
+        'avg_confidence': avg_conf,
+        'class_distribution': dist,
+    }
+    return render(request, 'admin_panel/performance_overview.html', context)
+
+
+@login_required
+@user_passes_test(is_staff_or_superuser)
 def start_training(request):
     """Start a new training run."""
     if request.method == 'POST':

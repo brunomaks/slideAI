@@ -18,6 +18,7 @@ urlpatterns = [
     path('models/<int:model_id>/deploy/', views.deploy_model, name='deploy_model'),
     path('models/<int:model_id>/rollback/', views.rollback_model, name='rollback_model'),
     path('models/compare/', views.compare_models, name='compare_models'),
+    path('models/performance/', views.performance_overview, name='performance_overview'),
 
     # Data Upload
     path('data/upload/', views.upload_data, name='upload_data'),
