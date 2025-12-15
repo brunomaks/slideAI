@@ -15,7 +15,8 @@ export default function SlidesView() {
     const slidesRef = useRef(null);
     const deckRef = useRef(null);
     const revealRootRef = useRef(null);
-    const navigationLockedRef = useRef(false)
+    const lastNavigationRef = useRef(0)
+    const LOCK_DURATION = 2000
 
     const { prediction } = useWebRTC();
 
@@ -80,11 +81,6 @@ export default function SlidesView() {
 
             await deck.initialize();
 
-            deck.on("slidechanged", (event) => {
-                console.log("NAVIGATION WILL UNLOCKED IN 2 seconds")
-                setTimeout(() => {navigationLockedRef.current = false}, 2000)
-            })
-
             deckRef.current = deck
             
             deck.layout();
@@ -98,16 +94,13 @@ export default function SlidesView() {
     }, [fileURL]);
 
     useEffect(() => {
-        console.log("Effect triggered, deckRef:", !!deckRef.current, "prediction:", prediction)
         if (!deckRef.current || !prediction) return
         if (!deckRef.current.isReady()) return
-        if (navigationLockedRef.current) return
 
-        console.log("Slide change:", prediction.predicted_class)
+        const now = Date.now()
+        if (now - lastNavigationRef.current < LOCK_DURATION) return
 
-        console.log("Reveal indices:", deckRef.current.getIndices())
-
-        navigationLockedRef.current = true
+        lastNavigationRef.current = now
 
         switch (prediction.predicted_class) {
             case "left":
@@ -119,7 +112,7 @@ export default function SlidesView() {
             default:
                 break
         }
-    }, [prediction?.timestamp])
+    }, [prediction])
 
     return (
         <div className="slides-view-wrapper">

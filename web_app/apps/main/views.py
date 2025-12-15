@@ -65,7 +65,7 @@ class ProcessedVideoTrack(VideoStreamTrack):
             self.frames_dropped += 1
             # Log drops
             if self.frames_dropped % 10 == 0:
-                print(f"[ADD] ⚠️  Dropped {self.frames_dropped} frames so far")
+                print(f"[ADD] Dropped {self.frames_dropped} frames so far")
             return
         
         # Measure decode time
@@ -141,12 +141,13 @@ async def process_video_frame(frame, session, return_track, inference_url, resiz
     # opencv works with BGR instead of RGB
     img = frame.to_ndarray(format="bgr24")
 
+    jpg_bytes = encode_jpg(img)
+
     if is_frame_empty(img):
         print("Skipping empty frame")
         data_channel.send(str({"predicted_class": "empty", "confidence": 100.0}))
+        await return_track.add_frame(jpg_bytes)
         return
-
-    jpg_bytes = encode_jpg(img)
 
     headers = {'X-Debug-Save': '1'} if debug_save else {}
 

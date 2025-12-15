@@ -35,6 +35,7 @@ def predict(model, img: np.ndarray) -> dict:
     return {
         "predicted_class": CLASSES[predicted_idx],
         "confidence": confidence,
+        "timestamp": time.time()
     }
 
 
@@ -73,7 +74,6 @@ async def inference(request: Request):
 
     try:
         result = predict(app.state.model, img)
-        result['timestamp'] = time.time()
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Inference failed: {e}")
 
