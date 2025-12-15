@@ -16,7 +16,7 @@ User = get_user_model()
 
 def create_admin_user():
     if not User.objects.filter(is_superuser=True).exists():
-        User.objects.create_superuser(username='admin', email='admin@gesturify.local', password='admin123')
+        User.objects.create_superuser(username='admin', email='admin@slideai.local', password='admin123')
         print("Admin user created: admin / admin123")
     else:
         print("Admin user already exists")
