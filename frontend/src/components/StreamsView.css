@@ -1,13 +1,14 @@
 .streams-view {
-    display: flex;
-    flex-direction: column;
+    position: fixed;
+    bottom: 2vw;
+    left: 2vw;
     width: 12vw;
     height: calc(12vw * (9 / 16) * 2 + 24px);
     margin: 0 auto;
 }
 
 .control-topbar {
-    height: 24px;
+    height: 0px;
     background-color: #6d6d6d;
     display: flex;
     align-items: center;
@@ -17,6 +18,7 @@
     flex: 1;
     display: flex;
     flex-direction: column;
+
 }
 
 .video-wrapper-instance {

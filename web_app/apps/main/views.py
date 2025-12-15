@@ -129,10 +129,23 @@ def parse_client_candidate(candidate_dict):
         sdpMLineIndex=candidate_dict.get('sdpMLineIndex')
     )
 
+def is_frame_empty(img, pixel_threshold=10, ratio=0.99):
+    """
+    Consider a frame empty if > ratio of pixels have intensity below pixel_threshold
+    """
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    low_pixels = np.sum(gray < pixel_threshold)
+    return (low_pixels / gray.size) > ratio
 
 async def process_video_frame(frame, session, return_track, inference_url, resize_url, debug_save, data_channel):
     # opencv works with BGR instead of RGB
     img = frame.to_ndarray(format="bgr24")
+
+    if is_frame_empty(img):
+        print("Skipping empty frame")
+        data_channel.send(str({"predicted_class": "empty", "confidence": 100.0}))
+        return
+
     jpg_bytes = encode_jpg(img)
 
     headers = {'X-Debug-Save': '1'} if debug_save else {}
@@ -205,7 +218,7 @@ async def main_view(request):
         print(f"Connection state changed: {pc.connectionState}")
         if pc.connectionState in ("failed", "closed", "disconnected"):
             await pc.close()
-            
+
     await pc.setRemoteDescription(offer)
 
     # Add ICE candidates
