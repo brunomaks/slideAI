@@ -6,6 +6,7 @@ from pathlib import Path
 import numpy as np
 import cv2
 import os
+import time
 
 CLASSES = ["left", "like", "right", "stop"]
 
@@ -72,6 +73,7 @@ async def inference(request: Request):
 
     try:
         result = predict(app.state.model, img)
+        result['timestamp'] = time.time()
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Inference failed: {e}")
 

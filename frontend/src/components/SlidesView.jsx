@@ -15,8 +15,7 @@ export default function SlidesView() {
     const slidesRef = useRef(null);
     const deckRef = useRef(null);
     const revealRootRef = useRef(null);
-    const [lastGestureTime, setLastGestureTime] = useState(0);
-    const COOLDOWN_MS = 1500; 
+    const navigationLockedRef = useRef(false)
 
     const { prediction } = useWebRTC();
 
@@ -80,8 +79,14 @@ export default function SlidesView() {
             });
 
             await deck.initialize();
-            deckRef.current = deck
 
+            deck.on("slidechanged", (event) => {
+                console.log("NAVIGATION WILL UNLOCKED IN 2 seconds")
+                setTimeout(() => {navigationLockedRef.current = false}, 2000)
+            })
+
+            deckRef.current = deck
+            
             deck.layout();
         };
 
@@ -96,17 +101,13 @@ export default function SlidesView() {
         console.log("Effect triggered, deckRef:", !!deckRef.current, "prediction:", prediction)
         if (!deckRef.current || !prediction) return
         if (!deckRef.current.isReady()) return
+        if (navigationLockedRef.current) return
 
         console.log("Slide change:", prediction.predicted_class)
 
         console.log("Reveal indices:", deckRef.current.getIndices())
 
-        const now = Date.now();
-        if (prediction.predicted_class === 'left' || prediction.predicted_class === 'right') {
-            if (now - lastGestureTime < COOLDOWN_MS) return;
-            setLastGestureTime(now);
-        }
-
+        navigationLockedRef.current = true
 
         switch (prediction.predicted_class) {
             case "left":
@@ -118,7 +119,7 @@ export default function SlidesView() {
             default:
                 break
         }
-    }, [prediction?.predicted_class])
+    }, [prediction?.timestamp])
 
     return (
         <div className="slides-view-wrapper">

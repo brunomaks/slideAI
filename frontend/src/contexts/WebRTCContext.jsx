@@ -49,7 +49,9 @@ export function WebRTCProvider({ children }) {
                 dataChannel.onmessage = (event) => {
                     const jsonString = event.data.replace(/'/g, '"');
                     const parsedData = JSON.parse(jsonString);
-                    setPrediction(parsedData);
+                    if (parsedData.predicted_class == 'left' || parsedData.predicted_class == 'right') {
+                        setPrediction(parsedData);
+                    }
                     console.log("Received:", parsedData);
                 };
 
