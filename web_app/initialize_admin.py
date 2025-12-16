@@ -3,12 +3,13 @@ import os
 import django
 from pathlib import Path
 from datetime import datetime
+from django.utils import timezone
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings.development')
 django.setup()
 
 from django.contrib.auth import get_user_model
-from apps.core.models import ModelVersion
+from apps.core.models import ModelVersion, ImageMetadata
 from django.conf import settings
 
 User = get_user_model()
@@ -34,15 +35,33 @@ def register_existing_models():
         
         try:
             parts = version_id.split('_')
-            training_date = datetime.strptime(f"{parts[-2]}_{parts[-1]}", "%Y%m%d_%H%M%S")
+            naive_dt = datetime.strptime(f"{parts[-2]}_{parts[-1]}", "%Y%m%d_%H%M%S")
+            training_date = timezone.make_aware(naive_dt, timezone.get_current_timezone())
         except:
-            training_date = datetime.now()
+            training_date = timezone.now()
         
+        # Dataset sizes (best effort)
+        train_size = ImageMetadata.objects.filter(dataset_type='train').count()
+        test_size = ImageMetadata.objects.filter(dataset_type='test').count()
+
+        # Sensible defaults for required fields
+        default_epochs = 10
+        default_batch = 32
+        default_img_size = 224
+
         ModelVersion.objects.create(
             version_id=version_id,
             model_file=model_file.name,
             framework='tensorflow',
             training_date=training_date,
+            # Dataset info
+            train_dataset_size=train_size,
+            test_dataset_size=test_size or None,
+            # Hyperparameters (defaults; actual may differ)
+            epochs=default_epochs,
+            batch_size=default_batch,
+            image_size=default_img_size,
+            # Performance metrics
             test_accuracy=90.0,
             is_active=False
         )

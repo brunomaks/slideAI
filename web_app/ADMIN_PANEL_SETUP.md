@@ -10,15 +10,7 @@ docker-compose exec web python manage.py makemigrations core
 docker-compose exec web python manage.py migrate
 ```
 
-## 2. Create admin user (choose one)
-
-### Manual
-
-```bash
-docker-compose exec web python manage.py createsuperuser
-```
-
-### Auto (also registers existing models)
+## 2. Create admin user
 
 ```bash
 docker-compose exec web python initialize_admin.py
