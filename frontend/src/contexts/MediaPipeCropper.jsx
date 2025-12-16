@@ -103,10 +103,9 @@ export function CropperProvider(inputStream) {
                         cropHeight
                     );
                 }
-                cropHandBoundingBox(ctx, landmark_0, 10)
+                cropHandBoundingBox(ctx, landmark_0, 30)
             }
         }
-
         animationId = requestAnimationFrame(processFrame);
     }
 
@@ -114,7 +113,7 @@ export function CropperProvider(inputStream) {
         processFrame();
     });
 
-    const outputStream = canvas.captureStream(settings.frameRate || 24);
+    const outputStream = canvas.captureStream(settings.frameRate || 5);
 
     outputStream.cleanup = () => {
         cancelAnimationFrame(animationId);

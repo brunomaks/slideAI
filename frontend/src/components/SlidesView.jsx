@@ -34,9 +34,14 @@ export default function SlidesView() {
     };
 
     const exitPreview = () => {
-        setFileURL(null);
-        setUiVisible(true);
-        slidesRef.current.innerHTML = "";
+        if (confirm("Do you want to exit the slide preview?")) {
+            setFileURL(null);
+            setUiVisible(true);
+            slidesRef.current.innerHTML = "";
+        } else {
+            return;
+        }
+
     };
 
     useEffect(() => {
@@ -67,6 +72,7 @@ export default function SlidesView() {
 
             deck = new Reveal(revealRootRef.current, {
                 controls: false,
+                slideNumber: true,
                 progress: true,
                 hash: false,
                 center: false,
@@ -76,7 +82,7 @@ export default function SlidesView() {
                 minScale: 1,
                 maxScale: 1,
                 backgroundTransition: 'none',
-                transition: 'none'
+                transition: 'fade'
             });
 
             await deck.initialize();
@@ -109,6 +115,11 @@ export default function SlidesView() {
             case "right":
                 deckRef.current.prev()
                 break
+            case "stop":
+                if (!uiVisible) {
+                    exitPreview();
+                }
+                break;
             default:
                 break
         }
