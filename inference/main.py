@@ -6,12 +6,13 @@ from pathlib import Path
 import numpy as np
 import cv2
 import os
+import time
 
-CLASSES = ["left", "like", "right", "stop"]
+CLASSES = ["like", "stop", "left", "right"]
 
 # ENSURE THE CORRECT MODEL NAME EXISTS IN shared_artifacts/models
 base_path = os.getenv('MODEL_PATH', '')
-MODEL_PATH = Path(base_path) / "gesture_model_20251209_114609.keras"
+MODEL_PATH = Path(base_path) / "gesture_model_20251212_083346.keras"
 
 
 def load_model(path: Path):
@@ -34,6 +35,7 @@ def predict(model, img: np.ndarray) -> dict:
     return {
         "predicted_class": CLASSES[predicted_idx],
         "confidence": confidence,
+        "timestamp": time.time()
     }
 
 
@@ -58,6 +60,7 @@ app = FastAPI(lifespan=lifespan)
 @app.post("/inference")
 async def inference(request: Request):
     body = await request.body()
+    # after this line nothing is async
 
     # decode image
     arr = np.frombuffer(body, np.uint8)
@@ -78,5 +81,5 @@ async def inference(request: Request):
 
 
 @app.get("/health")
-async def health():
-    return {"status": "ok", "service": "hand-detection"}
+def health():
+    return {"status": "ok", "service": "ml-inference"}

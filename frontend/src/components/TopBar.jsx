@@ -4,7 +4,7 @@ export default function Topbar({ onBrandClick }) {
   return (
     <nav className="topbar">
       <div className="topbar-content">
-        <div className="topbar-brand" onClick={onBrandClick}>Gesturify</div>
+        <div className="topbar-brand" onClick={onBrandClick}>SlideAI</div>
         <a
           href="https://git.chalmers.se/courses/dit826/2025/team4/-/wikis/home"
           target="_blank"

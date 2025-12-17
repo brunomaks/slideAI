@@ -4,6 +4,8 @@ import * as pdfjsLib from 'pdfjs-dist';
 import 'reveal.js/dist/reveal.css';
 import './SlidesView.css';
 
+import { useWebRTC } from '../contexts/WebRTCContext.jsx';
+
 import workerSrc from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
 
@@ -11,6 +13,12 @@ export default function SlidesView() {
     const [fileURL, setFileURL] = useState(null);
     const fileInputRef = useRef(null);
     const slidesRef = useRef(null);
+    const deckRef = useRef(null);
+    const revealRootRef = useRef(null);
+    const lastNavigationRef = useRef(0)
+    const LOCK_DURATION = 2000
+
+    const { prediction } = useWebRTC();
 
     const [uiVisible, setUiVisible] = useState(true);
 
@@ -26,9 +34,14 @@ export default function SlidesView() {
     };
 
     const exitPreview = () => {
-        setFileURL(null);
-        setUiVisible(true);
-        slidesRef.current.innerHTML = "";
+        if (confirm("Do you want to exit the slide preview?")) {
+            setFileURL(null);
+            setUiVisible(true);
+            slidesRef.current.innerHTML = "";
+        } else {
+            return;
+        }
+
     };
 
     useEffect(() => {
@@ -57,8 +70,9 @@ export default function SlidesView() {
                 slides.appendChild(section);
             }
 
-            deck = new Reveal({
-                controls: true,
+            deck = new Reveal(revealRootRef.current, {
+                controls: false,
+                slideNumber: true,
                 progress: true,
                 hash: false,
                 center: false,
@@ -68,10 +82,13 @@ export default function SlidesView() {
                 minScale: 1,
                 maxScale: 1,
                 backgroundTransition: 'none',
-                transition: 'none'
+                transition: 'fade'
             });
 
             await deck.initialize();
+
+            deckRef.current = deck
+            
             deck.layout();
         };
 
@@ -81,6 +98,32 @@ export default function SlidesView() {
             if (deck) deck.destroy();
         };
     }, [fileURL]);
+
+    useEffect(() => {
+        if (!deckRef.current || !prediction) return
+        if (!deckRef.current.isReady()) return
+
+        const now = Date.now()
+        if (now - lastNavigationRef.current < LOCK_DURATION) return
+
+        lastNavigationRef.current = now
+
+        switch (prediction.predicted_class) {
+            case "left":
+                deckRef.current.next()
+                break
+            case "right":
+                deckRef.current.prev()
+                break
+            case "stop":
+                if (!uiVisible) {
+                    exitPreview();
+                }
+                break;
+            default:
+                break
+        }
+    }, [prediction])
 
     return (
         <div className="slides-view-wrapper">
@@ -116,10 +159,8 @@ export default function SlidesView() {
                             Exit Preview
                         </button>
                     )}
-                    <div className="reveal-container">
-                        <div className="reveal">
-                            <div className="slides" ref={slidesRef}></div>
-                        </div>
+                    <div className="reveal" ref={revealRootRef}>
+                        <div className="slides" ref={slidesRef}></div>
                     </div>
                 </>
             )}

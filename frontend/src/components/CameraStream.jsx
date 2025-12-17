@@ -3,7 +3,7 @@ import { useWebRTC } from "../contexts/WebRTCContext";
 import { CropperProvider } from "../contexts/MediaPipeCropper";
 
 const streamConfig = {
-    fps: parseInt(import.meta.env.VITE_MAX_STREAM_FPS) || 24,
+    fps: parseInt(import.meta.env.VITE_MAX_STREAM_FPS) || 5,
     width: parseInt(import.meta.env.VITE_MAX_STREAM_WIDTH) || 1280,
     height: parseInt(import.meta.env.VITE_MAX_STREAM_HEIGHT) || 720,
     bitrate: parseInt(import.meta.env.VITE_MAX_STREAM_BITRATE) || 2500000,
