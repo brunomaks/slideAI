@@ -3,17 +3,23 @@
 {% block title %}Training Status{% endblock %}
 
 {% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+    <h1>Training Status</h1>
+    <a href="{% url 'admin_panel:start_training' %}" class="btn btn-primary">Start New Training</a>
+</div>
+
 <div class="card">
     <h2>Training Runs</h2>
+    <p style="color: #888; margin-bottom: 1rem;">Status updates automatically when you refresh the page.</p>
     {% if runs %}
     <table>
         <thead>
             <tr>
                 <th>Run ID</th>
                 <th>Status</th>
+                <th>Config</th>
                 <th>Started</th>
                 <th>Completed</th>
-                <th>Model Version</th>
                 <th>Actions</th>
             </tr>
         </thead>
@@ -23,38 +29,86 @@
                 <td><strong>{{ run.run_id }}</strong></td>
                 <td>
                     {% if run.status == 'completed' %}
-                    <span class="badge badge-success">Completed</span>
+                    <span class="badge" style="background: #28a745;">✓ Completed</span>
                     {% elif run.status == 'running' %}
-                    <span class="badge badge-info">Running</span>
+                    <span class="badge" style="background: #667eea;">⟳ Running</span>
                     {% elif run.status == 'pending' %}
-                    <span class="badge badge-secondary">Pending</span>
+                    <span class="badge" style="background: #6c757d;">○ Pending</span>
                     {% elif run.status == 'failed' %}
-                    <span class="badge badge-secondary">Failed</span>
+                    <span class="badge" style="background: #dc3545;">✗ Failed</span>
+                    {% elif run.status == 'cancelled' %}
+                    <span class="badge" style="background: #ffc107; color: #000;">⊘ Cancelled</span>
                     {% else %}
-                    <span class="badge badge-secondary">{{ run.status }}</span>
+                    <span class="badge" style="background: #6c757d;">{{ run.status }}</span>
                     {% endif %}
                 </td>
-                <td>{{ run.started_at|date:"Y-m-d H:i" }}</td>
-                <td>{{ run.completed_at|date:"Y-m-d H:i" }}</td>
-                <td>
-                    {% if run.model_version %}
-                        <a href="{% url 'admin_panel:model_detail' run.model_version.id %}">{{ run.model_version.version_id }}</a>
-                    {% else %}-{% endif %}
+                <td style="font-size: 0.85rem;">
+                    {% if run.config %}
+                    {{ run.config.epochs }} epochs, batch {{ run.config.batch_size }}, {{ run.config.image_size }}px
+                    {% endif %}
                 </td>
+                <td>{{ run.started_at|date:"M d, H:i"|default:"-" }}</td>
+                <td>{{ run.completed_at|date:"M d, H:i"|default:"-" }}</td>
                 <td>
                     {% if run.status == 'running' %}
                     <form method="post" action="{% url 'admin_panel:cancel_training' run.id %}" style="display:inline;">
                         {% csrf_token %}
-                        <button type="submit" class="btn btn-danger" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;">Cancel</button>
+                        <button type="submit" class="btn btn-danger"
+                            style="padding: 0.25rem 0.5rem; font-size: 0.8rem;">Cancel</button>
                     </form>
                     {% endif %}
+                    {% if run.model_version %}
+                    <a href="{% url 'admin_panel:model_detail' run.model_version.id %}" class="btn btn-secondary"
+                        style="padding: 0.25rem 0.5rem; font-size: 0.8rem;">View Model</a>
+                    {% endif %}
+                    <button type="button" class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;"
+                        onclick="toggleLogs('logs-{{ run.id }}')">Logs</button>
+                </td>
+            </tr>
+            <tr id="logs-{{ run.id }}" style="display: none;">
+                <td colspan="6">
+                    <div
+                        style="background: rgba(0,0,0,0.3); padding: 1rem; border-radius: 4px; max-height: 300px; overflow-y: auto;">
+                        {% if run.error_message %}
+                        <div style="color: #ff6b6b; margin-bottom: 0.5rem;"><strong>Error:</strong> {{ run.error_message
+                            }}</div>
+                        {% endif %}
+                        {% if run.logs %}
+                        <pre style="margin: 0; white-space: pre-wrap; font-size: 0.85rem;">{{ run.logs }}</pre>
+                        {% else %}
+                        <em style="color: #888;">No logs available yet.</em>
+                        {% endif %}
+                    </div>
                 </td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
     {% else %}
-    <p>No training runs yet.</p>
+    <p>No training runs yet. <a href="{% url 'admin_panel:start_training' %}">Start one now</a>.</p>
     {% endif %}
 </div>
+
+<script>
+    function toggleLogs(id) {
+        const row = document.getElementById(id);
+        row.style.display = row.style.display === 'none' ? 'table-row' : 'none';
+    }
+
+    // Auto-refresh page every 10 seconds if there are running jobs
+    {% if runs %}
+    (function () {
+        var hasRunning = false;
+        {% for run in runs %}
+        {% if run.status == 'running' %}
+        hasRunning = true;
+        {% endif %}
+        {% endfor %}
+        if (hasRunning) {
+            setTimeout(function () { location.reload(); }, 10000);
+        }
+    })();
+    {% endif %}
+</script>
+
 {% endblock %}

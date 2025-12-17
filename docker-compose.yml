@@ -49,7 +49,7 @@ services:
       - ./web_app:/app
       - ./shared_artifacts/models:/models
       - ./shared_artifacts/data:/data
-      - ./web_app/media:/app/media
+      - ./shared_artifacts/images:/images
     ports:
       - "8001:8001"
     extra_hosts:
@@ -58,13 +58,16 @@ services:
       - DJANGO_SETTINGS_MODULE=config.settings.development
       - MODEL_PATH=/models
       - DATABASE_PATH=/data/database.sqlite
+      - MEDIA_ROOT=/images
       - ALLOWED_HOSTS=localhost,frontend
       - INFERENCE_URL=http://ml-inference:8002/inference/
       - RESIZE_URL=http://127.0.0.1:8001/resize/
       - HOST_URL=http://127.0.0.1:8001/
       - DEBUG_SAVE=False
+      - ML_TRAINING_API_URL=http://ml-training:8003
     depends_on:
       - ml-inference
+      - ml-training
 
   frontend:
     build: ./frontend

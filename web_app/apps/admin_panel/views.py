@@ -1,3 +1,26 @@
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
+import json
+
+# Webhook endpoint for training metrics callback
+@csrf_exempt
+@require_POST
+def training_callback(request):
+    """Receive training metrics and register model/metrics directly from ML API."""
+    try:
+        data = json.loads(request.body.decode('utf-8'))
+        job_id = data.get('job_id')
+        version = data.get('version')
+        metrics = data.get('metrics')
+        if not (job_id and version and metrics):
+            return JsonResponse({'error': 'Missing job_id, version, or metrics'}, status=400)
+
+        # Register model and metrics using TrainingService
+        service = TrainingService()
+        service.register_training_callback(job_id, version, metrics)
+        return JsonResponse({'status': 'ok'})
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
@@ -304,8 +327,12 @@ def start_training(request):
             try:
                 service = TrainingService()
                 training_run = service.start_training(form.cleaned_data, request.user)
-                messages.success(request, f"Training started: {training_run.run_id}")
-                return redirect('admin_panel:dashboard')
+                messages.success(
+                    request, 
+                    f"Training run {training_run.run_id} created! "
+                    f"View the Training Status page for the command to run."
+                )
+                return redirect('admin_panel:training_status')
             except Exception as e:
                 messages.error(request, f"Failed to start training: {e}")
     else:

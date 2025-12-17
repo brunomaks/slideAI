@@ -5,10 +5,21 @@
 {% block content %}
 <h1 style="margin-bottom: 2rem;">Upload Training Data</h1>
 
+<div class="card">
+    <h2>Upload Instructions</h2>
+    <p style="margin-top: 1rem; line-height: 1.8;">
+        Upload a ZIP file containing <strong>train/</strong> and <strong>test/</strong> folders.<br>
+        Inside each folder, create subfolders for each gesture label (e.g., "like", "stop").<br>
+        Place images for each gesture in its corresponding folder.<br><br>
+    </p>
+    <p style="margin-top: 1rem;">
+        <strong>Supported formats:</strong> JPG, JPEG, PNG
+    </p>
+</div>
 
 <div class="card">
     <h2>Upload Form</h2>
-    <form method="post" enctype="multipart/form-data">
+    <form method="post" enctype="multipart/form-data" id="upload-form">
         {% csrf_token %}
 
         <div class="form-group">
@@ -17,8 +28,39 @@
             <small>{{ form.data_file.help_text }}</small>
         </div>
 
-        <button type="submit" class="btn btn-primary">Upload Data</button>
+        <button type="submit" class="btn btn-primary" id="submit-btn">Upload Data</button>
         <a href="{% url 'admin_panel:view_images' %}" class="btn btn-secondary">View Uploaded Images</a>
+
+        <div id="upload-spinner" style="display: none; margin-top: 1rem; text-align: center;">
+            <div style="
+                display: inline-block;
+                width: 40px;
+                height: 40px;
+                border: 4px solid rgba(102, 126, 234, 0.3);
+                border-top-color: #667eea;
+                border-radius: 50%;
+                animation: spin 1s linear infinite;
+            "></div>
+            <p style="margin-top: 1rem; color: #667eea; font-weight: bold;">
+                Processing upload... This may take several minutes for large datasets.
+            </p>
+        </div>
     </form>
 </div>
+
+<style>
+    @keyframes spin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+</style>
+
+<script>
+    document.getElementById('upload-form').addEventListener('submit', function () {
+        document.getElementById('submit-btn').disabled = true;
+        document.getElementById('upload-spinner').style.display = 'block';
+    });
+</script>
+
 {% endblock %}
