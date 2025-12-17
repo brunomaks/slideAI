@@ -1,6 +1,8 @@
 services:
-  ml-training:
-      build: ./ml_service
+  ml-training-gpu:
+      build:
+        context: ./ml_service
+        dockerfile: Dockerfile.gpu
       container_name: ml-training
       volumes:
         - ./ml_service:/workspace
@@ -9,11 +11,12 @@ services:
         - ./shared_artifacts/images:/images
       environment:
         - MODEL_OUTPUT_PATH=/models
-      profiles: ["training"]
       command: python src/train.py --epochs 10 --set-active
 
   ml-training-cpu:
-    build: ./ml_service
+    build:
+      context: ./ml_service
+      dockerfile: Dockerfile.cpu
     container_name: ml-training-cpu
     volumes:
       - ./ml_service:/workspace
@@ -23,7 +26,6 @@ services:
     environment:
       - CUDA_VISIBLE_DEVICES=-1
       - MODEL_OUTPUT_PATH=/models
-    profiles: ["training-cpu"]
     command: python src/train.py --epochs 10 --set-active
 
   ml-inference:
