@@ -1,6 +1,6 @@
 // We don't want to render the popup inside Reveal or PDF containers. 
 // Portal allows to render it into document.body
-import { createPortal } from "react-dom"; // we 
+import { createPortal } from "react-dom"; 
 import './ExitPopup.css';
 
 const ExitPopup = () => {

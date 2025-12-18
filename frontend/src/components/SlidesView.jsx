@@ -97,20 +97,16 @@ export default function SlidesView() {
     }, [fileURL]);
 
     useEffect(() => {
-        console.log("IN THE USE_EFFECT")
         const now = Date.now()
         if (now - lastNavigationRef.current < LOCK_DURATION) return
 
         lastNavigationRef.current = now
 
         if (showPopup) {
-            console.log("IN THE showPopup")
             if (prediction.predicted_class === "like") {
-                console.log("EXITING PREVIEW")
                 setShowPopup(false)
                 exitPreview()
             } else if(prediction.predicted_class === "stop") {
-                console.log("CLOSING THE POPUP")
                 setShowPopup(false)
             }
             return; // critical, otherwise the popup will open up again
