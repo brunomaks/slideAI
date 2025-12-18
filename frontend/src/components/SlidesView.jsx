@@ -3,6 +3,7 @@ import Reveal from 'reveal.js';
 import * as pdfjsLib from 'pdfjs-dist';
 import 'reveal.js/dist/reveal.css';
 import './SlidesView.css';
+import ExitPopup from './ExitPopup.jsx';
 
 import { useWebRTC } from '../contexts/WebRTCContext.jsx';
 
@@ -15,6 +16,7 @@ export default function SlidesView() {
     const slidesRef = useRef(null);
     const deckRef = useRef(null);
     const revealRootRef = useRef(null);
+    const [showPopup, setShowPopup] = useState(false);
     const lastNavigationRef = useRef(0)
     const LOCK_DURATION = 2000
 
@@ -34,15 +36,10 @@ export default function SlidesView() {
     };
 
     const exitPreview = () => {
-        if (confirm("Do you want to exit the slide preview?")) {
-            setFileURL(null);
-            setUiVisible(true);
-            slidesRef.current.innerHTML = "";
-        } else {
-            return;
-        }
-
-    };
+        setFileURL(null);
+        setUiVisible(true);
+        slidesRef.current.innerHTML = "";
+    }
 
     useEffect(() => {
         if (!fileURL) return;
@@ -100,29 +97,36 @@ export default function SlidesView() {
     }, [fileURL]);
 
     useEffect(() => {
-        if (!deckRef.current || !prediction) return
-        if (!deckRef.current.isReady()) return
-
         const now = Date.now()
         if (now - lastNavigationRef.current < LOCK_DURATION) return
 
         lastNavigationRef.current = now
 
+        if (showPopup) {
+            if (prediction.predicted_class === "like") {
+                setShowPopup(false)
+                exitPreview()
+            } else if(prediction.predicted_class === "stop") {
+                setShowPopup(false)
+            }
+            return; // critical, otherwise the popup will open up again
+        }
+
+        if (!deckRef.current || !prediction) return
+        if (!deckRef.current.isReady()) return
+
         switch (prediction.predicted_class) {
             case "left":
-                deckRef.current.next()
-                break
-            case "right":
-                deckRef.current.prev()
-                break
-            case "stop":
-                if (!uiVisible) {
-                    exitPreview();
-                }
+                deckRef.current.next();
                 break;
-            default:
-                break
+            case "right":
+                deckRef.current.prev();
+                break;
+            case "stop":
+                setShowPopup(true);
+                break;
         }
+
     }, [prediction])
 
     return (
@@ -158,12 +162,17 @@ export default function SlidesView() {
                         <button className="exit-button" onClick={exitPreview}>
                             Exit Preview
                         </button>
+
+                    )}
+                    {!uiVisible && showPopup && (
+                        <ExitPopup/>
                     )}
                     <div className="reveal" ref={revealRootRef}>
                         <div className="slides" ref={slidesRef}></div>
                     </div>
                 </>
             )}
+
         </div>
     );
 
