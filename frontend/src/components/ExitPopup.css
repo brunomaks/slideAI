@@ -1,0 +1,16 @@
+.popup-overlay {
+    position: fixed;
+    inset: 0; /* make the window behind the popup unresponsive */
+    z-index: 9999; /* force the popup to be on top*/
+    background: rgba(0, 0, 0, 0.55);
+}
+
+.popup {
+    background: #fff;
+    color: #111;
+    padding: 20px;
+    border-radius: 10px;
+    min-width: 280px;
+    max-width: 90vw;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+}
