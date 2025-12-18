@@ -97,31 +97,40 @@ export default function SlidesView() {
     }, [fileURL]);
 
     useEffect(() => {
-        if (!deckRef.current || !prediction) return
-        if (!deckRef.current.isReady()) return
-        if (showPopup) return
-
+        console.log("IN THE USE_EFFECT")
         const now = Date.now()
         if (now - lastNavigationRef.current < LOCK_DURATION) return
 
         lastNavigationRef.current = now
 
+        if (showPopup) {
+            console.log("IN THE showPopup")
+            if (prediction.predicted_class === "like") {
+                console.log("EXITING PREVIEW")
+                setShowPopup(false)
+                exitPreview()
+            } else if(prediction.predicted_class === "stop") {
+                console.log("CLOSING THE POPUP")
+                setShowPopup(false)
+            }
+            return; // critical, otherwise the popup will open up again
+        }
+
+        if (!deckRef.current || !prediction) return
+        if (!deckRef.current.isReady()) return
+
         switch (prediction.predicted_class) {
             case "left":
-                deckRef.current.next()
-                break
-            case "right":
-                deckRef.current.prev()
-                break
-            case "stop":
-                if (!uiVisible) {
-                    console.log("setShowPopup(true)")
-                    setShowPopup(true)
-                }
+                deckRef.current.next();
                 break;
-            default:
-                break
+            case "right":
+                deckRef.current.prev();
+                break;
+            case "stop":
+                setShowPopup(true);
+                break;
         }
+
     }, [prediction])
 
     return (
@@ -160,10 +169,7 @@ export default function SlidesView() {
 
                     )}
                     {!uiVisible && showPopup && (
-                        <ExitPopup
-                            onConfirm={() => { setShowPopup(false); exitPreview() }}
-                            onCancel={() => setShowPopup(false)}
-                        />
+                        <ExitPopup/>
                     )}
                     <div className="reveal" ref={revealRootRef}>
                         <div className="slides" ref={slidesRef}></div>
