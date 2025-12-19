@@ -57,7 +57,7 @@ class TrainingService:
             TrainingRun instance
         """
         # Create version name if not provided
-        version_name = config.get('version_name') or datetime.now().strftime("model_%Y%m%d_%H%M%S")
+        version_name = config.get('version_name') or timezone.now().strftime("model_%Y%m%d_%H%M%S")
         
         # Get dataset sizes
         train_size = ImageMetadata.objects.filter(dataset_type='train').count()
