@@ -378,3 +378,18 @@ def cancel_training(request, run_id):
         messages.error(request, f"Failed to cancel training: {e}")
     return redirect('admin_panel:training_status')
 
+@login_required
+@user_passes_test(is_staff_or_superuser)
+@require_POST
+def delete_model(request, model_id):
+    """Delete a model version."""
+    model = get_object_or_404(ModelVersion, id=model_id)
+    version_id = model.version_id
+    
+    try:
+        ModelManager.delete_model(model)
+        messages.success(request, f"Model {version_id} deleted successfully.")
+    except Exception as e:
+        messages.error(request, f"Failed to delete model {version_id}: {str(e)}")
+        
+    return redirect('admin_panel:models_list')

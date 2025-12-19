@@ -9,6 +9,13 @@
         <a href="{% url 'admin_panel:models_list' %}" class="btn btn-secondary">Back to Models</a>
         {% if not model.is_active %}
         <a href="{% url 'admin_panel:deploy_model' model.id %}" class="btn btn-success">Deploy This Model</a>
+        <form action="{% url 'admin_panel:delete_model' model.id %}" method="post"
+            style="display: inline-block; margin-left: 0.5rem;"
+            onsubmit="return confirm('Are you sure you want to delete this model? This cannot be undone.');">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger"
+                style="background-color: #dc3545; border-color: #dc3545; color: white;">Delete Model</button>
+        </form>
         {% endif %}
     </div>
 </div>
