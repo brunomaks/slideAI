@@ -63,6 +63,13 @@ class TrainingService:
         train_size = ImageMetadata.objects.filter(dataset_type='train').count()
         test_size = ImageMetadata.objects.filter(dataset_type='test').count()
         
+        # Validate dataset size - cannot train with no data
+        if train_size == 0:
+            raise ValueError(
+                "Cannot start training: No training images available. "
+                "Please upload training data before starting a training run."
+            )
+        
         # Prepare API request payload
         api_payload = {
             'epochs': config['epochs'],

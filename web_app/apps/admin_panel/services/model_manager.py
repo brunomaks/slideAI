@@ -18,6 +18,13 @@ class ModelManager:
             user: User performing the deployment
             notes: Optional deployment notes
         """
+        # Validate that the model was trained with actual data
+        if model.train_dataset_size is None or model.train_dataset_size == 0:
+            raise ValueError(
+                "Cannot deploy model: This model was trained with 0 training images. "
+                "Models must be trained with data before deployment."
+            )
+        
         # Deactivate all other models
         ModelVersion.objects.filter(is_active=True).update(is_active=False)
         
