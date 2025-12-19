@@ -2,6 +2,7 @@
 from django.utils import timezone
 from django.conf import settings
 from pathlib import Path
+import os
 from apps.core.models import ModelVersion
 
 
@@ -18,6 +19,13 @@ class ModelManager:
             user: User performing the deployment
             notes: Optional deployment notes
         """
+        # Validate that the model was trained with actual data
+        if model.train_dataset_size is None or model.train_dataset_size == 0:
+            raise ValueError(
+                "Cannot deploy model: This model was trained with 0 training images. "
+                "Models must be trained with data before deployment."
+            )
+        
         # Deactivate all other models
         ModelVersion.objects.filter(is_active=True).update(is_active=False)
         
@@ -55,4 +63,32 @@ class ModelManager:
     def get_active_model():
         """Get the currently active model."""
         return ModelVersion.objects.filter(is_active=True).first()
+
+    @staticmethod
+    def delete_model(model: ModelVersion):
+        """
+        Delete a model version and its associated file.
+        
+        Args:
+            model: ModelVersion instance to delete
+            
+        Raises:
+            ValueError: If trying to delete the active model
+        """
+        if model.is_active:
+            raise ValueError("Cannot delete the active model. Please deploy another model first.")
+            
+        # Delete file from filesystem
+        if model.model_file:
+            model_path = Path(settings.MODEL_PATH) / model.model_file
+            try:
+                if model_path.exists():
+                    os.remove(model_path)
+            except Exception as e:
+                # Log error but proceed with DB deletion
+                print(f"Error deleting model file {model_path}: {e}")
+                
+        # Delete from database
+        model.delete()
+
 

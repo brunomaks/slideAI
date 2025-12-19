@@ -180,3 +180,43 @@ class TrainingRun(BaseModel):
 
     def __str__(self):
         return f"Training Run {self.run_id} - {self.status}"
+
+
+class UploadTask(BaseModel):
+    """Track progress of dataset uploads."""
+    task_id = models.CharField(max_length=100, unique=True, db_index=True)
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+    filename = models.CharField(max_length=255)
+    
+    # Progress tracking
+    status = models.CharField(
+        max_length=20,
+        choices=[
+            ('processing', 'Processing'),
+            ('completed', 'Completed'),
+            ('failed', 'Failed')
+        ],
+        default='processing',
+        db_index=True
+    )
+    total_files = models.IntegerField(default=0)
+    processed_files = models.IntegerField(default=0)
+    train_count = models.IntegerField(default=0)
+    test_count = models.IntegerField(default=0)
+    
+    # Results
+    error_message = models.TextField(blank=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        db_table = 'upload_tasks'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Upload {self.task_id} - {self.status}"
+    
+    @property
+    def progress_percentage(self):
+        if self.total_files == 0:
+            return 0
+        return int((self.processed_files / self.total_files) * 100)

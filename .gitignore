@@ -234,3 +234,10 @@ shared_artifacts/images-old
 .vite/
 
 media/
+
+# Ignore large archives and temp artifacts
+*.zip
+*.tar
+*.tar.gz
+*.rar
+*.7z
