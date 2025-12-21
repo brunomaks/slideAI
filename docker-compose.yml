@@ -1,4 +1,20 @@
 services:
+  ml-training-landmarks:
+    build: ./ml_service_landmarks
+    container_name: ml-training-landmarks
+    volumes:
+      - ./ml_service_landmarks:/workspace
+      - ./shared_artifacts/models:/models
+      - ./shared_artifacts/data:/data
+      - ./shared_artifacts/images:/images
+    environment:
+      - MODEL_OUTPUT_PATH=/models
+      - PORT=8003
+    ports:
+      - "8003:8003"
+    profiles: ["gpu"]
+
+
   # ML Training Service (runs the Training API server)
   ml-training:
     build: ./ml_service
@@ -65,9 +81,6 @@ services:
       - HOST_URL=http://127.0.0.1:8001/
       - DEBUG_SAVE=False
       - ML_TRAINING_API_URL=http://ml-training:8003
-    depends_on:
-      - ml-inference
-      - ml-training
 
   frontend:
     build: ./frontend
