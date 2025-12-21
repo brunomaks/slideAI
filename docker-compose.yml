@@ -1,7 +1,9 @@
 services:
   # ML Training Service (runs the Training API server)
   ml-training:
-    build: ./ml_service
+    build:
+      context: ./ml_service
+      target: dev
     container_name: ml-training
     volumes:
       - ./ml_service:/workspace
@@ -13,12 +15,14 @@ services:
       - PORT=8003
     ports:
       - "8003:8003"
-    profiles: ["gpu"]
+    profiles: [ "gpu" ]
     # GPU support is optional via docker-compose.override.yml
 
-  # CPU-only training service for systems without GPU
+    # CPU-only training service for systems without GPU
   ml-training-cpu:
-    build: ./ml_service
+    build:
+      context: ./ml_service
+      target: dev
     container_name: ml-training
     volumes:
       - ./ml_service:/workspace
@@ -31,19 +35,24 @@ services:
       - PORT=8003
     ports:
       - "8003:8003"
-    profiles: ["cpu"]
+    profiles: [ "cpu" ]
     # Runs the API server (no GPU available)
 
   ml-inference:
-    build: ./inference
+    build:
+      context: ./inference
+      target: dev
     container_name: ml-inference
     volumes:
       - ./shared_artifacts/models:/models
+      - ./inference:/app
     environment:
       - MODEL_PATH=/models
 
   web:
-    build: ./web_app
+    build:
+      context: ./web_app
+      target: dev
     container_name: web
     volumes:
       - ./web_app:/app
@@ -70,7 +79,9 @@ services:
       - ml-training
 
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
+      target: dev
     ports:
       - "5173:5173"
     volumes:
