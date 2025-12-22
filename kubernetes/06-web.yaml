@@ -57,18 +57,6 @@ spec:
             - mountPath: /images
               name: shared-storage
               subPath: images
-          livenessProbe:
-            httpGet:
-              path: /admin/
-              port: 8001
-            initialDelaySeconds: 30
-            periodSeconds: 30
-          readinessProbe:
-            httpGet:
-              path: /admin/
-              port: 8001
-            initialDelaySeconds: 10
-            periodSeconds: 10
       volumes:
         - name: shared-storage
           persistentVolumeClaim:
