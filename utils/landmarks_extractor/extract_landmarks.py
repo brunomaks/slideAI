@@ -1,175 +1,188 @@
-import random
+# USAGE (maybe create readme):
+# How to use this:
+# Just run without args to do both:
+# 'python your_script.py'
+# 
+# To only extract raw landmarks:
+# 'python your_script.py --extract'
+# 
+# To only process (assumes raw JSON exists):
+# 'python your_script.py --process'
+# 
+# To process with augmentation:
+# 'python your_script.py --process --augment'
+
 import mediapipe as mp
-from mediapipe.tasks import python
-from mediapipe.tasks.python import vision
-import numpy as np
 import cv2
 import os
-import argparse
 import tqdm
-from pathlib import Path
 import json
+from pathlib import Path
+import numpy as np
+import argparse
 
-BASE_DIR = Path(__file__).resolve().parent
-DETECTOR_PATH = BASE_DIR / 'hand_landmarker.task'
-BASE_IMAGE_DIR = BASE_DIR.parent.parent / "shared_artifacts/images/hagrid_30k"
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
-BaseOptions = mp.tasks.BaseOptions
-VisionRunningMode = mp.tasks.vision.RunningMode
-HandLandmarkerOptions = mp.tasks.vision.HandLandmarkerOptions
-HandLandmarker = mp.tasks.vision.HandLandmarker
+BASE_IMAGE_DIR = BASE_DIR / "shared_artifacts/images/hagrid_30k"
 
-options = HandLandmarkerOptions(base_options=BaseOptions(model_asset_path=str(DETECTOR_PATH)),
-                                num_hands=1,
-                                running_mode=VisionRunningMode.IMAGE)
+DETECTOR_PATH = BASE_DIR / 'shared_artifacts/models/hand_landmarker.task'
 
-class DatasetOptions:
-    def __init__(self, augment=False, augment_gestures=None, augment_count=0, augment_angles=None):
-        self.augment = augment
-        self.augment_gestures = augment_gestures if augment_gestures else []
-        self.augment_count = augment_count
-        self.augment_angles = augment_angles if augment_angles else []
+RAW_LANDMARKS_PATH = BASE_IMAGE_DIR / "hagrid_30k_landmarks_raw.json"
+PROCESSED_LANDMARKS_PATH = BASE_IMAGE_DIR / "hagrid_30k_landmarks_processed.json"
 
-dataset_options = DatasetOptions(
-    augment=True,
-    augment_gestures=['two_up_inverted'],
-    augment_count=2,
-    augment_angles=[-30, -45, -60, -90]
+mp_tasks = mp.tasks
+BaseOptions = mp_tasks.BaseOptions
+VisionRunningMode = mp_tasks.vision.RunningMode
+HandLandmarkerOptions = mp_tasks.vision.HandLandmarkerOptions
+HandLandmarker = mp_tasks.vision.HandLandmarker
+
+options = HandLandmarkerOptions(
+    base_options=BaseOptions(model_asset_path=str(DETECTOR_PATH)),
+    num_hands=1,
+    running_mode=VisionRunningMode.IMAGE
 )
-
-
-def main():
-    # args = parse_args()
-    # process_image(args.input, args.output)
-    input_path = BASE_IMAGE_DIR
-    output_path = BASE_IMAGE_DIR / "hagrid_30k_landmarks.json"
-    dataset = build_dataset(input_path, dataset_options)
-    save_dataset(dataset, output_path)
-
-
-def parse_args():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-i", "--input", dest = "input", default = "input/", help="Path to input folder")
-    parser.add_argument("-o", "--output", dest = "output", default = "output/landmarks_raw.json", help="Path to output .json file")
-    return parser.parse_args()
-
-def build_dataset(input_path, dataset_options):
-    dataset = []
-    skipped_count = 0
-
-    with HandLandmarker.create_from_options(options) as landmarker:
-        for gesture_folder in os.listdir(input_path):
-            gesture_path = input_path / gesture_folder
-            for file in tqdm.tqdm(os.listdir(gesture_path), desc=f"Processing {gesture_folder}"):
-                image_path = gesture_path / file
-                landmarks = extract_landmarks(image_path, landmarker)
-                result = process_landmarks(landmarks, gesture_folder, image_path)
-                if result:
-                    dataset.append(result)
-                else:
-                    skipped_count += 1
-
-                if dataset_options.augment:
-                    if gesture_folder in dataset_options.augment_gestures:
-                        for _ in range(dataset_options.augment_count):
-                            angle = random.choice(dataset_options.augment_angles)
-                            result = process_landmarks(landmarks, gesture_folder, image_path, angle)
-                            if result:
-                                dataset.append(result)
-                            else:
-                                skipped_count += 1 
-    
-    print(f"Total images processed(and augmented?): {len(dataset) + skipped_count}")
-    print(f"Total images skipped (no hand detected): {skipped_count}")
-    return dataset
-
-def save_dataset(dataset, output_path):
-    try:
-        output_path.parent.mkdir(parents=True, exist_ok=True)
-        with open(output_path, "w") as f:
-            json.dump(dataset, f, indent=2)
-        print(f"File saved successfully.")
-    except Exception as e:
-        print(f"Error writing file: {e}")
 
 def extract_landmarks(image_path, landmarker):
     image = cv2.imread(str(image_path))
     image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-
     mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=image_rgb)
-
     results = landmarker.detect(mp_image)
-
     return results
 
+def save_raw_landmarks():
+    dataset = []
+    with HandLandmarker.create_from_options(options) as landmarker:
+        for gesture_folder in os.listdir(BASE_IMAGE_DIR):
+            gesture_path = BASE_IMAGE_DIR / gesture_folder
+            if not gesture_path.is_dir():
+                continue
+            for file in tqdm.tqdm(os.listdir(gesture_path), desc=f"Extracting {gesture_folder}"):
+                image_path = gesture_path / file
+                results = extract_landmarks(image_path, landmarker)
+                raw_result = {
+                    "gesture": gesture_folder,
+                    "image_path": str(image_path.relative_to(BASE_IMAGE_DIR)),
+                    "hand_landmarks": [],
+                    "handedness": []
+                }
+                if results.hand_landmarks:
+                    for hand_landmark in results.hand_landmarks:
+                        raw_result["hand_landmarks"].append([[lm.x, lm.y, lm.z] for lm in hand_landmark])
+                    for hand_handedness in results.handedness:
+                        raw_result["handedness"].append({
+                            "category_name": hand_handedness[0].category_name,
+                            "score": hand_handedness[0].score
+                        })
+                dataset.append(raw_result)
 
-def process_landmarks(input, gesture_name, image_path, rotate_angle_deg=0):
-    if not input.hand_landmarks:
-        return
-
-    landmarks = input.hand_landmarks[0]
-    handedness_category = input.handedness[0][0]
-    handedness = handedness_category.category_name
-    confidence = handedness_category.score
-
-    landmark_list = []
-    for lm in landmarks:
-        landmark_list.append([lm.x, lm.y])
-
-    normalized_landmarks = normalize_landmarks(landmark_list, handedness, rotate_angle_deg)
-    
-    # using pathlib for relative paths 
-    image_Path = Path(image_path)
-    return {
-        "gesture": gesture_name,
-        "handedness": handedness,
-        "confidence": confidence,
-        "landmarks": normalized_landmarks,
-        "image_path": str(image_Path.relative_to(BASE_IMAGE_DIR))
-    }
+    RAW_LANDMARKS_PATH.parent.mkdir(parents=True, exist_ok=True)
+    with open(RAW_LANDMARKS_PATH, "w") as f:
+        json.dump(dataset, f, indent=2)
+    print(f"Raw landmark data saved to {RAW_LANDMARKS_PATH}")
 
 def normalize_landmarks(landmarks, handedness, rotate_angle_deg=0):
-    landmarks = np.array(landmarks)
+    landmarks = np.array(landmarks)[:, :2]  # use only x,y
 
-    # Translate so that wrist is at origin
     wrist = landmarks[0]
     landmarks = landmarks - wrist
 
-    # Scale so that distance between wrist and middle finger MCP is 1
-    mcp_index = 9  # Middle finger MCP landmark index
-    scale = np.linalg.norm(landmarks[mcp_index]) # euclidean distance from the origin (wrist)
+    mcp_index = 9
+    scale = np.linalg.norm(landmarks[mcp_index])
     if scale > 0:
         landmarks = landmarks / scale
-    
-    # Mirror left hands
+
     if handedness == "Left":
-        landmarks[:, 0]  =  -landmarks[:, 0]
+        landmarks[:, 0] = -landmarks[:, 0]
 
     if rotate_angle_deg != 0:
         landmarks = rotate_landmarks(landmarks, rotate_angle_deg)
 
     return landmarks.tolist()
 
-# to be able to detect rotated hands
 def rotate_landmarks(landmarks, angle_deg):
     angle = np.deg2rad(angle_deg)
-
-    # 2d rotation matrix
     R = np.array([
         [np.cos(angle), -np.sin(angle)],
         [np.sin(angle),  np.cos(angle)]
-    ]) # 2,2
-
+    ])
     center = landmarks.mean(axis=0)
-
-    # make center to be the origin
-    landmarks = landmarks - center # 21,2
-
-    # perform rotation and translate back
+    landmarks = landmarks - center
     landmarks = (landmarks @ R.T) + center
-
     return landmarks
 
+def process_landmarks(raw_data, augment=False, augment_angles=None, augment_gestures=None, augment_count=0):
+    results = []
+    augment_angles = augment_angles or []
+    augment_gestures = augment_gestures or []
+    skipped_count = 0
+
+    for entry in raw_data:
+        if not entry["hand_landmarks"]:
+            skipped_count += 1
+            continue
+        landmarks = entry["hand_landmarks"][0]
+        handedness = entry["handedness"][0]["category_name"]
+        confidence = entry["handedness"][0]["score"]
+
+        normalized = normalize_landmarks(landmarks, handedness)
+        results.append({
+            "gesture": entry["gesture"],
+            "handedness": handedness,
+            "confidence": confidence,
+            "landmarks": normalized,
+            "image_path": entry["image_path"]
+        })
+
+        # Augmentation (rotation)
+        if augment and entry["gesture"] in augment_gestures:
+            for _ in range(augment_count):
+                angle = np.random.choice(augment_angles)
+                rotated = normalize_landmarks(landmarks, handedness, rotate_angle_deg=angle)
+                results.append({
+                    "gesture": entry["gesture"],
+                    "handedness": handedness,
+                    "confidence": confidence,
+                    "landmarks": rotated,
+                    "image_path": entry["image_path"],
+                    "augmented_rotation_deg": int(angle)
+                })
+
+    print(f"Processed {len(results)} samples; skipped {skipped_count} samples (no hands detected)")
+    return results
+
+def main(args):
+    # Step 1: Extract raw landmarks if requested or if raw file doesn't exist
+    if args.extract or not RAW_LANDMARKS_PATH.exists():
+        save_raw_landmarks()
+
+    # Step 2: Load raw and process if requested
+    if args.process:
+        with open(RAW_LANDMARKS_PATH) as f:
+            raw_data = json.load(f)
+        
+        processed = process_landmarks(
+            raw_data,
+            augment=args.augment,
+            augment_angles=[-70, -75, -80, 85, -90, -95, -100],
+            augment_gestures=['two_up_inverted'],
+            augment_count=2
+        )
+        
+        PROCESSED_LANDMARKS_PATH.parent.mkdir(parents=True, exist_ok=True)
+        with open(PROCESSED_LANDMARKS_PATH, "w") as f:
+            json.dump(processed, f, indent=2)
+        print(f"Processed landmarks saved to {PROCESSED_LANDMARKS_PATH}")
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description="Extract and/or process hand landmarks")
+    parser.add_argument("--extract", action="store_true", help="Run MediaPipe and extract raw landmarks")
+    parser.add_argument("--process", action="store_true", help="Load raw landmarks and process them")
+    parser.add_argument("--augment", action="store_true", help="Apply augmentation during processing")
+    args = parser.parse_args()
+
+    # If no args given, do both
+    if not (args.extract or args.process):
+        args.extract = True
+        args.process = True
+
+    main(args)

@@ -17,7 +17,7 @@ def train_model(args):
     INPUT_DIM = 42
 
     try:
-        landmarks_path = Path(args.data_path) / "hagrid_30k_landmarks.json"
+        landmarks_path = Path(args.data_path) / "hagrid_30k_landmarks_processed.json"
 
         import json
         with open(landmarks_path, 'r') as f:
