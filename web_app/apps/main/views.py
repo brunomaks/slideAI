@@ -178,7 +178,7 @@ async def main_view(request):
     return_track = ProcessedVideoTrack()
     pc.addTrack(return_track)
 
-    data_channel_container = {"channel": None}  # mutable container for closure access
+    data_channel_container = { "channel": None }
 
     @pc.on("datachannel")
     def on_datachannel(channel):
