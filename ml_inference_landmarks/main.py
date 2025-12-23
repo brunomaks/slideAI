@@ -60,21 +60,24 @@ app = FastAPI(lifespan=lifespan)
 
 @app.post("/inference")
 async def inference(request: Request):
-    body = await request.body()
-    # after this line nothing is async
+    json_data = await request.json()
+    
+    # Validate and extract landmarks
+    landmarks_list = json_data.get("landmarks")
+    if not landmarks_list or not isinstance(landmarks_list, list) or len(landmarks_list) != 21:
+        raise HTTPException(status_code=400, detail="Invalid or missing 'landmarks' in request")
 
-    # decode image
-    arr = np.frombuffer(body, np.uint8)
-    img = cv2.imdecode(arr, cv2.IMREAD_COLOR)
-
-    if img is None:
-        raise HTTPException(status_code=400, detail="Invalid image data")
+    try:
+        # Extract x,y coords into np array of shape (21, 2)
+        landmarks = np.array([[pt["x"], pt["y"]] for pt in landmarks_list], dtype=np.float32)
+    except (Exception) as e:
+        raise HTTPException(status_code=400, detail=f"Malformed landmarks data: {e}")
 
     if app.state.model is None:
         raise HTTPException(status_code=500, detail="Model not loaded")
 
     try:
-        result = predict(app.state.model, img)
+        result = predict(app.state.model, landmarks)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Inference failed: {e}")
 

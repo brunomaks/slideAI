@@ -66,8 +66,8 @@ export default function CameraStream({ onStreamReady }) {
         if (!subscribeToLandmarks) return;
 
         const unsubscribe = subscribeToLandmarks((landmarks) => {
-            console.log("Landmarks detected:", landmarks);
-            sendMessage(landmarks)
+            console.log("Sent landmarks")
+            sendMessage({"landmarks": landmarks})
         });
 
         return () => unsubscribe();
