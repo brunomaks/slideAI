@@ -50,6 +50,14 @@ services:
     profiles: ["cpu"]
     # Runs the API server (no GPU available)
 
+  ml-inference-landmarks:
+    build: ./ml_inference_landmarks
+    container_name: ml-inference-landmarks
+    volumes:
+      - ./shared_artifacts/models:/models
+    environment:
+      - MODEL_PATH=/models
+
   ml-inference:
     build: ./inference
     container_name: ml-inference
