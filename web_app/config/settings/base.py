@@ -1,4 +1,5 @@
 from pathlib import Path
+from django.urls import reverse_lazy
 import os
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
@@ -73,9 +74,9 @@ MEDIA_ROOT = os.environ.get('MEDIA_ROOT', BASE_DIR / 'media')
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 MODEL_PATH = os.environ.get('MODEL_PATH', '/models')
 
-# Authentication settings
-LOGIN_URL = '/admin/login/'
-LOGIN_REDIRECT_URL = '/admin/'
-LOGOUT_REDIRECT_URL = '/admin/login/'
+# Authentication settings (use reverse_lazy so FORCE_SCRIPT_NAME is applied)
+LOGIN_URL = reverse_lazy('admin_panel:login')
+LOGIN_REDIRECT_URL = reverse_lazy('admin_panel:dashboard')
+LOGOUT_REDIRECT_URL = reverse_lazy('admin_panel:login')
 
 CORS_ALLOWED_ORIGINS = []

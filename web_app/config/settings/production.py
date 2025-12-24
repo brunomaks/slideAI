@@ -4,6 +4,8 @@ DEBUG = False
 ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '').split(',')
 SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'change-me-in-production')
 
+FORCE_SCRIPT_NAME = os.environ.get('SCRIPT_NAME', '/api')
+
 # Static files for production
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
