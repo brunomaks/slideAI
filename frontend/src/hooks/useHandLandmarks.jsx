@@ -34,6 +34,8 @@ export function useHandLandmarks(inputStream) {
   const videoRef = useRef(null);
   const animationIdRef = useRef(null);
   const lastVideoTimeRef = useRef(-1);
+  const lastPredictionTimeMs = useRef(0);
+  const PREDICTION_INTERVAL_MS = 100;
 
   // Create or update the video element when inputStream changes
   useEffect(() => {
@@ -59,9 +61,7 @@ export function useHandLandmarks(inputStream) {
 
   // Main loop: process frames and call callback with landmarks
   useEffect(() => {
-    let isCancelled = false;
-
-    const processFrame = async () => {
+    const processFrame = () => {
       if (!videoRef.current || videoRef.current.readyState < 2 || !handLandmarker) {
         // Wait and try again
         animationIdRef.current = requestAnimationFrame(processFrame);
@@ -73,6 +73,13 @@ export function useHandLandmarks(inputStream) {
         lastVideoTimeRef.current = videoRef.current.currentTime;
         const startTimeMs = performance.now();
 
+        if ((startTimeMs - lastPredictionTimeMs.current) < PREDICTION_INTERVAL_MS) {
+          animationIdRef.current = requestAnimationFrame(processFrame);
+          return
+        }
+
+        lastPredictionTimeMs.current = startTimeMs
+
         // TODO: cap the mediapipe predictions somehow
         const results = handLandmarker.detectForVideo(
           videoRef.current,
@@ -81,34 +88,29 @@ export function useHandLandmarks(inputStream) {
 
         if (results.landmarks && results.landmarks.length > 0 && onLandmarksRef.current) {
           let handedness = results.handednesses[0][0].categoryName
-          if (handedness === "Left") {
-            handedness = "Right"
-          } else {
-            handedness = "Left"
-          }
+          // if (handedness === "Left") {
+          //   handedness = "Right"
+          // } else {
+          //   handedness = "Left"
+          // }
           const message = {
             landmarks: results.landmarks[0],
             handedness: handedness
           }
           onLandmarksRef.current(message);
-          console.log(message.handedness)
         }
+
       }
 
-      if (!isCancelled) {
-        animationIdRef.current = requestAnimationFrame(processFrame);
-      }
+      animationIdRef.current = requestAnimationFrame(processFrame);
     };
 
     // Wait for handLandmarker to be ready then start processing
     initHandLandmarker().then(() => {
-      if (!isCancelled) {
-        animationIdRef.current = requestAnimationFrame(processFrame);
-      }
+      animationIdRef.current = requestAnimationFrame(processFrame);
     });
 
     return () => {
-      isCancelled = true;
       if (animationIdRef.current) {
         cancelAnimationFrame(animationIdRef.current);
       }

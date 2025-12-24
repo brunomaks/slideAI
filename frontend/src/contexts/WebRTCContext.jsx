@@ -38,7 +38,7 @@ export function WebRTCProvider({ children }) {
                     }
                 };
 
-                let dataChannel = pc.createDataChannel("MyApp Channel");
+                let dataChannel = pc.createDataChannel("SlideAI data channel");
 
                 dataChannel.onopen = () => {
                     console.log("DataChannel open");
@@ -52,9 +52,9 @@ export function WebRTCProvider({ children }) {
                     const parsedData = JSON.parse(event.data);
                     // do not trigger react rerender on empty gesture
                     if (parsedData.predicted_class !== 'empty') {
-                        setPrediction(parsedData);
+                        setPrediction(parsedData.result);
                     }
-                    console.log("Received:", parsedData);
+                    console.log("Received:", parsedData.result);
                 };
 
                 dataChannelRef.current = dataChannel

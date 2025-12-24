@@ -68,7 +68,6 @@ export default function CameraStream({ onStreamReady }) {
         if (!subscribeToLandmarks) return;
 
         const unsubscribe = subscribeToLandmarks((landmarks_obj) => {
-            console.log("Sent landmarks")
             requestId += 1
             const message = {
                 request_id: requestId,
