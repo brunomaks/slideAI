@@ -10,9 +10,16 @@ import time
 
 CLASSES = ["like", "stop", "left", "right"]
 
-# ENSURE THE CORRECT MODEL NAME EXISTS IN shared_artifacts/models
+# Load model name from active_model.txt
 base_path = os.getenv('MODEL_PATH', '')
-MODEL_PATH = Path(base_path) / "gesture_model_20251212_083346.keras"
+active_model_file = Path(base_path) / "active_model.txt"
+
+if active_model_file.exists():
+    model_name = active_model_file.read_text().strip()
+    MODEL_PATH = Path(base_path) / model_name
+else:
+    # Fallback to hardcoded model name
+    MODEL_PATH = Path(base_path) / "gesture_model_20251125_193254.keras"
 
 
 def load_model(path: Path):
