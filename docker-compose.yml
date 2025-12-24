@@ -88,5 +88,5 @@ services:
       - ./frontend:/app
       - /app/node_modules
     environment:
-      - VITE_API_URL=http://localhost:8000
       - CHOKIDAR_USEPOLLING=true
+      - VITE_WEBRTC_SERVER_URL=http://127.0.0.1:8001/offer/

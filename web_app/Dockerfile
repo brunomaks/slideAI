@@ -18,13 +18,13 @@ CMD ["python", "-m", "uvicorn", "config.asgi:application", "--host", "0.0.0.0", 
 # ============ PRODUCTION STAGE ============
 FROM base AS prod
 
-# Install production server
-RUN pip install gunicorn
+# Install production server with async support
+RUN pip install gunicorn uvicorn
 
 COPY . .
 
 # Collect static files for production
 RUN python manage.py collectstatic --noinput --settings=config.settings.production || true
 
-# Production server: no reload, multiple workers for performance
-CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8001", "--workers", "4"]
+# Production server: use uvicorn workers for async support
+CMD ["gunicorn", "config.asgi:application", "--bind", "0.0.0.0:8001", "--workers", "4", "-k", "uvicorn.workers.UvicornWorker"]

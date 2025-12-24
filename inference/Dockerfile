@@ -22,5 +22,4 @@ RUN pip install gunicorn
 
 COPY . .
 
-# Production: gunicorn with uvicorn workers, no reload
-CMD ["gunicorn", "main:app", "--bind", "0.0.0.0:8002", "--workers", "2", "--worker-class", "uvicorn.workers.UvicornWorker"]
+CMD ["gunicorn", "main:app", "--bind", "0.0.0.0:8002", "--workers", "2", "--worker-class", "uvicorn.workers.UvicornWorker", "--timeout", "120"]
