@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: slideai
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: shared-data-pvc
+  namespace: slideai
+spec:
+  accessModes:
+    - ReadWriteOnce # Change to ReadWriteMany if using NFS/Cloud Filestore
+  resources:
+    requests:
+      storage: 5Gi
