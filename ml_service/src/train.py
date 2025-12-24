@@ -1,11 +1,13 @@
+import tensorflow as tf
+from tensorflow.keras import layers, models
+from tensorflow.keras.metrics import Precision, Recall, Accuracy
+
 import argparse
 from pathlib import Path
 from datetime import datetime
 
 
 def train_model(args):
-    import tensorflow as tf
-    from tensorflow.keras import layers, models
     print("Training CNN model...")
     print ("GPU Available: ", tf.config.list_physical_devices('GPU'))
 
@@ -18,7 +20,7 @@ def train_model(args):
             '/images/train',
             shuffle=True,
             color_mode="rgb",
-            validation_split=0.2,
+            validation_split=0.1,
             subset="training",
             seed=123,
             image_size=IMG_SIZE,
@@ -29,7 +31,7 @@ def train_model(args):
             '/images/train',
             shuffle=True,
             color_mode='rgb',
-            validation_split=0.2,
+            validation_split=0.1,
             subset="validation",
             seed=123,
             image_size=IMG_SIZE,
@@ -60,6 +62,7 @@ def train_model(args):
         # optimize dataset performance by prefetching
         train_data = train_data.prefetch(buffer_size=tf.data.AUTOTUNE)
         val_data = val_data.prefetch(buffer_size=tf.data.AUTOTUNE)
+        test_data = test_data.prefetch(buffer_size=tf.data.AUTOTUNE)
 
     except Exception as e:
         print(f"Error loading dataset: {e}")
@@ -68,20 +71,42 @@ def train_model(args):
     model = models.Sequential([
         layers.Rescaling(1./255, input_shape=(IMG_SIZE[0], IMG_SIZE[1], 3)),
 
-        layers.Conv2D(32, (3, 3), activation='relu'),
+        layers.Conv2D(32, (3, 3), padding='same'),
         layers.BatchNormalization(),
-
-        layers.Conv2D(64, (3, 3), activation='relu'),
+        layers.Activation('relu'),
+        layers.Conv2D(32, (3, 3), padding='same'),
         layers.BatchNormalization(),
-
-        layers.Conv2D(64, (3, 3), activation='relu'),
-        layers.BatchNormalization(),
+        layers.Activation('relu'),
         layers.MaxPooling2D((2, 2)),
+        layers.Dropout(0.25),
 
+        layers.Conv2D(64, (3, 3), padding='same'),
+        layers.BatchNormalization(),
+        layers.Activation('relu'),
+        layers.Conv2D(64, (3, 3), padding='same'),
+        layers.BatchNormalization(),
+        layers.Activation('relu'),
+        layers.MaxPooling2D((2, 2)),
+        layers.Dropout(0.25),
+
+        layers.Conv2D(128, (3, 3), padding='same'),
+        layers.BatchNormalization(),
+        layers.Activation('relu'),
+        layers.Conv2D(128, (3, 3), padding='same'),
+        layers.BatchNormalization(),
+        layers.Activation('relu'),
+        layers.MaxPooling2D((2, 2)),
+        layers.Dropout(0.25),
+        
         layers.Flatten(),
-
-        layers.Dense(128, activation='relu'),
-        layers.Dropout(0.4),
+        layers.Dense(256),
+        layers.BatchNormalization(),
+        layers.Activation('relu'),
+        layers.Dropout(0.5),
+        layers.Dense(128),
+        layers.BatchNormalization(),
+        layers.Activation('relu'),
+        layers.Dropout(0.5),
         layers.Dense(num_classes, activation='softmax')
     ])
 
@@ -175,7 +200,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Train a CNN model for gesture recognition.")
     parser.add_argument('--epochs', type=int, default=10, help='Number of training epochs')
     parser.add_argument('--batch-size', type=int, default=32, help='Batch size for training')
-    parser.add_argument('--img-size', type=int, default=128, help='Image size (width and height)')
+    parser.add_argument('--img-size', type=int, default=96, help='Image size (width and height)')
     parser.add_argument('--version', type=str, help='Model version identifier')
     parser.add_argument('--set-active', action='store_true', help='Set the trained model as active')
     parser.add_argument('--model-output-path', default='/models', help='Directory to save the trained model and metadata')

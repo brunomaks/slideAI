@@ -232,7 +232,6 @@ shared_artifacts/images-old
 .idea/
 .env/
 .vite/
-
 media/
 
 # Ignore large archives and temp artifacts
@@ -241,3 +240,4 @@ media/
 *.tar.gz
 *.rar
 *.7z
+>>>>>>> main
