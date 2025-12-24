@@ -6,7 +6,7 @@ metadata:
 data:
   # Django Settings
   DJANGO_SETTINGS_MODULE: "config.settings.production"
-  ALLOWED_HOSTS: "web-service,localhost"
+  ALLOWED_HOSTS: "*"
   
   # Storage Paths
   MODEL_PATH: "/models"
@@ -16,7 +16,11 @@ data:
   
   # Service URLs (internal K8s DNS)
   INFERENCE_URL: "http://inference-service:8002/inference/"
+  RESIZE_URL: "http://web-service:8001/resize/"
+  HOST_URL: "http://web-service:8001/"
   ML_TRAINING_API_URL: "http://ml-training-service:8003"
+  DEBUG_SAVE: "False"
+  PYTHONUNBUFFERED: "1"
   
   # Frontend Configuration
-  VITE_API_URL: "http://web-service:8001"
+  VITE_WEBRTC_SERVER_URL: "/api/offer/"

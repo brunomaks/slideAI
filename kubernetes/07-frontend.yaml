@@ -47,7 +47,7 @@ metadata:
   name: frontend-service
   namespace: slideai
 spec:
-  type: LoadBalancer
+  type: ClusterIP
   selector:
     app: frontend
   ports:

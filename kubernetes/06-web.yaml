@@ -68,7 +68,7 @@ metadata:
   name: web-service
   namespace: slideai
 spec:
-  type: LoadBalancer
+  type: ClusterIP
   selector:
     app: web
   ports:
