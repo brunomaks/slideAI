@@ -62,12 +62,21 @@ export default function CameraStream({ onStreamReady }) {
         };
     }, []);
 
+    let requestId = 0;
+
     useEffect(() => {
         if (!subscribeToLandmarks) return;
 
-        const unsubscribe = subscribeToLandmarks((landmarks) => {
+        const unsubscribe = subscribeToLandmarks((landmarks_obj) => {
             console.log("Sent landmarks")
-            sendMessage({"landmarks": landmarks})
+            requestId += 1
+            const message = {
+                request_id: requestId,
+                landmarks: landmarks_obj.landmarks,
+                handedness: landmarks_obj.handedness
+            }
+
+            sendMessage(message)
         });
 
         return () => unsubscribe();

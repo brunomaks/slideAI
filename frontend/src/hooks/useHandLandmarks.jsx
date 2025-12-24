@@ -62,11 +62,7 @@ export function useHandLandmarks(inputStream) {
     let isCancelled = false;
 
     const processFrame = async () => {
-      if (
-        !videoRef.current ||
-        videoRef.current.readyState < 2 || // HAVE_CURRENT_DATA
-        !handLandmarker
-      ) {
+      if (!videoRef.current || videoRef.current.readyState < 2 || !handLandmarker) {
         // Wait and try again
         animationIdRef.current = requestAnimationFrame(processFrame);
         return;
@@ -77,17 +73,25 @@ export function useHandLandmarks(inputStream) {
         lastVideoTimeRef.current = videoRef.current.currentTime;
         const startTimeMs = performance.now();
 
+        // TODO: cap the mediapipe predictions somehow
         const results = handLandmarker.detectForVideo(
           videoRef.current,
           startTimeMs
         );
 
-        if (
-          results.landmarks &&
-          results.landmarks.length > 0 &&
-          onLandmarksRef.current
-        ) {
-          onLandmarksRef.current(results.landmarks[0]);
+        if (results.landmarks && results.landmarks.length > 0 && onLandmarksRef.current) {
+          let handedness = results.handednesses[0][0].categoryName
+          if (handedness === "Left") {
+            handedness = "Right"
+          } else {
+            handedness = "Left"
+          }
+          const message = {
+            landmarks: results.landmarks[0],
+            handedness: handedness
+          }
+          onLandmarksRef.current(message);
+          console.log(message.handedness)
         }
       }
 

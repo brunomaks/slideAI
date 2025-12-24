@@ -27,9 +27,12 @@ def load_model(path: Path):
 
 def predict(model, landmarks: np.ndarray) -> dict:
     # landmarks shape should be (21,2)
-    landmarks = landmarks.reshape(1, -1)
 
-    prediction = model.predict(landmarks, verbose=0)
+    input_vector = np.array(landmarks, dtype=np.float32).flatten() # (42,)
+
+    input_vector = np.expand_dims(input_vector, axis=0) # (1, 42)
+
+    prediction = model.predict(input_vector, verbose=0)
     predicted_idx = int(np.argmax(prediction))
     confidence = float(np.max(prediction) * 100)
 
@@ -38,6 +41,25 @@ def predict(model, landmarks: np.ndarray) -> dict:
         "confidence": confidence,
         "timestamp": time.time()
     }
+
+def normalize_landmarks(landmarks, handedness):
+    landmarks = np.array(landmarks)
+
+    # Translate so that wrist is at origin
+    wrist = landmarks[0]
+    landmarks = landmarks - wrist
+
+    # Scale so that distance between wrist and middle finger MCP is 1
+    mcp_index = 9  # Middle finger MCP landmark index
+    scale = np.linalg.norm(landmarks[mcp_index]) # euclidean distance from the origin (wrist)
+    if scale > 0:
+        landmarks = landmarks / scale
+    
+    # Mirror left hands
+    if handedness == "Left":
+        landmarks[:, 0]  =  -landmarks[:, 0]
+
+    return landmarks
 
 
 @asynccontextmanager
@@ -66,6 +88,8 @@ async def inference(request: Request):
     landmarks_list = json_data.get("landmarks")
     if not landmarks_list or not isinstance(landmarks_list, list) or len(landmarks_list) != 21:
         raise HTTPException(status_code=400, detail="Invalid or missing 'landmarks' in request")
+    
+    handedness = json_data.get("handedness")
 
     try:
         # Extract x,y coords into np array of shape (21, 2)
@@ -77,7 +101,8 @@ async def inference(request: Request):
         raise HTTPException(status_code=500, detail="Model not loaded")
 
     try:
-        result = predict(app.state.model, landmarks)
+        normalized = normalize_landmarks(landmarks, handedness)
+        result = predict(app.state.model, normalized)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Inference failed: {e}")
 

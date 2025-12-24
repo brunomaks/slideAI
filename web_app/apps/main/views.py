@@ -13,6 +13,28 @@ from aiortc import RTCPeerConnection, RTCSessionDescription, RTCIceCandidate, RT
 
 INFERENCE_URL = os.getenv('INFERENCE_URL')
 
+# Global threee-item queue for inference requests
+inference_queue = asyncio.Queue(maxsize=3)
+
+async def inference_worker(channel):
+    while True:
+        request = await inference_queue.get()
+        request_id = request["request_id"]
+        landmarks = request["landmarks"]
+        handedness = request["handedness"]
+
+        async with aiohttp.ClientSession() as session:
+            async with session.post(INFERENCE_URL, json={"landmarks": landmarks, "handedness": handedness}) as resp:
+                result = await resp.json()
+
+        # Send response only if channel is open
+        if channel.readyState == "open":
+            response = {"request_id": request_id, "result": result}
+            channel.send(json.dumps(response))
+
+        inference_queue.task_done()
+
+
 @csrf_exempt
 async def main_view(request):
     params = json.loads(request.body)
@@ -28,28 +50,39 @@ async def main_view(request):
         print(f"DataChannel received: {channel.label}")
         data_channel_container["channel"] = channel
 
+        # Start the worker task once per channel
+        asyncio.create_task(inference_worker(channel))
+
         @channel.on("message")
         async def on_message(message):
             try:
                 data = json.loads(message)
+
+                request_id = data.get("request_id")
+                landmarks = data.get("landmarks")
+                handedness = data.get("handedness")
+
+                if request_id is None or landmarks is None or handedness is None:
+                    return
+
+                # If queue is full, remove the oldest one
+                if inference_queue.full():
+                    try:
+                        inference_queue.get_nowait()
+                        inference_queue.task_done()
+                    except asyncio.QueueEmpty:
+                        pass
+
+                # Put the latest request in the queue
+                request = {
+                    "request_id": request_id,
+                    "landmarks": landmarks,
+                    "handedness": handedness
+                }
+                await inference_queue.put(request)
+
             except Exception as e:
-                print(f"Failed to parse JSON message: {e}")
-                return
-
-            async with aiohttp.ClientSession() as session:
-                try:
-                    async with session.post(INFERENCE_URL, json=data) as resp:
-                        response_json = await resp.json()
-                except Exception as e:
-                    print(f"Inference server request failed: {e}")
-                    response_json = {"error": "inference request failed"}
-
-            # Send response back via data channel
-            if channel.readyState == "open":
-                channel.send(json.dumps(response_json))
-                print("Sent response back via datachannel:", response_json)
-            else:
-                print("Data channel not open to send response")
+                print("Error in on_message:", e)
 
     @pc.on("connectionstatechange")
     async def on_connectionstatechange():
