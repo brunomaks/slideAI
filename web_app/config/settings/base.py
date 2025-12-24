@@ -16,6 +16,7 @@ INSTALLED_APPS = [
     'apps.core',
     'apps.main',
     'apps.resize',
+    'apps.admin_panel',
 ]
 
 ALLOWED_HOSTS = []
@@ -60,16 +61,21 @@ DATABASES = {
 }
 
 LANGUAGE_CODE = 'en-us'
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Europe/Stockholm'
 USE_I18N = True
 USE_TZ = True
 
 STATIC_URL = 'static/'
 MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+MEDIA_ROOT = os.environ.get('MEDIA_ROOT', BASE_DIR / 'media')
 
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 MODEL_PATH = os.environ.get('MODEL_PATH', '/models')
+
+# Authentication settings
+LOGIN_URL = '/admin/login/'
+LOGIN_REDIRECT_URL = '/admin/'
+LOGOUT_REDIRECT_URL = '/admin/login/'
 
 CORS_ALLOWED_ORIGINS = []

@@ -1,0 +1,64 @@
+{% extends 'admin_panel/base.html' %}
+
+{% block title %}Performance Overview{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>Current Model Performance</h2>
+    <form method="get" action="{% url 'admin_panel:performance_overview' %}" style="margin-bottom:1rem;">
+        <div class="form-group" style="max-width:240px;">
+            <label for="days">Window (days)</label>
+            <select id="days" name="days">
+                <option value="1" {% if days == 1 %}selected{% endif %}>1</option>
+                <option value="7" {% if days == 7 %}selected{% endif %}>7</option>
+                <option value="14" {% if days == 14 %}selected{% endif %}>14</option>
+                <option value="30" {% if days == 30 %}selected{% endif %}>30</option>
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary">Update</button>
+    </form>
+
+    <table>
+        <tbody>
+            <tr>
+                <td><strong>Active Model</strong></td>
+                <td>{% if active_model %}{{ active_model.version_id }} ({{ active_model.test_accuracy|default:"-" }}%){% else %}-{% endif %}</td>
+            </tr>
+            <tr>
+                <td><strong>Total Predictions</strong></td>
+                <td>{{ total_preds }}</td>
+            </tr>
+            <tr>
+                <td><strong>Average Confidence</strong></td>
+                <td>{{ avg_confidence|floatformat:2 }}%</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+<div class="card">
+    <h2>Per-Class Distribution</h2>
+    {% if class_distribution %}
+    <table>
+        <thead>
+            <tr>
+                <th>Class</th>
+                <th>Count</th>
+                <th>Percentage</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in class_distribution %}
+            <tr>
+                <td><strong>{{ item.predicted_class }}</strong></td>
+                <td>{{ item.count }}</td>
+                <td>{{ item.percentage }}%</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p>No predictions in the selected window.</p>
+    {% endif %}
+</div>
+{% endblock %}

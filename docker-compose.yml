@@ -1,20 +1,25 @@
 services:
+  # ML Training Service (runs the Training API server)
   ml-training:
-      build: ./ml_service
-      container_name: ml-training
-      volumes:
-        - ./ml_service:/workspace
-        - ./shared_artifacts/models:/models
-        - ./shared_artifacts/data:/data
-        - ./shared_artifacts/images:/images
-      environment:
-        - MODEL_OUTPUT_PATH=/models
-      profiles: ["training"]
-      command: python src/train.py --epochs 10 --set-active
+    build: ./ml_service
+    container_name: ml-training
+    volumes:
+      - ./ml_service:/workspace
+      - ./shared_artifacts/models:/models
+      - ./shared_artifacts/data:/data
+      - ./shared_artifacts/images:/images
+    environment:
+      - MODEL_OUTPUT_PATH=/models
+      - PORT=8003
+    ports:
+      - "8003:8003"
+    profiles: ["gpu"]
+    # GPU support is optional via docker-compose.override.yml
 
+  # CPU-only training service for systems without GPU
   ml-training-cpu:
     build: ./ml_service
-    container_name: ml-training-cpu
+    container_name: ml-training
     volumes:
       - ./ml_service:/workspace
       - ./shared_artifacts/models:/models
@@ -23,8 +28,11 @@ services:
     environment:
       - CUDA_VISIBLE_DEVICES=-1
       - MODEL_OUTPUT_PATH=/models
-    profiles: ["training-cpu"]
-    command: python src/train.py --epochs 10 --set-active
+      - PORT=8003
+    ports:
+      - "8003:8003"
+    profiles: ["cpu"]
+    # Runs the API server (no GPU available)
 
   ml-inference:
     build: ./inference
@@ -41,7 +49,7 @@ services:
       - ./web_app:/app
       - ./shared_artifacts/models:/models
       - ./shared_artifacts/data:/data
-      - ./web_app/media:/app/media
+      - ./shared_artifacts/images:/images
     ports:
       - "8001:8001"
     extra_hosts:
@@ -50,13 +58,16 @@ services:
       - DJANGO_SETTINGS_MODULE=config.settings.development
       - MODEL_PATH=/models
       - DATABASE_PATH=/data/database.sqlite
+      - MEDIA_ROOT=/images
       - ALLOWED_HOSTS=localhost,frontend
       - INFERENCE_URL=http://ml-inference:8002/inference/
       - RESIZE_URL=http://127.0.0.1:8001/resize/
       - HOST_URL=http://127.0.0.1:8001/
       - DEBUG_SAVE=False
+      - ML_TRAINING_API_URL=http://ml-training:8003
     depends_on:
       - ml-inference
+      - ml-training
 
   frontend:
     build: ./frontend

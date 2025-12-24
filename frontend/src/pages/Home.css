@@ -1,0 +1,15 @@
+.home-page {
+  position: relative;
+}
+
+/* Floating webcam stream */
+.streams-overlay {
+  position: fixed;
+  left: 20px;   /* distance from left edge */
+  bottom: 20px; /* distance from bottom */
+  z-index: 9999; /* must be very high to stay above reveal.js */
+  background: rgba(0, 0, 0, 0.4); /* optional: nice overlay bg */
+  border-radius: 12px;
+  padding: 6px;
+  backdrop-filter: blur(6px);
+}

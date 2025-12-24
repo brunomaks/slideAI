@@ -1,6 +1,7 @@
 import tensorflow as tf
 from tensorflow.keras import layers, models
 from tensorflow.keras.metrics import Precision, Recall, Accuracy
+
 import argparse
 from pathlib import Path
 from datetime import datetime
@@ -66,7 +67,7 @@ def train_model(args):
     except Exception as e:
         print(f"Error loading dataset: {e}")
         return
-    
+
     model = models.Sequential([
         layers.Rescaling(1./255, input_shape=(IMG_SIZE[0], IMG_SIZE[1], 3)),
 
@@ -145,6 +146,53 @@ def train_model(args):
         active_path = Path(args.model_output_path) / "active_model.txt"
         active_path.write_text(f"gesture_model_{version}.keras")
         print(f"Set as active model: gesture_model_{version}.keras")
+
+    # Export metrics alongside the model for downstream registration
+    try:
+        # Derive dataset counts from filesystem (best-effort)
+        train_total = len(list(Path('/images/train').glob('*/*')))
+        val_count = int(train_total * 0.2)
+        train_count = train_total - val_count
+        test_count = len(list(Path('/images/test').glob('*/*')))
+
+        # Training metrics from history
+        train_acc = float(history.history.get('accuracy', [0.0])[-1])
+        train_loss = float(history.history.get('loss', [0.0])[-1])
+
+        metrics = {
+            'model_file': f"gesture_model_{version}.keras",
+            'version': version,
+            'config': {
+                'epochs': EPOCHS,
+                'batch_size': BATCH_SIZE,
+                'image_size': args.img_size,
+            },
+            'dataset': {
+                'train_count': train_count,
+                'validation_count': val_count,
+                'test_count': test_count,
+            },
+            'train': {
+                'accuracy': float(train_acc),
+                'loss': float(train_loss),
+            },
+            'validation': {
+                'accuracy': float(val_accuracy),
+                'loss': float(val_loss),
+            },
+            'test': {
+                'accuracy': float(test_accuracy),
+                'loss': float(test_loss),
+            }
+        }
+
+        import json
+        metrics_path = Path(args.model_output_path) / f"gesture_model_{version}.metrics.json"
+        with open(metrics_path, 'w') as f:
+            json.dump(metrics, f)
+        print(f"Metrics saved: {metrics_path}")
+    except Exception as e:
+        print(f"Failed to write metrics file: {e}")
 
     return test_accuracy
 
