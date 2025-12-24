@@ -130,6 +130,7 @@ celerybeat.pid
 .venv
 env/
 venv/
+venv2/
 ENV/
 env.bak/
 venv.bak/
@@ -225,6 +226,7 @@ model/
 ml_service/images/
 shared_artifacts/models/*.pkl
 shared_artifacts/models/*.keras
+shared_artifacts/models/*.pth
 shared_artifacts/data/*.sqlite
 shared_artifacts/images
 shared_artifacts/images-old
