@@ -12,7 +12,7 @@ RAW_LANDMARKS_PATH = BASE_IMAGE_DIR / "hagrid_30k_landmarks_raw.json"
 PROCESSED_LANDMARKS_PATH = BASE_IMAGE_DIR / "hagrid_30k_landmarks_processed.json"
 
 
-def normalize_landmarks(landmarks):
+def normalize_landmarks(landmarks, handedness):
     landmarks = np.array(landmarks)[:, :2]  # use only x,y
 
     wrist = landmarks[0]
@@ -23,10 +23,38 @@ def normalize_landmarks(landmarks):
     if scale > 0:
         landmarks = landmarks / scale
 
-    # if handedness == "Left":
-    # landmarks[:, 0] = -landmarks[:, 0]
+    if handedness == "Left":
+        landmarks[:, 0] = -landmarks[:, 0]
 
     return landmarks.tolist()
+
+def normalize_rotation(landmarks):
+    landmarks = np.array(landmarks)
+
+    # Reference vector: from wrist (now at origin) to middle finger MCP
+    reference_vector = landmarks[9]  # Middle finger MCP
+    
+    # Current angle of reference vector
+    current_angle = np.arctan2(reference_vector[1], reference_vector[0])
+    
+    # Target angle (pointing up in image coordinates = -90 degrees = -pi/2)
+    # Note: In image coordinates, Y increases downward, so "up" is negative Y
+    target_angle = -np.pi / 2
+    
+    # Calculate rotation needed
+    rotation_angle = target_angle - current_angle
+    
+    # Apply rotation
+    cos_a = np.cos(rotation_angle)
+    sin_a = np.sin(rotation_angle)
+    rotation_matrix = np.array([
+        [cos_a, -sin_a],
+        [sin_a, cos_a]
+    ])
+    
+    rotated_landmarks = (rotation_matrix @ landmarks.T).T
+    
+    return rotated_landmarks.tolist()
 
 def rotate_landmarks(landmarks, angle_deg):
     landmarks = np.array(landmarks)
@@ -44,16 +72,19 @@ def process_landmarks(raw_data):
     for entry in raw_data:
         landmarks = entry["hand_landmarks"]
         handedness = entry["handedness"]
-        confidence = entry["confidence"]
         gesture = entry["gesture"]
         image_path = entry["image_path"]
 
-        l = normalize_landmarks(landmarks)
 
-        # lr = rotate_landmarks(l, 90)
+        lr = rotate_landmarks(landmarks, 90)
 
-        x = [point[0] for point in l]
-        y = [point[1] for point in l]
+        ln = normalize_landmarks(lr, handedness)
+
+        rl = normalize_rotation(lr)
+
+
+        x = [point[0] for point in ln]
+        y = [point[1] for point in ln]
 
         print(x)
         print(y)
@@ -71,6 +102,7 @@ def process_landmarks(raw_data):
 
         plt.savefig('landmarks_plot.png')
         print(image_path)
+
         return
 
 
