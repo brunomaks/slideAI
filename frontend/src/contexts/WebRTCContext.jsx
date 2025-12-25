@@ -50,10 +50,7 @@ export function WebRTCProvider({ children }) {
 
                 dataChannel.onmessage = (event) => {
                     const parsedData = JSON.parse(event.data);
-                    // do not trigger react rerender on empty gesture
-                    if (parsedData.predicted_class !== 'empty') {
-                        setPrediction(parsedData.result);
-                    }
+                    setPrediction(parsedData.result);
                     console.log("Received:", parsedData.result);
                 };
 

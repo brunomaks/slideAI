@@ -115,16 +115,14 @@ export default function SlidesView() {
         if (!deckRef.current || !prediction) return
         if (!deckRef.current.isReady()) return
 
-        switch (prediction.predicted_class) {
-            case "left":
-                deckRef.current.next();
-                break;
-            case "right":
-                deckRef.current.prev();
-                break;
-            case "stop":
-                setShowPopup(true);
-                break;
+        if (prediction.predicted_class === "two_up") {
+            if (prediction.direction === "Left") {
+                deckRef.current.next()
+            } else if (prediction.direction === "Right") {
+                deckRef.current.prev()
+            }
+        } else if (prediction.predicted_class === "stop") {
+            setShowPopup(true);
         }
 
     }, [prediction])

@@ -84,7 +84,7 @@ services:
       - DATABASE_PATH=/data/database.sqlite
       - MEDIA_ROOT=/images
       - ALLOWED_HOSTS=localhost,frontend
-      - INFERENCE_URL=http://ml-inference-landmarks:8002/inference/
+      - INFERENCE_URL=http://ml-inference-landmarks:8002/inference
       - RESIZE_URL=http://127.0.0.1:8001/resize/
       - HOST_URL=http://127.0.0.1:8001/
       - DEBUG_SAVE=False
