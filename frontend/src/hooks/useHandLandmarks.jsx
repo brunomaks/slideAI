@@ -88,14 +88,13 @@ export function useHandLandmarks(inputStream) {
 
         if (results.landmarks && results.landmarks.length > 0 && onLandmarksRef.current) {
           let handedness = results.handednesses[0][0].categoryName
-          // if (handedness === "Left") {
-          //   handedness = "Right"
-          // } else {
-          //   handedness = "Left"
-          // }
+
+          const flippedHandedness = handedness === "Left" ? "Right" : "Left";
+
+          console.log("Flipped handedness: ", flippedHandedness)
           const message = {
             landmarks: results.landmarks[0],
-            handedness: handedness
+            handedness: flippedHandedness
           }
           onLandmarksRef.current(message);
         }
