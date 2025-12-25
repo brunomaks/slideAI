@@ -45,20 +45,12 @@ def normalize_rotation(landmarks):
     rotation_angle = target_angle - current_angle
     
     # Apply rotation
-    cos_a = np.cos(rotation_angle)
-    sin_a = np.sin(rotation_angle)
-    rotation_matrix = np.array([
-        [cos_a, -sin_a],
-        [sin_a, cos_a]
-    ])
+    rotated_landmarks = rotate_landmarks(landmarks, rotation_angle)
     
-    rotated_landmarks = (rotation_matrix @ landmarks.T).T
-    
-    return rotated_landmarks.tolist()
+    return rotated_landmarks
 
-def rotate_landmarks(landmarks, angle_deg):
+def rotate_landmarks(landmarks, angle):
     landmarks = np.array(landmarks)
-    angle = np.deg2rad(angle_deg)
     R = np.array([
         [np.cos(angle), -np.sin(angle)],
         [np.sin(angle),  np.cos(angle)]
@@ -69,50 +61,68 @@ def rotate_landmarks(landmarks, angle_deg):
     return landmarks.tolist()
 
 def process_landmarks(raw_data):
-    for entry in raw_data:
-        landmarks = entry["hand_landmarks"]
+    hand_sizes = []  # collect for global scale check
+
+    for i, entry in enumerate(raw_data):
+        landmarks = entry["landmarks"]
         handedness = entry["handedness"]
         gesture = entry["gesture"]
         image_path = entry["image_path"]
 
+        x = np.array([p[0] for p in landmarks], dtype=np.float32)
+        y = np.array([p[1] for p in landmarks], dtype=np.float32)
 
-        lr = rotate_landmarks(landmarks, 90)
+        # if image_path != "stop/9ad4d55d-28c4-4001-8215-6ee22ec044d2.jpg":
+        #     continue
 
-        ln = normalize_landmarks(lr, handedness)
+        # plt.figure(figsize=(6,6))
+        # plt.scatter(x, y)
 
-        rl = normalize_rotation(lr)
+        # plt.xlim(-10, 10)
+        # plt.ylim(-10, 10)
+        # plt.xlabel("X (normalized)")
+        # plt.ylabel("Y (normalized)")
+        # plt.title("Normalized landmarks")
 
+        # plt.gca().invert_yaxis()
 
-        x = [point[0] for point in ln]
-        y = [point[1] for point in ln]
+        # plt.savefig('landmarks_plot.png')
+        # print(image_path)
 
-        print(x)
-        print(y)
+        # return
 
-        plt.figure(figsize=(6,6))
-        plt.scatter(x, y)
+        tag = f"[{gesture} | {handedness} | {image_path}]"
 
-        plt.xlim(-2, 2)
-        plt.ylim(-3, 0.5)
-        plt.xlabel("X (normalized)")
-        plt.ylabel("Y (normalized)")
-        plt.title("Normalized landmarks")
+        # 1. Wrist at origin
+        assert abs(x[0]) < 1e-4, f"{tag} wrist x not zero: {x[0]}"
+        assert abs(y[0]) < 1e-4, f"{tag} wrist y not zero: {y[0]}"
 
-        plt.gca().invert_yaxis()
+        # 2. Range check
+        assert x.min() > -3 and x.max() < 3, f"{tag} x out of range: min={x.min()}; max={x.max()}"
+        assert y.min() > -3 and y.max() <= 0, f"{tag} y out of range: min={y.min()}; max={y.max()}"
 
-        plt.savefig('landmarks_plot.png')
-        print(image_path)
+        # 3. Fingers mostly above wrist (Y negative)
+        tip_ids = [4, 8, 12, 16, 20]
+        num_down = sum(y[i] > 0 for i in tip_ids)
+        assert num_down <= 1, f"{tag} too many fingertips below wrist"
 
-        return
+        # 4. Collect scale (index fingertip distance)
+        hand_size = np.linalg.norm([x[9], y[9]])
+        hand_sizes.append(hand_size)
 
+    # 5. Global scale consistency check
+    hand_sizes = np.array(hand_sizes)
+    assert hand_sizes.std() < 0.5, f"Global scale inconsistency (std={hand_sizes.std():.2f})"
+
+    print(f"✔ Dataset passed validation ({len(raw_data)} samples)")
 
 def main(args):
     # Step 2: Load raw and process if requested
     if args.process:
-        with open(RAW_LANDMARKS_PATH) as f:
+        with open(PROCESSED_LANDMARKS_PATH) as f:
             raw_data = json.load(f)
         
-        processed = process_landmarks(raw_data)
+        process_landmarks(raw_data)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Extract and/or process hand landmarks")

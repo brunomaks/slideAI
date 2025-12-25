@@ -66,6 +66,39 @@ def save_raw_landmarks():
         json.dump(dataset, f, indent=2)
     print(f"Raw landmark data saved to {RAW_LANDMARKS_PATH}")
 
+def process_landmarks(raw_data):
+    results = []
+    discarded = 0
+
+    for entry in raw_data:
+        landmarks = entry["hand_landmarks"]
+        handedness = entry["handedness"]
+
+        normalized = normalize_landmarks(landmarks, handedness)
+
+        wrist = normalized[0]
+        if not np.allclose(wrist, [0, 0], atol=1e-3):
+            # print(f"Discarding sample: wrist not at origin {wrist}")
+            discarded += 1
+            continue
+
+        xs = [lm[0] for lm in normalized]
+        ys = [lm[1] for lm in normalized]
+        if min(xs) < -3 or max(xs) > 3 or min(ys) < -3 or max(ys) > 0:
+            # print("Discarding sample: landmarks out of expected range")
+            discarded += 1
+            continue
+
+        results.append({
+            "gesture": entry["gesture"],
+            "image_path": entry["image_path"],
+            "handedness": entry["handedness"],
+            "landmarks": normalized,
+        })
+
+    print(f"Discarded {discarded} samples because of wrong invariants")
+    return results
+
 def normalize_landmarks(landmarks, handedness, rotate_angle_deg=0):
     landmarks = np.array(landmarks)[:, :2]  # use only x,y
 
@@ -80,39 +113,39 @@ def normalize_landmarks(landmarks, handedness, rotate_angle_deg=0):
     if handedness == "Left":
         landmarks[:, 0] = -landmarks[:, 0]
 
-    if rotate_angle_deg != 0:
-        landmarks = rotate_landmarks(landmarks, rotate_angle_deg)
+    # make Wrist - MCP always point up
+    rotated_landmarks = normalize_rotation(landmarks)
 
-    return landmarks.tolist()
+    return rotated_landmarks.tolist()
 
-def rotate_landmarks(landmarks, angle_deg):
-    angle = np.deg2rad(angle_deg)
+def normalize_rotation(landmarks):
+    # Reference vector: from wrist (now at origin) to middle finger MCP
+    reference_vector = landmarks[9]  # Middle finger MCP (wrist is at origin)
+    
+    # Current angle of reference vector
+    current_angle = np.arctan2(reference_vector[1], reference_vector[0])
+    
+    # Target angle (pointing up in image coordinates = -90 degrees = -pi/2)
+    # Note: In image coordinates, Y increases downward, so "up" is negative Y
+    target_angle = -np.pi / 2
+    
+    # Calculate rotation needed
+    rotation_angle = target_angle - current_angle
+    
+    # Apply rotation
+    rotated_landmarks = rotate_landmarks(landmarks, rotation_angle)
+    
+    return rotated_landmarks
+
+def rotate_landmarks(landmarks, angle):
     R = np.array([
         [np.cos(angle), -np.sin(angle)],
         [np.sin(angle),  np.cos(angle)]
     ])
-    center = landmarks.mean(axis=0)
-    landmarks = landmarks - center
-    landmarks = (landmarks @ R.T) + center
+
+    # Rotate around origin (0,0) - wrist
+    landmarks = (landmarks @ R.T)
     return landmarks
-
-def process_landmarks(raw_data):
-    results = []
-
-    for entry in raw_data:
-        landmarks = entry["hand_landmarks"]
-        handedness = entry["handedness"]
-
-        normalized = normalize_landmarks(landmarks, handedness)
-
-        results.append({
-            "gesture": entry["gesture"],
-            "image_path": entry["image_path"],
-            "handedness": entry["handedness"],
-            "landmarks": normalized,
-        })
-
-    return results
 
 def main(args):
     # Step 1: Extract raw landmarks if requested or if raw file doesn't exist
