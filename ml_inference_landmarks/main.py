@@ -8,11 +8,11 @@ import cv2
 import os
 import time
 
-CLASSES = ["like", "stop", "two_up"]
+CLASSES = ["stop", "like", "two_up"]
 
 # ENSURE THE CORRECT MODEL NAME EXISTS IN shared_artifacts/models
 base_path = os.getenv('MODEL_PATH', '')
-MODEL_PATH = Path(base_path) / "gesture_model_20251221_184630.keras"
+MODEL_PATH = Path(base_path) / "latest.keras"
 
 
 def load_model(path: Path):
@@ -33,12 +33,14 @@ def predict(model, landmarks: np.ndarray) -> dict:
     input_vector = np.expand_dims(input_vector, axis=0) # (1, 42)
 
     prediction = model.predict(input_vector, verbose=0)
-    predicted_idx = int(np.argmax(prediction))
-    confidence = float(np.max(prediction) * 100)
+    predicted_idx = np.argmax(prediction[0])
+    confidence = prediction[0][predicted_idx]
+
+    predicted_gesture = CLASSES[predicted_idx]
 
     return {
-        "predicted_class": CLASSES[predicted_idx],
-        "confidence": confidence,
+        "predicted_class": predicted_gesture,
+        "confidence": float(confidence),
         "timestamp": time.time()
     }
 
@@ -59,7 +61,66 @@ def normalize_landmarks(landmarks, handedness):
     if handedness == "Left":
         landmarks[:, 0]  =  -landmarks[:, 0]
 
-    return landmarks
+    rotated_landmarks = normalize_rotation(landmarks)
+
+    return rotated_landmarks
+
+def normalize_rotation(landmarks):
+    # Reference vector: from wrist (now at origin) to middle finger MCP
+    reference_vector = landmarks[9]  # Middle finger MCP (wrist is at origin)
+    
+    # Current angle of reference vector
+    current_angle = np.arctan2(reference_vector[1], reference_vector[0])
+    
+    # Target angle (pointing up in image coordinates = -90 degrees = -pi/2)
+    # Note: In image coordinates, Y increases downward, so "up" is negative Y
+    target_angle = -np.pi / 2
+    
+    # Calculate rotation needed
+    rotation_angle = target_angle - current_angle
+    
+    # Apply rotation
+    cos_a = np.cos(rotation_angle)
+    sin_a = np.sin(rotation_angle)
+    rotation_matrix = np.array([
+        [cos_a, -sin_a],
+        [sin_a, cos_a]
+    ])
+    
+    rotated_landmarks = (rotation_matrix @ landmarks.T).T
+    
+    return rotated_landmarks
+
+def compute_direction(landmark_list):
+    wrist = np.array(landmark_list[0])
+    index_mcp = np.array(landmark_list[5])
+    middle_mcp = np.array(landmark_list[9])
+    index_tip = np.array(landmark_list[8])
+    middle_tip = np.array(landmark_list[12])
+
+    palm_center = (wrist + index_mcp + middle_mcp) / 3
+    finger_tip_avg = (index_tip + middle_tip) / 2
+    finger_dir = finger_tip_avg - palm_center
+
+    angle = np.arctan2(finger_dir[1], finger_dir[0])  # radians, range [-pi, pi]
+    return angle
+
+def retrieve_direction(angle):
+    # Normalize angle to [-pi, pi]
+    angle = (angle + np.pi) % (2 * np.pi) - np.pi
+    
+    # Define thresholds in radians
+    right_thresh = np.pi / 4          # 45 degrees
+    left_thresh = 3 * np.pi / 4       # 135 degrees
+    
+    if -right_thresh <= angle <= right_thresh:
+        return "Right"
+    elif angle >= left_thresh or angle <= -left_thresh:
+        return "Left"
+    elif right_thresh < angle < left_thresh:
+        return "Down"
+    else:
+        return "Up"
 
 
 @asynccontextmanager
@@ -101,8 +162,14 @@ async def inference(request: Request):
         raise HTTPException(status_code=500, detail="Model not loaded")
 
     try:
+        # compute direction based on original landmarks
+        angle = compute_direction(landmarks)
+        direction = retrieve_direction(angle)
+
         normalized = normalize_landmarks(landmarks, handedness)
+
         result = predict(app.state.model, normalized)
+        result["direction"] = direction
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Inference failed: {e}")
 
