@@ -2,6 +2,7 @@ import argparse
 from pathlib import Path
 from datetime import datetime
 import numpy as np
+import json
 
 from sklearn.model_selection import train_test_split
 import tensorflow as tf
@@ -15,11 +16,14 @@ def train_model(args):
     BATCH_SIZE = args.batch_size
     EPOCHS = args.epochs
     INPUT_DIM = 42
+    CLASS_NAMES = []
+    TRAIN_SAMPLES = 0
+    VAL_SAMPLES = 0
+    TEST_SAMPLES = 0
 
     try:
         landmarks_path = Path(args.data_path) / "hagrid_30k_landmarks_processed.json"
 
-        import json
         with open(landmarks_path, 'r') as f:
             data = json.load(f)
 
@@ -43,19 +47,22 @@ def train_model(args):
         X_train, X_temp, y_train, y_temp = train_test_split(X, y, test_size=0.3, random_state=10)
         X_val, X_test, y_val, y_test = train_test_split(X_temp, y_temp, test_size=0.5, random_state=10)
 
-        print(f"Train samples: {len(X_train)}")
-        print(f"Validation samples: {len(X_val)}")
-        print(f"Test samples: {len(X_test)}")
+        TRAIN_SAMPLES = len(X_train)
+        VAL_SAMPLES = len(X_val)
+        TEST_SAMPLES = len(X_test)
+        print(f"Train samples: {TRAIN_SAMPLES}")
+        print(f"Validation samples: {VAL_SAMPLES}")
+        print(f"Test samples: {TEST_SAMPLES}")
 
         train_dataset = tf.data.Dataset.from_tensor_slices((X_train, y_train)).shuffle(buffer_size=1024).batch(BATCH_SIZE)
         val_dataset = tf.data.Dataset.from_tensor_slices((X_val, y_val)).batch(BATCH_SIZE)
         test_dataset = tf.data.Dataset.from_tensor_slices((X_test, y_test)).batch(BATCH_SIZE)
 
         num_classes = len(gesture_to_idx)
-        class_names = list(gesture_to_idx.keys())
+        CLASS_NAMES = list(gesture_to_idx.keys())
 
         print(f"Number of classes: {num_classes}")
-        print(f"Class names: {class_names}")
+        print(f"Class names: {CLASS_NAMES}")
 
     except Exception as e:
         print(f"Error loading dataset: {e}")
@@ -108,26 +115,33 @@ def train_model(args):
 
     # Save model with versioning
     version = args.version or datetime.now().strftime("%Y%m%d_%H%M%S")
-    model_path = Path(args.model_output_path) / f"gesture_model_{version}.keras"
-    model_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path = Path(args.model_output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    model_path = output_path / f"gesture_model_{version}.keras"
 
     model.save(model_path)
-
     print(f"Model saved: {model_path}")
 
-    if args.set_active:
-        active_path = Path(args.model_output_path) / "active_model.txt"
-        active_path.write_text(f"gesture_model_{version}.keras")
-        print(f"Set as active model: gesture_model_{version}.keras")
+    if not args.no_set_active:
+        active_path = output_path / "active_model.json"
+
+        active_data = {
+            "model_file": f"gesture_model_{version}.keras",
+            "class_names": CLASS_NAMES
+        }
+
+        try:
+            with open(active_path, 'w') as f:
+                json.dump(active_data, f)
+            print(f"Set as active model: gesture_model_{version}.keras")
+        except Exception as e:
+            print(f"Failed to write active model file: {e}")
+
+
 
     # Export metrics alongside the model for downstream registration
     try:
-        # Derive dataset counts from filesystem (best-effort)
-        train_total = len(list(Path('/images/train').glob('*/*')))
-        val_count = int(train_total * 0.2)
-        train_count = train_total - val_count
-        test_count = len(list(Path('/images/test').glob('*/*')))
-
         # Training metrics from history
         train_acc = float(history.history.get('accuracy', [0.0])[-1])
         train_loss = float(history.history.get('loss', [0.0])[-1])
@@ -138,12 +152,11 @@ def train_model(args):
             'config': {
                 'epochs': EPOCHS,
                 'batch_size': BATCH_SIZE,
-                'image_size': args.img_size,
             },
             'dataset': {
-                'train_count': train_count,
-                'validation_count': val_count,
-                'test_count': test_count,
+                'train_count': TRAIN_SAMPLES + VAL_SAMPLES,
+                'validation_count': VAL_SAMPLES,
+                'test_count': TEST_SAMPLES,
             },
             'train': {
                 'accuracy': float(train_acc),
@@ -159,7 +172,6 @@ def train_model(args):
             }
         }
 
-        import json
         metrics_path = Path(args.model_output_path) / f"gesture_model_{version}.metrics.json"
         with open(metrics_path, 'w') as f:
             json.dump(metrics, f)
@@ -175,7 +187,7 @@ if __name__ == "__main__":
     parser.add_argument('--batch-size', type=int, default=32, help='Batch size for training')
     parser.add_argument('--data_path', type=str, default='/images/hagrid_30k', help='Path to the json data directory')
     parser.add_argument('--version', type=str, help='Model version identifier')
-    parser.add_argument('--set-active', action='store_true', help='Set the trained model as active')
+    parser.add_argument('--no-set-active', action='store_true', help='Set the trained model as active')
     parser.add_argument('--model-output-path', default='/models', help='Directory to save the trained model and metadata')
 
     args = parser.parse_args()
