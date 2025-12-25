@@ -4,7 +4,7 @@ metadata:
   name: frontend
   namespace: slideai
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: frontend
@@ -13,12 +13,10 @@ spec:
       labels:
         app: frontend
     spec:
-      imagePullSecrets:
-        - name: gitlab-registry
       containers:
         - name: frontend
           image: registry.git.chalmers.se/courses/dit826/2025/team4/frontend:latest
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           ports:
             - containerPort: 80
           resources:

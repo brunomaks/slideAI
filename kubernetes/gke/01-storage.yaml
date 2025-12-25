@@ -10,7 +10,8 @@ metadata:
   namespace: slideai
 spec:
   accessModes:
-    - ReadWriteOnce # Change to ReadWriteMany if using NFS/Cloud Filestore
+    - ReadWriteOnce
+  storageClassName: standard
   resources:
     requests:
-      storage: 5Gi
+      storage: 10Gi

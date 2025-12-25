@@ -13,12 +13,10 @@ spec:
       labels:
         app: ml-training
     spec:
-      imagePullSecrets:
-        - name: gitlab-registry
       containers:
         - name: ml-training
           image: registry.git.chalmers.se/courses/dit826/2025/team4/ml-training:latest
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           ports:
             - containerPort: 8003
           envFrom:

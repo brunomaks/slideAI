@@ -4,7 +4,7 @@ metadata:
   name: inference
   namespace: slideai
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: inference
@@ -13,12 +13,10 @@ spec:
       labels:
         app: inference
     spec:
-      imagePullSecrets:
-        - name: gitlab-registry
       containers:
         - name: inference
           image: registry.git.chalmers.se/courses/dit826/2025/team4/inference:latest
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           ports:
             - containerPort: 8002
           envFrom:

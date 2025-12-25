@@ -4,7 +4,7 @@ metadata:
   name: web
   namespace: slideai
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: web
@@ -13,12 +13,10 @@ spec:
       labels:
         app: web
     spec:
-      imagePullSecrets:
-        - name: gitlab-registry
       initContainers:
         - name: migrate-db
           image: registry.git.chalmers.se/courses/dit826/2025/team4/web:latest
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           command: ["python", "/app/manage.py", "migrate"]
           envFrom:
             - configMapRef:
@@ -27,12 +25,11 @@ spec:
                 name: app-secrets
           volumeMounts:
             - mountPath: /data
-              name: shared-storage
-              subPath: data
+              name: database-storage
       containers:
         - name: web
           image: registry.git.chalmers.se/courses/dit826/2025/team4/web:latest
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           ports:
             - containerPort: 8001
           envFrom:
@@ -52,8 +49,7 @@ spec:
               name: shared-storage
               subPath: models
             - mountPath: /data
-              name: shared-storage
-              subPath: data
+              name: database-storage  # Separate volume for SQLite
             - mountPath: /images
               name: shared-storage
               subPath: images
@@ -61,6 +57,8 @@ spec:
         - name: shared-storage
           persistentVolumeClaim:
             claimName: shared-data-pvc
+        - name: database-storage
+          emptyDir: {}  # Ephemeral local storage - fast, free, lost on pod restart
 ---
 apiVersion: v1
 kind: Service
