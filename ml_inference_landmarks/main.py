@@ -4,15 +4,37 @@ from tensorflow import keras
 from contextlib import asynccontextmanager
 from pathlib import Path
 import numpy as np
-import cv2
+import json
 import os
 import time
 
-CLASSES = ["stop", "like", "two_up"]
+ACTIVE_MODEL_PATH = os.getenv('ACTIVE_MODEL_PATH')
+MODEL_PATH = os.getenv('MODEL_PATH')
 
-# ENSURE THE CORRECT MODEL NAME EXISTS IN shared_artifacts/models
-base_path = os.getenv('MODEL_PATH', '')
-MODEL_PATH = Path(base_path) / "latest.keras"
+def load_active_model_info():
+    active_json_path = Path(ACTIVE_MODEL_PATH)
+    
+    if not active_json_path.exists():
+        raise FileNotFoundError(f"Active model descriptor not found at {active_json_path}")
+    
+    with open(active_json_path, 'r') as f:
+        active_data = json.load(f)
+    
+    model_file = active_data.get("model_file")
+    class_names = active_data.get("class_names")
+    
+    if not model_file:
+        raise ValueError("Model file not specified in active_model.json")
+    
+    model_path = Path(MODEL_PATH) / model_file
+
+    if not model_path.exists():
+        raise FileNotFoundError(f"Model file {model_path} does not exist")
+    
+    return model_path, class_names
+
+
+MODEL_PATH, CLASSES = load_active_model_info()
 
 
 def load_model(path: Path):
@@ -125,7 +147,7 @@ def retrieve_direction(angle):
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    print("Loading ML model...")
+    print(f"Loading ML model at {MODEL_PATH}")
     try:
         app.state.model = load_model(MODEL_PATH)
     except Exception as e:

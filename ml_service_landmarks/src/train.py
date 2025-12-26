@@ -3,11 +3,15 @@ from pathlib import Path
 from datetime import datetime
 import numpy as np
 import json
+import sqlite3
+import os
 
 from sklearn.model_selection import train_test_split
 import tensorflow as tf
 from tensorflow.keras import layers, models
 
+DB_PATH = os.getenv('DATABASE_PATH')
+print(f"DATABASE PATH resolved: {DB_PATH}")
 
 def train_model(args):
     print("Training MLP model...")
@@ -22,27 +26,33 @@ def train_model(args):
     TEST_SAMPLES = 0
 
     try:
-        landmarks_path = Path(args.data_path) / "hagrid_30k_landmarks_processed.json"
+        conn = sqlite3.connect(DB_PATH)
+        cur = conn.cursor()
 
-        with open(landmarks_path, 'r') as f:
-            data = json.load(f)
+        rows = cur.execute("""
+            SELECT gesture, landmarks FROM gestures_processed
+        """).fetchall()
+
+        conn.close()
 
         X = []
         y = []
         gesture_to_idx = {}
 
-        for item in data:
-            landmarks = np.array(item['landmarks']).flatten() # (21, 2) -> (42,)
+        for gesture, landmarks_json in rows:
+            landmarks = np.array(json.loads(landmarks_json)).flatten() # (21, 2) -> (42,)
             X.append(landmarks)
 
             # map gesture to integer label
-            gesture = item['gesture']
             if gesture not in gesture_to_idx:
                 gesture_to_idx[gesture] = len(gesture_to_idx)
-            y.append(gesture_to_idx[gesture])
 
+            y.append(gesture_to_idx[gesture])
+        
         X = np.array(X, dtype=np.float32)
         y = np.array(y, dtype=np.int32)
+
+        print("Fetched the data from the database")
 
         X_train, X_temp, y_train, y_temp = train_test_split(X, y, test_size=0.3, random_state=10)
         X_val, X_test, y_val, y_test = train_test_split(X_temp, y_temp, test_size=0.5, random_state=10)
@@ -103,6 +113,7 @@ def train_model(args):
         train_dataset,
         validation_data=val_dataset,
         epochs=EPOCHS,
+        callbacks=[early_stopping],
         verbose=1
     )
 
@@ -115,8 +126,9 @@ def train_model(args):
 
     # Save model with versioning
     version = args.version or datetime.now().strftime("%Y%m%d_%H%M%S")
+
     output_path = Path(args.model_output_path)
-    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.mkdir(parents=True, exist_ok=True)
 
     model_path = output_path / f"gesture_model_{version}.keras"
 
@@ -133,7 +145,7 @@ def train_model(args):
 
         try:
             with open(active_path, 'w') as f:
-                json.dump(active_data, f)
+                json.dump(active_data, f, indent=2)
             print(f"Set as active model: gesture_model_{version}.keras")
         except Exception as e:
             print(f"Failed to write active model file: {e}")
@@ -154,7 +166,7 @@ def train_model(args):
                 'batch_size': BATCH_SIZE,
             },
             'dataset': {
-                'train_count': TRAIN_SAMPLES + VAL_SAMPLES,
+                'train_count': TRAIN_SAMPLES,
                 'validation_count': VAL_SAMPLES,
                 'test_count': TEST_SAMPLES,
             },
@@ -174,7 +186,7 @@ def train_model(args):
 
         metrics_path = Path(args.model_output_path) / f"gesture_model_{version}.metrics.json"
         with open(metrics_path, 'w') as f:
-            json.dump(metrics, f)
+            json.dump(metrics, f, indent=2)
         print(f"Metrics saved: {metrics_path}")
     except Exception as e:
         print(f"Failed to write metrics file: {e}")
@@ -182,12 +194,11 @@ def train_model(args):
     return test_accuracy
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Train a CNN model for gesture recognition.")
+    parser = argparse.ArgumentParser(description="Train a MLP model for gesture recognition.")
     parser.add_argument('--epochs', type=int, default=30, help='Number of training epochs')
     parser.add_argument('--batch-size', type=int, default=32, help='Batch size for training')
-    parser.add_argument('--data_path', type=str, default='/images/hagrid_30k', help='Path to the json data directory')
     parser.add_argument('--version', type=str, help='Model version identifier')
-    parser.add_argument('--no-set-active', action='store_true', help='Set the trained model as active')
+    parser.add_argument('--no-set-active', action='store_true', help='Do not set the trained model as active')
     parser.add_argument('--model-output-path', default='/models', help='Directory to save the trained model and metadata')
 
     args = parser.parse_args()

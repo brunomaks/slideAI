@@ -6,9 +6,9 @@ services:
       - ./ml_service_landmarks:/workspace
       - ./shared_artifacts/models:/models
       - ./shared_artifacts/data:/data
-      - ./shared_artifacts/images:/images
     environment:
       - MODEL_OUTPUT_PATH=/models
+      - DATABASE_PATH=/data/landmarks.sqlite
       - PORT=8003
     ports:
       - "8003:8003"
@@ -56,6 +56,7 @@ services:
     volumes:
       - ./shared_artifacts/models:/models
     environment:
+      - ACTIVE_MODEL_PATH=/models/active_model.json
       - MODEL_PATH=/models
 
   ml-inference:
