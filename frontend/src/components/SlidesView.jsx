@@ -115,7 +115,8 @@ export default function SlidesView() {
         if (!deckRef.current || !prediction) return
         if (!deckRef.current.isReady()) return
 
-        if (prediction.predicted_class === "two_up") {
+
+        if (prediction.predicted_class === "two_up_inverted") {
             if (prediction.direction === "Left") {
                 deckRef.current.next()
             } else if (prediction.direction === "Right") {
