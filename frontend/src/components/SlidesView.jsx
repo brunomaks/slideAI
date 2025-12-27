@@ -19,6 +19,7 @@ export default function SlidesView() {
     const [showPopup, setShowPopup] = useState(false);
     const lastNavigationRef = useRef(0)
     const LOCK_DURATION = 2000
+    const CONFIDENCE_THRESHOLD = 0.9
 
     const { prediction } = useWebRTC();
 
@@ -101,6 +102,11 @@ export default function SlidesView() {
         if (now - lastNavigationRef.current < LOCK_DURATION) return
 
         lastNavigationRef.current = now
+
+        if (prediction?.confidence < CONFIDENCE_THRESHOLD) {
+            console.log("Prediction discarded due to low confidence")
+            return
+        }
 
         if (showPopup) {
             if (prediction.predicted_class === "like") {
