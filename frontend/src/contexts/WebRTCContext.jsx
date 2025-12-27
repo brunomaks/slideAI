@@ -11,6 +11,7 @@ export function WebRTCProvider({ children }) {
     const [isConnected, setIsConnected] = useState(false);
     const [prediction, setPrediction] = useState(null);
     const pcRef = useRef(null);
+    const dataChannelRef = useRef(null);
 
     useEffect(() => {
         if (!stream) {
@@ -37,24 +38,23 @@ export function WebRTCProvider({ children }) {
                     }
                 };
 
-                let dataChannel = pc.createDataChannel("MyApp Channel");
-                dataChannel.addEventListener("open", (event) => {
-                    setInterval(() => {
-                        dataChannel.send("Hello World!");
-                    }, 500);
-                }
-                );
+                let dataChannel = pc.createDataChannel("SlideAI data channel");
 
+                dataChannel.onopen = () => {
+                    console.log("DataChannel open");
+                };
+
+                dataChannel.onclose = () => {
+                    console.log("DataChannel closed");
+                };
 
                 dataChannel.onmessage = (event) => {
-                    const jsonString = event.data.replace(/'/g, '"');
-                    const parsedData = JSON.parse(jsonString);
-                    // do not trigger react rerender on empty gesture
-                    if (parsedData.predicted_class !== 'empty') {
-                        setPrediction(parsedData);
-                    }
-                    console.log("Received:", parsedData);
+                    const parsedData = JSON.parse(event.data);
+                    setPrediction(parsedData.result);
+                    console.log("Received:", parsedData.result);
                 };
+
+                dataChannelRef.current = dataChannel
 
                 const offer = await pc.createOffer();
                 await pc.setLocalDescription(offer);
@@ -128,6 +128,19 @@ export function WebRTCProvider({ children }) {
         setRemoteStream(null);
     };
 
+    // send message over webrtc datachannel
+    const sendMessage = (payload) => {
+        const channel = dataChannelRef.current;
+
+        if (!channel || channel.readyState !== "open") {
+            console.log("Data channel not open");
+            return;
+        }
+
+        channel.send(JSON.stringify(payload));
+    };
+
+
     const value = {
         stream,
         remoteStream,
@@ -135,6 +148,7 @@ export function WebRTCProvider({ children }) {
         prediction,
         connectStream,
         disconnectStream,
+        sendMessage
     };
 
     return (

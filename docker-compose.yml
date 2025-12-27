@@ -1,4 +1,20 @@
 services:
+  ml-training-landmarks:
+    build: ./ml_service_landmarks
+    container_name: ml-training-landmarks
+    volumes:
+      - ./ml_service_landmarks:/workspace
+      - ./shared_artifacts/models:/models
+      - ./shared_artifacts/data:/data
+    environment:
+      - MODEL_OUTPUT_PATH=/models
+      - DATABASE_PATH=/data/landmarks.sqlite
+      - PORT=8003
+    ports:
+      - "8003:8003"
+    profiles: ["gpu"]
+
+
   # ML Training Service (runs the Training API server)
   ml-training:
     build: ./ml_service
@@ -34,6 +50,15 @@ services:
     profiles: ["cpu"]
     # Runs the API server (no GPU available)
 
+  ml-inference-landmarks:
+    build: ./ml_inference_landmarks
+    container_name: ml-inference-landmarks
+    volumes:
+      - ./shared_artifacts/models:/models
+    environment:
+      - ACTIVE_MODEL_PATH=/models/active_model.json
+      - MODEL_PATH=/models
+
   ml-inference:
     build: ./inference
     container_name: ml-inference
@@ -60,14 +85,11 @@ services:
       - DATABASE_PATH=/data/database.sqlite
       - MEDIA_ROOT=/images
       - ALLOWED_HOSTS=localhost,frontend
-      - INFERENCE_URL=http://ml-inference:8002/inference/
+      - INFERENCE_URL=http://ml-inference-landmarks:8002/inference
       - RESIZE_URL=http://127.0.0.1:8001/resize/
       - HOST_URL=http://127.0.0.1:8001/
       - DEBUG_SAVE=False
       - ML_TRAINING_API_URL=http://ml-training:8003
-    depends_on:
-      - ml-inference
-      - ml-training
 
   frontend:
     build: ./frontend
