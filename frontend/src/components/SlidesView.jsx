@@ -3,7 +3,7 @@ import Reveal from 'reveal.js';
 import * as pdfjsLib from 'pdfjs-dist';
 import 'reveal.js/dist/reveal.css';
 import './SlidesView.css';
-import ExitPopup from './ExitPopup.jsx';
+import ExitDialog from './ExitDialog.jsx';
 
 import { useWebRTC } from '../contexts/WebRTCContext.jsx';
 
@@ -16,7 +16,7 @@ export default function SlidesView() {
     const slidesRef = useRef(null);
     const deckRef = useRef(null);
     const revealRootRef = useRef(null);
-    const [showPopup, setShowPopup] = useState(false);
+    const [showDialog, setShowDialog] = useState(false);
     const lastNavigationRef = useRef(0)
     const LOCK_DURATION = 2000
 
@@ -102,12 +102,12 @@ export default function SlidesView() {
 
         lastNavigationRef.current = now
 
-        if (showPopup) {
+        if (showDialog) {
             if (prediction.predicted_class === "like") {
-                setShowPopup(false)
+                setShowDialog(false)
                 exitPreview()
             } else if(prediction.predicted_class === "stop") {
-                setShowPopup(false)
+                setShowDialog(false)
             }
             return; // critical, otherwise the popup will open up again
         }
@@ -123,7 +123,7 @@ export default function SlidesView() {
                 deckRef.current.prev();
                 break;
             case "stop":
-                setShowPopup(true);
+                setShowDialog(true);
                 break;
         }
 
@@ -164,8 +164,8 @@ export default function SlidesView() {
                         </button>
 
                     )}
-                    {!uiVisible && showPopup && (
-                        <ExitPopup/>
+                    {!uiVisible && showDialog && (
+                        <ExitDialog/>
                     )}
                     <div className="reveal" ref={revealRootRef}>
                         <div className="slides" ref={slidesRef}></div>
