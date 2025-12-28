@@ -15,7 +15,6 @@ INSTALLED_APPS = [
     'corsheaders',
     'apps.core',
     'apps.main',
-    'apps.resize',
     'apps.admin_panel',
 ]
 
