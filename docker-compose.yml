@@ -5,10 +5,13 @@ services:
     volumes:
       - ./ml_service_landmarks:/workspace
       - ./shared_artifacts/models:/models
+      - ./shared_artifacts/images:/images
       - ./shared_artifacts/data:/data
     environment:
       - MODEL_OUTPUT_PATH=/models
       - DATABASE_PATH=/data/landmarks.sqlite
+      - RAW_IMAGES_PATH=/images
+      - LANDMARK_DETECTOR_PATH=/models/hand_landmarker.task
       - PORT=8003
     ports:
       - "8003:8003"

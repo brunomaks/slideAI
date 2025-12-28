@@ -49,7 +49,6 @@ def run_training(job_id: str, config: dict):
             'python', '-u', 'src/train.py',  # -u for unbuffered output
             '--epochs', str(config.get('epochs', 10)),
             '--batch-size', str(config.get('batch_size', 32)),
-            '--batch-size', str(config.get('batch_size', 32)),
             '--set-active',
         ]
         
