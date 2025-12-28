@@ -8,12 +8,15 @@
 <div class="card">
     <h2>Upload Instructions</h2>
     <p style="margin-top: 1rem; line-height: 1.8;">
-        Upload a ZIP file containing <strong>train/</strong> and <strong>test/</strong> folders.<br>
-        Inside each folder, create subfolders for each gesture label (e.g., "like", "stop").<br>
-        Place images for each gesture in its corresponding folder.<br><br>
+        Upload a JSON file containing processed landmarks data.<br>
+        The file should be a list of objects, each containing:
+    <ul>
+        <li><code>gesture</code>: Label string (e.g., "like", "stop")</li>
+        <li><code>landmarks</code>: List of 21 [x, y] coordinates</li>
+    </ul>
     </p>
     <p style="margin-top: 1rem;">
-        <strong>Supported formats:</strong> JPG, JPEG, PNG
+        <strong>Supported formats:</strong> JSON
     </p>
 </div>
 
@@ -29,7 +32,7 @@
         </div>
 
         <button type="submit" class="btn btn-primary" id="submit-btn">Upload Data</button>
-        <a href="{% url 'admin_panel:view_images' %}" class="btn btn-secondary">View Uploaded Images</a>
+        <a href="{% url 'admin_panel:view_dataset' %}" class="btn btn-secondary">View Dataset Statistics</a>
 
         <div id="upload-spinner" style="display: none; margin-top: 1rem; text-align: center;">
             <div style="
