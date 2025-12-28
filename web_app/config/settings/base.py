@@ -57,6 +57,10 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': os.environ.get('DATABASE_PATH', '/data/database.sqlite'),
+    },
+    'landmarks': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': os.environ.get('LANDMARKS_DB_PATH', '/data/landmarks.sqlite'),
     }
 }
 
