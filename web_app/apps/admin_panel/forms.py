@@ -3,11 +3,11 @@ from apps.core.models import ModelVersion, TrainingRun
 
 
 class DataUploadForm(forms.Form):
-    """Form for uploading labeled training data."""
+    """Form for uploading labeled training data (landmarks JSON)."""
     data_file = forms.FileField(
-        label='Upload ZIP File',
-        help_text='ZIP file with train/ and test/ folders, each containing labeled subfolders',
-        widget=forms.FileInput(attrs={'accept': '.zip'})
+        label='Upload Landmarks JSON',
+        help_text='JSON file containing labeled landmarks data',
+        widget=forms.FileInput(attrs={'accept': '.json'})
     )
 
 
