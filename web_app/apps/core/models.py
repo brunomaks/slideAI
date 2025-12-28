@@ -56,7 +56,6 @@ class ModelVersion(BaseModel):
     epochs = models.IntegerField()
     batch_size = models.IntegerField()
     learning_rate = models.FloatField(null=True, blank=True)
-    image_size = models.IntegerField()
     
     # Performance metrics
     train_accuracy = models.FloatField(null=True, blank=True)

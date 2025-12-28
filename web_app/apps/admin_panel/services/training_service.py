@@ -223,12 +223,10 @@ class TrainingService:
 
         if not model_version:
             # Create a new ModelVersion entry from training context
-            # Prefer metrics/config from trainer if available
             epochs = (metrics or {}).get('config', {}).get('epochs') or training_run.config.get('epochs') or 0
             batch_size = (metrics or {}).get('config', {}).get('batch_size') or training_run.config.get('batch_size') or 0
-            image_size = (metrics or {}).get('config', {}).get('image_size') or training_run.config.get('image_size') or 0
-            train_size = (metrics or {}).get('dataset', {}).get('train_count') or training_run.config.get('train_dataset_size') or 0
-            test_size = (metrics or {}).get('dataset', {}).get('test_count') or training_run.config.get('test_dataset_size') or 0
+            train_size = (metrics or {}).get('dataset', {}).get('train_count') or 0
+            test_size = (metrics or {}).get('dataset', {}).get('test_count') or 0
 
             # Determine if this model was set active by trainer (active_model.txt)
             model_path = Path(settings.MODEL_PATH)
@@ -255,7 +253,6 @@ class TrainingService:
                 # Hyperparameters
                 epochs=epochs,
                 batch_size=batch_size,
-                image_size=image_size,
                 # Minimal metrics (trainer does not persist metrics yet)
                 train_accuracy=(metrics or {}).get('train', {}).get('accuracy'),
                 validation_accuracy=(metrics or {}).get('validation', {}).get('accuracy'),

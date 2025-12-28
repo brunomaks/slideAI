@@ -24,7 +24,6 @@ training_jobs: Dict[str, Dict[str, Any]] = {}
 class TrainingConfig(BaseModel):
     epochs: int = 10
     batch_size: int = 32
-    image_size: int = 128
     version: Optional[str] = None
 
 
@@ -50,7 +49,7 @@ def run_training(job_id: str, config: dict):
             'python', '-u', 'src/train.py',  # -u for unbuffered output
             '--epochs', str(config.get('epochs', 10)),
             '--batch-size', str(config.get('batch_size', 32)),
-            '--img-size', str(config.get('image_size', 128)),
+            '--batch-size', str(config.get('batch_size', 32)),
             '--set-active',
         ]
         

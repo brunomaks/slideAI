@@ -44,12 +44,6 @@ class TrainingConfigForm(forms.Form):
         max_value=0.1,
         label='Learning Rate'
     )
-    image_size = forms.IntegerField(
-        initial=128,
-        min_value=64,
-        max_value=512,
-        label='Image Size (pixels)'
-    )
     
     validation_split = forms.FloatField(
         initial=0.2,
