@@ -83,6 +83,7 @@ services:
       - DJANGO_SETTINGS_MODULE=config.settings.development
       - MODEL_PATH=/models
       - DATABASE_PATH=/data/database.sqlite
+      - LANDMARKS_DB_PATH=/data/landmarks.sqlite
       - MEDIA_ROOT=/images
       - ALLOWED_HOSTS=localhost,frontend
       - INFERENCE_URL=http://ml-inference-landmarks:8002/inference
