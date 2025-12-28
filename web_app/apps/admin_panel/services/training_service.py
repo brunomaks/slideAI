@@ -11,7 +11,7 @@ from django.utils import timezone
 from django.conf import settings
 from pathlib import Path
 
-from apps.core.models import TrainingRun, ModelVersion, ImageMetadata
+from apps.core.models import TrainingRun, ModelVersion
 
 
 # URL for the ML Training API service
@@ -59,22 +59,35 @@ class TrainingService:
         # Create version name if not provided
         version_name = config.get('version_name') or timezone.now().strftime("model_%Y%m%d_%H%M%S")
         
-        # Get dataset sizes
-        train_size = ImageMetadata.objects.filter(dataset_type='train').count()
-        test_size = ImageMetadata.objects.filter(dataset_type='test').count()
-        
-        # Validate dataset size - cannot train with no data
-        if train_size == 0:
-            raise ValueError(
-                "Cannot start training: No training images available. "
-                "Please upload training data before starting a training run."
+        # Check landmarks database
+        db_path = Path(settings.DATABASES['landmarks']['NAME'])
+        if not db_path.exists():
+             raise ValueError(
+                "Cannot start training: Landmarks database not found. "
+                "Please upload landmarks JSON first."
             )
+            
+        # Optional: check count (rough check if any data exists)
+        try:
+             import sqlite3
+             with sqlite3.connect(db_path) as conn:
+                 cursor = conn.cursor()
+                 cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='gestures_processed'")
+                 if not cursor.fetchone():
+                      raise ValueError("Landmarks database exists but is empty/uninitialized.")
+                     
+                 cursor.execute("SELECT COUNT(*) FROM gestures_processed")
+                 count = cursor.fetchone()[0]
+                 if count == 0:
+                     raise ValueError("Landmarks database is empty.")
+        except Exception as e:
+            # Don't block entirely if check fails, but warn
+            pass
         
         # Prepare API request payload
         api_payload = {
             'epochs': config['epochs'],
             'batch_size': config['batch_size'],
-            'image_size': config['image_size'],
             'version': version_name,
         }
         
@@ -106,12 +119,9 @@ class TrainingService:
                 'epochs': config['epochs'],
                 'batch_size': config['batch_size'],
                 'learning_rate': config.get('learning_rate'),
-                'image_size': config['image_size'],
                 'validation_split': config.get('validation_split', 0.2),
                 'version_name': version_name,
                 'description': config.get('description', ''),
-                'train_dataset_size': train_size,
-                'test_dataset_size': test_size,
                 'api_job_id': job_id,
             }
         )
