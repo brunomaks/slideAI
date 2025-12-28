@@ -33,7 +33,7 @@ import zipfile
 import shutil
 from pathlib import Path
 
-from apps.core.models import ModelVersion, Prediction, TrainingRun, ImageMetadata
+from apps.core.models import ModelVersion, Prediction, TrainingRun
 from .forms import DataUploadForm, TrainingConfigForm, ModelDeploymentForm
 from .services.model_manager import ModelManager
 from .services.training_service import TrainingService
@@ -69,9 +69,13 @@ def dashboard(request):
     # Get model count
     total_models = ModelVersion.objects.count()
     
-    # Get dataset stats
-    train_images = ImageMetadata.objects.filter(dataset_type='train').count()
-    test_images = ImageMetadata.objects.filter(dataset_type='test').count()
+    # Get dataset stats (from Landmarks DB)
+    try:
+        uploader = DataUploader()
+        stats = uploader.get_upload_statistics()
+        total_samples = stats['total_samples']
+    except Exception:
+        total_samples = 0
     
     # Prediction distribution by class (last 24h)
     class_distribution = Prediction.objects.filter(
@@ -96,8 +100,7 @@ def dashboard(request):
         'active_training': active_training,
         'recent_trainings': recent_trainings,
         'total_models': total_models,
-        'train_images': train_images,
-        'test_images': test_images,
+        'total_samples': total_samples,
         'class_distribution': class_dist_with_percentage,
     }
     
@@ -217,7 +220,7 @@ def upload_data(request):
                     request, 
                     f"Successfully uploaded {counts['train']} train and {counts['test']} test images."
                 )
-                return redirect('admin_panel:view_images')
+                return redirect('admin_panel:view_dataset')
             except Exception as e:
                 messages.error(request, f'Upload failed: {str(e)}')
     else:
@@ -232,35 +235,25 @@ def upload_data(request):
 
 @login_required
 @user_passes_test(is_staff_or_superuser)
-def view_images(request):
-    """View uploaded images by label."""
-    label_filter = request.GET.get('label', '')
-    dataset_type = request.GET.get('dataset_type', 'train')
+def view_dataset(request):
+    """View training dataset statistics (Landmarks)."""
     
-    images_query = ImageMetadata.objects.filter(dataset_type=dataset_type)
+    # Get stats from DataUploader (which now queries SQLite)
+    uploader = DataUploader()
+    stats = uploader.get_upload_statistics()
     
-    if label_filter:
-        images_query = images_query.filter(label=label_filter)
+    label_stats = stats.get('by_label', [])
+    total_samples = stats.get('total_samples', 0)
     
-    images = images_query.order_by('-created_at')[:100]
-    
-    # Get available labels
-    labels = ImageMetadata.objects.values_list('label', flat=True).distinct().order_by('label')
-    
-    # Get stats by label
-    label_stats = ImageMetadata.objects.filter(dataset_type=dataset_type).values('label').annotate(
-        count=Count('id')
-    ).order_by('label')
+    labels = sorted([item['label'] for item in label_stats])
     
     context = {
-        'images': images,
         'labels': labels,
         'label_stats': label_stats,
-        'selected_label': label_filter,
-        'dataset_type': dataset_type,
+        'total_samples': total_samples,
     }
     
-    return render(request, 'admin_panel/view_images.html', context)
+    return render(request, 'admin_panel/view_dataset.html', context)
 
 
 @login_required

@@ -23,7 +23,7 @@ urlpatterns = [
 
     # Data Upload
     path('data/upload/', views.upload_data, name='upload_data'),
-    path('data/images/', views.view_images, name='view_images'),
+    path('data/dataset/', views.view_dataset, name='view_dataset'),
 
     # Training
     path('training/start/', views.start_training, name='start_training'),
