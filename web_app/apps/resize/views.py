@@ -8,7 +8,7 @@ import time
 
 from apps.core.utils import encode_jpg, decode_jpg
 
-SIZE = 96 # 96x96
+SIZE = 150
 
 @csrf_exempt
 def resize_view(request):

@@ -9,7 +9,8 @@ requests
 python-dotenv
 django-cors-headers
 uvicorn
-aiortc
+websockets
 aiohttp
-av
 tqdm
+channels
+daphne

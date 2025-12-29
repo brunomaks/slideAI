@@ -95,7 +95,6 @@ function WebSocketProviderComponent({ children }) {
 
             ws.onclose = (event) => {
                 setIsConnected(false);
-                wsRef.current = null;
 
                 if (shouldReconnectRef.current && reconnectAttemptsRef.current < MAX_RECONNECT_ATTEMPTS) {
                     reconnectAttemptsRef.current += 1;

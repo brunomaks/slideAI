@@ -75,6 +75,10 @@ async def inference(request: Request):
 
     if img is None:
         raise HTTPException(status_code=400, detail="Invalid image data")
+    
+    if len(img.shape) == 3 and img.shape[2] == 3:
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        img = np.expand_dims(img, axis=-1)
 
     if app.state.model is None:
         raise HTTPException(status_code=500, detail="Model not loaded")
