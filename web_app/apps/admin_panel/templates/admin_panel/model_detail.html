@@ -104,21 +104,18 @@
             <th>Learning Rate</th>
             <td>{{ model.learning_rate|default:"N/A" }}</td>
         </tr>
-        <tr>
-            <th>Image Size</th>
-            <td>{{ model.image_size }}x{{ model.image_size }}</td>
-        </tr>
+
         <tr>
             <th>Training Dataset Size</th>
-            <td>{{ model.train_dataset_size }} images</td>
+            <td>{{ model.train_dataset_size }} samples</td>
         </tr>
         <tr>
             <th>Test Dataset Size</th>
-            <td>{{ model.test_dataset_size|default:"N/A" }} images</td>
+            <td>{{ model.test_dataset_size|default:"N/A" }} samples</td>
         </tr>
         <tr>
             <th>Validation Dataset Size</th>
-            <td>{{ model.validation_dataset_size|default:"N/A" }} images</td>
+            <td>{{ model.validation_dataset_size|default:"N/A" }} samples</td>
         </tr>
     </table>
 </div>

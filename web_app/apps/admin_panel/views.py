@@ -218,7 +218,7 @@ def upload_data(request):
                 counts = uploader.handle_upload(request.FILES['data_file'])
                 messages.success(
                     request, 
-                    f"Successfully uploaded {counts['train']} train and {counts['test']} test images."
+                    f"Successfully processed {counts['total']} samples into the dataset."
                 )
                 return redirect('admin_panel:view_dataset')
             except Exception as e:

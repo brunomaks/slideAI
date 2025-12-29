@@ -4,7 +4,7 @@
 
 {% block content %}
 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
-    <h1>Dataset Statistics (Landmarks)</h1>
+    <h1>Dataset Statistics</h1>
     <a href="{% url 'admin_panel:upload_data' %}" class="btn btn-primary">Upload More Data</a>
 </div>
 
@@ -14,7 +14,7 @@
         <div class="stat-card">
             <h3>Total Samples</h3>
             <div class="value">{{ total_samples }}</div>
-            <div class="change">Landmarks</div>
+            <div class="change">Samples</div>
         </div>
         <div class="stat-card">
             <h3>Classes</h3>
@@ -43,7 +43,7 @@
             </tr>
             {% empty %}
             <tr>
-                <td colspan="3">No data found. Upload a landmarks JSON file.</td>
+                <td colspan="3">No data found. Upload a ZIP file with gesture images.</td>
             </tr>
             {% endfor %}
         </tbody>
@@ -51,7 +51,7 @@
 </div>
 
 {% comment %}
-Legacy Image Gallery removed as we now use landmarks.
+Legacy Image Gallery removed. Raw images are processed and deleted after landmark extraction.
 {% endcomment %}
 
 {% endblock %}

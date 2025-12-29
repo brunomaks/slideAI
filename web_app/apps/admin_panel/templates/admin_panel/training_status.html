@@ -44,7 +44,7 @@
                 </td>
                 <td style="font-size: 0.85rem;">
                     {% if run.config %}
-                    {{ run.config.epochs }} epochs, batch {{ run.config.batch_size }}, {{ run.config.image_size }}px
+                    {{ run.config.epochs }} epochs, batch {{ run.config.batch_size }}
                     {% endif %}
                 </td>
                 <td>{{ run.started_at|date:"M d, H:i"|default:"-" }}</td>
