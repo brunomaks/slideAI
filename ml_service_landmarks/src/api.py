@@ -13,11 +13,18 @@ from pathlib import Path
 from typing import Optional, Dict, Any
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
+from preprocess_data import init_database, ingest_raw_landmarks, ingest_normalized_landmarks
+
+DB_PATH = Path(os.getenv("DATABASE_PATH"))
+RAW_IMAGES_PATH = Path(os.getenv("RAW_IMAGES_PATH"))
+LANDMARK_DETECTOR_PATH = Path(os.getenv("LANDMARK_DETECTOR_PATH"))
 
 app = FastAPI(title="ML Training API", version="1.0.0")
 
 # In-memory store for training jobs (in production, use Redis/DB)
 training_jobs: Dict[str, Dict[str, Any]] = {}
+
+preprocessing_jobs: Dict[str, Dict[str, Any]] = {}
 
 
 # Pydantic models for request/response validation
@@ -32,6 +39,8 @@ class TrainingJobResponse(BaseModel):
     status: str
     message: str
 
+class PreprocJobRequest(BaseModel): # for preprocessing
+    dataset_version: str
 
 class HealthResponse(BaseModel):
     status: str
@@ -166,13 +175,45 @@ async def get_training_logs(job_id: str):
         'stderr': job.get('stderr', ''),
     }
 
-
 @app.get('/train')
 async def list_training_jobs():
     """List all training jobs."""
     return {
         'jobs': list(training_jobs.values())
     }
+
+@app.post("/preprocess", response_model=TrainingJobResponse)
+async def run_preprocessing(request: PreprocJobRequest):
+    job_id = f"preprocess_{uuid.uuid4().hex[:8]}"
+
+    preprocessing_jobs[job_id] = {
+        "status": "pending",
+        "message": "",
+    }
+
+    def task():
+        try:
+            preprocessing_jobs[job_id]["status"] = "running"
+            init_database(DB_PATH)
+            raw_stats = ingest_raw_landmarks(DB_PATH, LANDMARK_DETECTOR_PATH, RAW_IMAGES_PATH, request.dataset_version)
+            normalized_stats = ingest_normalized_landmarks(DB_PATH, request.dataset_version)
+            preprocessing_jobs[job_id]["status"] = "completed"
+            preprocessing_jobs[job_id]["message"] = f"Raw: {raw_stats}, Normalized: {normalized_stats}"
+        except Exception as e:
+            preprocessing_jobs[job_id]["status"] = "failed"
+            preprocessing_jobs[job_id]["message"] = str(e)
+
+    threading.Thread(target=task, daemon=True).start()
+
+    return TrainingJobResponse(job_id=job_id, status="pending", message="Preprocessing started")
+
+@app.get("/preprocess/{job_id}")
+async def get_preprocessing_status(job_id: str):
+    job = preprocessing_jobs.get(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Preprocessing job not found")
+    return job
+
 
 
 @app.get('/models')

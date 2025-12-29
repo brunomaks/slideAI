@@ -7,12 +7,6 @@ from pathlib import Path
 import numpy as np
 import mediapipe as mp
 
-DB_PATH = Path(os.getenv("DATABASE_PATH"))
-
-RAW_IMAGES_PATH = Path(os.getenv("RAW_IMAGES_PATH"))
-LANDMARK_DETECTOR_PATH = Path(os.getenv("LANDMARK_DETECTOR_PATH"))
-
-
 __all__ = [
     "init_database",
     "ingest_raw_landmarks",
