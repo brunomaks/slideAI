@@ -12,13 +12,13 @@ services:
       - DATABASE_PATH=/data/landmarks.sqlite
       - RAW_IMAGES_PATH=/images
       - LANDMARK_DETECTOR_PATH=/models/hand_landmarker.task
+      - INFERENCE_API_URL=http://ml-inference-landmarks:8000
       - PORT=8003
     ports:
       - "8003:8003"
-    profiles: ["gpu"]
+    # profiles: [ "gpu" ]
 
-
-  # ML Training Service (runs the Training API server)
+    # ML Training Service (runs the Training API server)
   ml-training:
     build: ./ml_service
     container_name: ml-training
@@ -35,7 +35,7 @@ services:
     profiles: ["gpu"]
     # GPU support is optional via docker-compose.override.yml
 
-  # CPU-only training service for systems without GPU
+    # CPU-only training service for systems without GPU
   ml-training-cpu:
     build: ./ml_service
     container_name: ml-training
@@ -93,7 +93,7 @@ services:
       - RESIZE_URL=http://127.0.0.1:8001/resize/
       - HOST_URL=http://127.0.0.1:8001/
       - DEBUG_SAVE=False
-      - ML_TRAINING_API_URL=http://ml-training:8003
+      - ML_TRAINING_API_URL=http://ml-training-landmarks:8003
 
   frontend:
     build: ./frontend

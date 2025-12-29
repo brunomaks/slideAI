@@ -83,3 +83,6 @@ LOGIN_REDIRECT_URL = '/admin/'
 LOGOUT_REDIRECT_URL = '/admin/login/'
 
 CORS_ALLOWED_ORIGINS = []
+
+# ML Training API URL
+ML_TRAINING_API_URL = os.environ.get('ML_TRAINING_API_URL', 'http://ml-training-landmarks:8003')
