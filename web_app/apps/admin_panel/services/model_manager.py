@@ -3,6 +3,8 @@ from django.utils import timezone
 from django.conf import settings
 from pathlib import Path
 import os
+import json
+import sqlite3
 from apps.core.models import ModelVersion
 
 
@@ -22,7 +24,7 @@ class ModelManager:
         # Validate that the model was trained with actual data
         if model.train_dataset_size is None or model.train_dataset_size == 0:
             raise ValueError(
-                "Cannot deploy model: This model was trained with 0 training images. "
+                "Cannot deploy model: This model was trained with 0 samples. "
                 "Models must be trained with data before deployment."
             )
         
@@ -37,10 +39,15 @@ class ModelManager:
             model.notes = f"{model.notes}\n\n[{timezone.now()}] Deployment: {notes}" if model.notes else notes
         model.save()
         
-        # Update the active_model.txt file
+        # Update the active_model.json file (read by inference service)
         model_path = Path(settings.MODEL_PATH)
-        active_model_file = model_path / 'active_model.txt'
-        active_model_file.write_text(model.model_file)
+        active_model_file = model_path / 'active_model.json'
+        active_data = {
+            "model_file": model.model_file,
+            "class_names": ModelManager._get_class_names_from_model(model)
+        }
+        with open(active_model_file, 'w') as f:
+            json.dump(active_data, f, indent=2)
         
         return model
     
@@ -91,4 +98,20 @@ class ModelManager:
         # Delete from database
         model.delete()
 
-
+    @staticmethod
+    def _get_class_names_from_model(model: ModelVersion):
+        """
+        Get the class names for a model by reading from landmarks database.
+        
+        The actual class names are determined at training time from the database.
+        We read them from the gestures_processed table.
+        """
+        try:
+            db_path = settings.DATABASES['landmarks']['NAME']
+            with sqlite3.connect(db_path) as conn:
+                cursor = conn.cursor()
+                cursor.execute("SELECT DISTINCT gesture FROM gestures_processed ORDER BY gesture")
+                return [row[0] for row in cursor.fetchall()]
+        except Exception:
+            # Fallback: return empty list (inference will fail but won't crash deploy)
+            return []
