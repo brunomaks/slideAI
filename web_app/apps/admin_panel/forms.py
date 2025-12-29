@@ -41,15 +41,15 @@ class TrainingConfigForm(forms.Form):
 
 
 class ModelDeploymentForm(forms.Form):
-    """Form for deploying a model version."""
+    """Form for activating a model version."""
     confirm = forms.BooleanField(
         required=True,
-        label='I confirm this deployment',
+        label='I confirm this activation',
         help_text='This will replace the currently active model'
     )
     notes = forms.CharField(
         widget=forms.Textarea(attrs={'rows': 2}),
         required=False,
-        label='Deployment Notes'
+        label='Activation Notes'
     )
 

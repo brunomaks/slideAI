@@ -160,7 +160,7 @@ def model_detail(request, model_id):
 @login_required
 @user_passes_test(is_staff_or_superuser)
 def deploy_model(request, model_id):
-    """Deploy a model version as the active model."""
+    """Activate a model version as the active model."""
     model = get_object_or_404(ModelVersion, id=model_id)
     
     if request.method == 'POST':
@@ -168,10 +168,10 @@ def deploy_model(request, model_id):
         if form.is_valid():
             try:
                 ModelManager.deploy_model(model, request.user, form.cleaned_data.get('notes', ''))
-                messages.success(request, f'Model {model.version_id} deployed successfully!')
+                messages.success(request, f'Model {model.version_id} activated successfully!')
                 return redirect('admin_panel:models_list')
             except Exception as e:
-                messages.error(request, f'Deployment failed: {str(e)}')
+                messages.error(request, f'Activation failed: {str(e)}')
     else:
         form = ModelDeploymentForm()
     
