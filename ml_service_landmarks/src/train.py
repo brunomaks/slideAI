@@ -151,47 +151,38 @@ def train_model(args):
             print(f"Failed to write active model file: {e}")
 
 
+    # Build metrics dict for API/callback (stored in DB, not file)
+    # Training metrics from history
+    train_acc = float(history.history.get('accuracy', [0.0])[-1])
+    train_loss_val = float(history.history.get('loss', [0.0])[-1])
 
-    # Export metrics alongside the model for downstream registration
-    try:
-        # Training metrics from history
-        train_acc = float(history.history.get('accuracy', [0.0])[-1])
-        train_loss = float(history.history.get('loss', [0.0])[-1])
-
-        metrics = {
-            'model_file': f"gesture_model_{version}.keras",
-            'version': version,
-            'config': {
-                'epochs': EPOCHS,
-                'batch_size': BATCH_SIZE,
-            },
-            'dataset': {
-                'train_count': TRAIN_SAMPLES,
-                'validation_count': VAL_SAMPLES,
-                'test_count': TEST_SAMPLES,
-            },
-            'train': {
-                'accuracy': float(train_acc),
-                'loss': float(train_loss),
-            },
-            'validation': {
-                'accuracy': float(val_accuracy),
-                'loss': float(val_loss),
-            },
-            'test': {
-                'accuracy': float(test_accuracy),
-                'loss': float(test_loss),
-            }
+    metrics = {
+        'model_file': f"gesture_model_{version}.keras",
+        'version': version,
+        'config': {
+            'epochs': EPOCHS,
+            'batch_size': BATCH_SIZE,
+        },
+        'dataset': {
+            'train_count': TRAIN_SAMPLES,
+            'validation_count': VAL_SAMPLES,
+            'test_count': TEST_SAMPLES,
+        },
+        'train': {
+            'accuracy': float(train_acc),
+            'loss': float(train_loss_val),
+        },
+        'validation': {
+            'accuracy': float(val_accuracy),
+            'loss': float(val_loss),
+        },
+        'test': {
+            'accuracy': float(test_accuracy),
+            'loss': float(test_loss),
         }
+    }
 
-        metrics_path = Path(args.model_output_path) / f"gesture_model_{version}.metrics.json"
-        with open(metrics_path, 'w') as f:
-            json.dump(metrics, f, indent=2)
-        print(f"Metrics saved: {metrics_path}")
-    except Exception as e:
-        print(f"Failed to write metrics file: {e}")
-
-    return test_accuracy
+    return test_accuracy, metrics
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Train a MLP model for gesture recognition.")
