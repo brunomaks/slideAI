@@ -5,7 +5,7 @@ import 'reveal.js/dist/reveal.css';
 import './SlidesView.css';
 import ExitDialog from './ExitDialog.jsx';
 
-import { useWebRTC } from '../contexts/WebRTCContext.jsx';
+import { useWebSocket } from '../contexts/WebSocketContext.jsx';
 
 import workerSrc from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
@@ -20,7 +20,7 @@ export default function SlidesView() {
     const lastNavigationRef = useRef(0)
     const LOCK_DURATION = 2000
 
-    const { prediction } = useWebRTC();
+    const { prediction } = useWebSocket();
 
     const [uiVisible, setUiVisible] = useState(true);
 

@@ -1,29 +1,24 @@
 import React, { useRef, useEffect } from "react";
-import { useWebRTC } from "../contexts/WebRTCContext";
+import { useWebSocket } from "../contexts/WebSocketContext";
 import "./ProcessedStream.css";
 
 export default function ProcessedStream() {
-    const videoRef = useRef(null);
-    const { remoteStream } = useWebRTC();
+    const imgRef = useRef(null);
+    const { processedFrame } = useWebSocket();
 
     useEffect(() => {
-        const video = videoRef.current;
-        if (!video) return;
+        const img = imgRef.current;
+        if (!img) return;
 
-        if (remoteStream) {
-            video.srcObject = remoteStream;
-        } else {
-            video.srcObject = null;
+        if (processedFrame) {
+            img.src = processedFrame;
         }
-    }, [remoteStream]);
+    }, [processedFrame]);
 
     return (
         <div className="processed-stream-wrapper">
-            <video
-                ref={videoRef}
-                autoPlay
-                playsInline
-                disablePictureInPicture
+            <img
+                ref={imgRef}
             />
         </div>
     );

@@ -1,19 +1,18 @@
 import React, { useRef, useEffect } from "react";
-import { useWebRTC } from "../contexts/WebRTCContext";
+import { useWebSocket } from "../contexts/WebSocketContext";
 import { CropperProvider } from "../contexts/MediaPipeCropper";
 
 const streamConfig = {
     fps: parseInt(import.meta.env.VITE_MAX_STREAM_FPS) || 5,
     width: parseInt(import.meta.env.VITE_MAX_STREAM_WIDTH) || 1280,
     height: parseInt(import.meta.env.VITE_MAX_STREAM_HEIGHT) || 720,
-    bitrate: parseInt(import.meta.env.VITE_MAX_STREAM_BITRATE) || 2500000,
     delay: parseInt(import.meta.env.VITE_ORIGINAL_STREAM_VIEW_DELAY_MS) || 2000,
 };
 
 export default function CameraStream({ onStreamReady }) {
     const videoRef = useRef(null);
     const rawStreamRef = useRef(null);
-    const { connectStream, disconnectStream } = useWebRTC();
+    const { connectStream, disconnectStream } = useWebSocket();
 
     useEffect(() => {
         const startCamera = async () => {

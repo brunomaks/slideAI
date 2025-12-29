@@ -2,7 +2,7 @@ import { useState } from 'react'
 import Home from './pages/Home'
 import Landing from './pages/LandingPage'
 import Topbar from './components/TopBar'
-import { WebRTCProvider } from './contexts/WebRTCContext'
+import { WebSocketProvider } from './contexts/WebSocketContext'
 
 function App() {
   const [showLanding, setShowLanding] = useState(false);
@@ -16,13 +16,13 @@ function App() {
   };
 
   return (
-    <WebRTCProvider>
+    <WebSocketProvider>
       <Topbar onBrandClick={handleReset} />
       {showLanding && <Landing onEnter={handleEnter} />}
       {!showLanding && (
         <Home />
       )}
-    </WebRTCProvider>
+    </WebSocketProvider>
   )
 }
 
