@@ -1,9 +1,0 @@
-{
-  "model_file": "gesture_model_model_20251229_125600.keras",
-  "class_names": [
-    "like",
-    "stop",
-    "swipe_left",
-    "swipe_right"
-  ]
-}
