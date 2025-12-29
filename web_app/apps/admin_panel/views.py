@@ -1,6 +1,24 @@
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 import json
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth.decorators import login_required, user_passes_test
+from django.contrib import messages
+from django.http import JsonResponse
+from django.utils import timezone
+from django.db.models import Count, Avg, Q
+from datetime import datetime, timedelta
+import os
+import zipfile
+import shutil
+from pathlib import Path
+
+from apps.core.models import ModelVersion, Prediction, TrainingRun
+from .forms import DataUploadForm, TrainingConfigForm, ModelDeploymentForm
+from .services.model_manager import ModelManager
+from .services.training_service import TrainingService
+from .services.data_uploader import DataUploader
+
 
 # Webhook endpoint for training metrics callback
 @csrf_exempt
@@ -21,24 +39,6 @@ def training_callback(request):
         return JsonResponse({'status': 'ok'})
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
-from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth.decorators import login_required, user_passes_test
-from django.contrib import messages
-from django.http import JsonResponse
-from django.utils import timezone
-from django.db.models import Count, Avg, Q
-from datetime import datetime, timedelta
-import os
-import zipfile
-import shutil
-from pathlib import Path
-
-from apps.core.models import ModelVersion, Prediction, TrainingRun, ImageMetadata
-from .forms import DataUploadForm, TrainingConfigForm, ModelDeploymentForm
-from .services.model_manager import ModelManager
-from .services.training_service import TrainingService
-from .services.data_uploader import DataUploader
-
 
 def is_staff_or_superuser(user):
     """Check if user is staff or superuser."""
