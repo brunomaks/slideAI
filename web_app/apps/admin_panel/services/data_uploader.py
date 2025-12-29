@@ -1,12 +1,13 @@
 import json
 import sqlite3
+import requests
+import time
+import os
 from pathlib import Path
 from django.conf import settings
 from django.core.files.uploadedfile import UploadedFile
 from django.db import transaction
 from django.db.models import Count
-from PIL import Image
-import tempfile
 
 
 class DataUploader:
@@ -18,61 +19,68 @@ class DataUploader:
     
     def handle_upload(self, uploaded_file: UploadedFile):
         """
-        Handle JSON file upload containing landmarks.
+        Handle ZIP file upload containing raw images.
         
         Args:
-            uploaded_file: Django UploadedFile instance (JSON)
+            uploaded_file: Django UploadedFile instance (ZIP)
             
         Returns:
             Dict with count of imported records
         """
-        if not uploaded_file.name.lower().endswith('.json'):
-            raise ValueError("Only JSON files are supported")
-            
-        try:
-            # Parse JSON content
-            content = uploaded_file.read().decode('utf-8')
-            data = json.loads(content)
-        except json.JSONDecodeError:
-            raise ValueError("Invalid JSON file")
-            
-        if not isinstance(data, list):
-            raise ValueError("JSON root must be a list of records")
-            
-        # Write to SQLite
-        try:
-            with sqlite3.connect(self.db_path) as conn:
-                cursor = conn.cursor()
+        if not uploaded_file.name.lower().endswith('.zip'):
+            raise ValueError("Only ZIP files are supported")
+        
+        # 1. Save ZIP locally
+        # Use a timestamped filename to avoid collisions
+        timestamp = int(time.time())
+        zip_filename = f"upload_{timestamp}.zip"
+        fs_path = Path(settings.MEDIA_ROOT) / zip_filename
+        fs_path.parent.mkdir(parents=True, exist_ok=True)
+        
+        with open(fs_path, 'wb+') as destination:
+            for chunk in uploaded_file.chunks():
+                destination.write(chunk)
                 
-                # Re-create table
-                cursor.execute("DROP TABLE IF EXISTS gestures_processed")
-                cursor.execute("""
-                    CREATE TABLE gestures_processed (
-                        gesture TEXT,
-                        landmarks TEXT
-                    )
-                """)
+        # 2. Trigger Preprocessing via API
+        ml_api_url = settings.ML_TRAINING_API_URL
+        version_id = f"v{timestamp}"
+        
+        try:
+            resp = requests.post(
+                f"{ml_api_url}/preprocess",
+                json={
+                    "dataset_version": version_id,
+                    "zip_filename": zip_filename
+                },
+                timeout=10
+            )
+            resp.raise_for_status()
+            job_data = resp.json()
+            job_id = job_data['job_id']
+            
+            # Poll for completion
+            for _ in range(60): # wait up to 60s
+                time.sleep(1)
+                status_resp = requests.get(f"{ml_api_url}/preprocess/{job_id}", timeout=5)
+                status_data = status_resp.json()
                 
-                count = 0
-                for item in data:
-                    gesture = item.get('gesture')
-                    landmarks = item.get('landmarks')
+                if status_data['status'] == 'completed':
+                    # Return stats
+                    stats = self.get_upload_statistics()
+                    return {'total': stats['total_samples']}
                     
-                    if gesture and landmarks:
-                        cursor.execute(
-                            "INSERT INTO gestures_processed (gesture, landmarks) VALUES (?, ?)", 
-                            (gesture, json.dumps(landmarks))
-                        )
-                        count += 1
-                
-                conn.commit()
-                
- 
+                if status_data['status'] == 'failed':
+                    raise RuntimeError(f"Preprocessing failed: {status_data.get('message')}")
+                    
+            raise RuntimeError("Preprocessing timed out")
             
-            return {'train': count, 'test': 0} # Tests are split at training time
-            
-        except Exception as e:
-            raise RuntimeError(f"Failed to ingest landmarks: {e}")
+        except requests.exceptions.RequestException as e:
+            raise RuntimeError(f"Failed to communicate with ML service: {e}")
+        finally:
+            # Optional: Delete zip after successful handoff if desired, 
+            # but user might want to keep it as backup. 
+            # Current plan says "keep zip", so we leave it.
+            pass
 
     def get_upload_statistics(self):
         """
