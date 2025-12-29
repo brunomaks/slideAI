@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import os
+import json
 import django
 from pathlib import Path
 from datetime import datetime
@@ -9,7 +10,7 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings.development')
 django.setup()
 
 from django.contrib.auth import get_user_model
-from apps.core.models import ModelVersion, ImageMetadata
+from apps.core.models import ModelVersion
 from django.conf import settings
 
 User = get_user_model()
@@ -39,42 +40,40 @@ def register_existing_models():
             training_date = timezone.make_aware(naive_dt, timezone.get_current_timezone())
         except:
             training_date = timezone.now()
-        
-        # Dataset sizes (best effort)
-        train_size = ImageMetadata.objects.filter(dataset_type='train').count()
-        test_size = ImageMetadata.objects.filter(dataset_type='test').count()
 
         # Sensible defaults for required fields
         default_epochs = 10
         default_batch = 32
-        default_img_size = 224
 
         ModelVersion.objects.create(
             version_id=version_id,
             model_file=model_file.name,
             framework='tensorflow',
             training_date=training_date,
-            # Dataset info
-            train_dataset_size=train_size,
-            test_dataset_size=test_size or None,
             # Hyperparameters (defaults; actual may differ)
             epochs=default_epochs,
             batch_size=default_batch,
-            image_size=default_img_size,
             # Performance metrics
-            test_accuracy=90.0,
+            test_accuracy=0.0,
             is_active=False
         )
         print(f"Registered: {version_id}")
     
-    active_model_file = model_path / 'active_model.txt'
+    # Check active model from active_model.json
+    active_model_file = model_path / 'active_model.json'
     if active_model_file.exists():
-        version_id = Path(active_model_file.read_text().strip()).stem
-        model = ModelVersion.objects.filter(version_id=version_id).first()
-        if model:
-            ModelVersion.objects.filter(is_active=True).update(is_active=False)
-            model.is_active = True
-            model.save()
+        try:
+            with open(active_model_file, 'r') as f:
+                active_data = json.load(f)
+            model_filename = active_data.get('model_file', '')
+            version_id = Path(model_filename).stem
+            model = ModelVersion.objects.filter(version_id=version_id).first()
+            if model:
+                ModelVersion.objects.filter(is_active=True).update(is_active=False)
+                model.is_active = True
+                model.save()
+        except Exception:
+            pass
 
 
 if __name__ == '__main__':
