@@ -63,8 +63,8 @@ class TrainingService:
         db_path = Path(settings.DATABASES['landmarks']['NAME'])
         if not db_path.exists():
              raise ValueError(
-                "Cannot start training: Landmarks database not found. "
-                "Please upload landmarks JSON first."
+                "Cannot start training: No training data found. "
+                "Please upload gesture images first."
             )
             
         # Optional: check count (rough check if any data exists)
@@ -238,14 +238,16 @@ class TrainingService:
             train_size = (metrics or {}).get('dataset', {}).get('train_count') or 0
             test_size = (metrics or {}).get('dataset', {}).get('test_count') or 0
 
-            # Determine if this model was set active by trainer (active_model.txt)
+            # Determine if this model was set active by trainer (active_model.json)
             model_path = Path(settings.MODEL_PATH)
-            active_file = model_path / 'active_model.txt'
+            active_file = model_path / 'active_model.json'
             is_active = False
             if active_file.exists():
                 try:
-                    active_name = active_file.read_text().strip()
-                    is_active = (active_name == model_filename)
+                    import json
+                    with open(active_file, 'r') as f:
+                        active_data = json.load(f)
+                    is_active = (active_data.get('model_file') == model_filename)
                 except Exception:
                     is_active = False
 
@@ -263,10 +265,10 @@ class TrainingService:
                 # Hyperparameters
                 epochs=epochs,
                 batch_size=batch_size,
-                # Minimal metrics (trainer does not persist metrics yet)
-                train_accuracy=(metrics or {}).get('train', {}).get('accuracy'),
-                validation_accuracy=(metrics or {}).get('validation', {}).get('accuracy'),
-                test_accuracy=(metrics or {}).get('test', {}).get('accuracy') or 0.0,
+                # Metrics - convert from 0-1 scale to percentage (0-100)
+                train_accuracy=((metrics or {}).get('train', {}).get('accuracy') or 0) * 100,
+                validation_accuracy=((metrics or {}).get('validation', {}).get('accuracy') or 0) * 100,
+                test_accuracy=((metrics or {}).get('test', {}).get('accuracy') or 0) * 100,
                 train_loss=(metrics or {}).get('train', {}).get('loss'),
                 validation_loss=(metrics or {}).get('validation', {}).get('loss'),
                 test_loss=(metrics or {}).get('test', {}).get('loss'),
