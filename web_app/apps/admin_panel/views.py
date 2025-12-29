@@ -111,6 +111,19 @@ def dashboard(request):
 @user_passes_test(is_staff_or_superuser)
 def models_list(request):
     """List all model versions."""
+    # Sync any completed training runs that might not have models linked yet
+    # This handles the case where user navigates directly to models without visiting training status
+    service = TrainingService()
+    pending_sync_runs = TrainingRun.objects.filter(
+        status__in=['running', 'pending'],
+    ).select_related('model_version')
+    
+    for run in pending_sync_runs:
+        try:
+            service.check_training_status(run)
+        except Exception:
+            pass  # Don't block page load for API errors
+    
     models = ModelVersion.objects.all()
     
     context = {
@@ -386,3 +399,25 @@ def delete_model(request, model_id):
         messages.error(request, f"Failed to delete model {version_id}: {str(e)}")
         
     return redirect('admin_panel:models_list')
+
+
+@login_required
+@user_passes_test(is_staff_or_superuser)
+@require_POST
+def delete_training_run(request, run_id):
+    """Delete a training run record."""
+    run = get_object_or_404(TrainingRun, id=run_id)
+    run_id_str = run.run_id
+    
+    # Only allow deleting completed, failed, or cancelled runs
+    if run.status in ['pending', 'running']:
+        messages.error(request, f"Cannot delete a {run.status} training run. Cancel it first.")
+        return redirect('admin_panel:training_status')
+    
+    try:
+        run.delete()
+        messages.success(request, f"Training run {run_id_str} deleted successfully.")
+    except Exception as e:
+        messages.error(request, f"Failed to delete training run: {str(e)}")
+        
+    return redirect('admin_panel:training_status')

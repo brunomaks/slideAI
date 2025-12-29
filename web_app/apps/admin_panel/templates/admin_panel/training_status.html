@@ -63,6 +63,15 @@
                     {% endif %}
                     <button type="button" class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;"
                         onclick="toggleLogs('logs-{{ run.id }}')">Logs</button>
+                    {% if run.status in 'completed,failed,cancelled' %}
+                    <form method="post" action="{% url 'admin_panel:delete_training_run' run.id %}"
+                        style="display:inline; margin-left: 0.25rem;"
+                        onsubmit="return confirm('Delete this training run? This cannot be undone.');">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger"
+                            style="padding: 0.25rem 0.5rem; font-size: 0.8rem; background-color: #dc3545;">Delete</button>
+                    </form>
+                    {% endif %}
                 </td>
             </tr>
             <tr id="logs-{{ run.id }}" style="display: none;">
