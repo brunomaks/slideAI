@@ -198,6 +198,20 @@ async def inference(request: Request):
     return JSONResponse(content=result)
 
 
+@app.post("/reload")
+async def reload_model():
+    print("Reloading model...")
+    try:
+        global MODEL_PATH, CLASSES
+        MODEL_PATH, CLASSES = load_active_model_info()
+        app.state.model = load_model(MODEL_PATH)
+        print(f"Model reloaded. Classes: {CLASSES}")
+        return {"status": "reloaded", "classes": CLASSES}
+    except Exception as e:
+        print(f"Reload failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @app.get("/health")
 def health():
     return {"status": "ok", "service": "ml-inference-landmarks"}

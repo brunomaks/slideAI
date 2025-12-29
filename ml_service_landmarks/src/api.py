@@ -41,6 +41,7 @@ class TrainingJobResponse(BaseModel):
 
 class PreprocJobRequest(BaseModel): # for preprocessing
     dataset_version: str
+    zip_filename: str
 
 class HealthResponse(BaseModel):
     status: str
@@ -58,7 +59,7 @@ def run_training(job_id: str, config: dict):
             'python', '-u', 'src/train.py',  # -u for unbuffered output
             '--epochs', str(config.get('epochs', 10)),
             '--batch-size', str(config.get('batch_size', 32)),
-            '--set-active',
+            # Note: train.py sets model as active by default (use --no-set-active to disable)
         ]
         
         if config.get('version'):
@@ -96,6 +97,22 @@ def run_training(job_id: str, config: dict):
                         training_jobs[job_id]['metrics'] = json.load(f)
                 # Always attach model file name
                 training_jobs[job_id]['model_file'] = f"gesture_model_{version}.keras" if version else training_jobs[job_id]['metrics'].get('model_file') if training_jobs[job_id].get('metrics') else None
+                
+                # TRIGGER RELOAD if set_active was true (implicit in this script unless flag passed, but train.py handles the file write)
+                # If active_model.json was updated, we should reload.
+                # Since we passed --set-active to train.py, we assume it updated it.
+                inference_url = os.getenv('INFERENCE_API_URL')
+                if inference_url:
+                    print(f"Triggering inference reload at {inference_url}/reload")
+                    import requests
+                    try:
+                        r = requests.post(f"{inference_url}/reload", timeout=5)
+                        r.raise_for_status()
+                        training_jobs[job_id]['reload_status'] = 'success'
+                    except Exception as re:
+                        print(f"Failed to reload inference service: {re}")
+                        training_jobs[job_id]['reload_status'] = f'failed: {re}'
+                        
             except Exception:
                 pass
         else:
@@ -192,14 +209,57 @@ async def run_preprocessing(request: PreprocJobRequest):
     }
 
     def task():
+        import shutil
+        import zipfile
+        
         try:
             preprocessing_jobs[job_id]["status"] = "running"
-            init_database(DB_PATH)
-            raw_stats = ingest_raw_landmarks(DB_PATH, LANDMARK_DETECTOR_PATH, RAW_IMAGES_PATH, request.dataset_version)
-            normalized_stats = ingest_normalized_landmarks(DB_PATH, request.dataset_version)
-            preprocessing_jobs[job_id]["status"] = "completed"
-            preprocessing_jobs[job_id]["message"] = f"Raw: {raw_stats}, Normalized: {normalized_stats}"
+            
+            # Paths
+            # RAW_IMAGES_PATH is /images (mapped volume)
+            zip_path = RAW_IMAGES_PATH / request.zip_filename
+            
+            if not zip_path.exists():
+                raise FileNotFoundError(f"ZIP file not found: {zip_path}")
+
+            # Temp extraction path (local to container, fast I/O)
+            temp_extract_path = Path("/tmp") / f"extract_{job_id}"
+            temp_extract_path.mkdir(parents=True, exist_ok=True)
+            
+            try:
+                print(f"Extracting {zip_path} to {temp_extract_path}")
+                with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+                    zip_ref.extractall(temp_extract_path)
+                
+                # Verify structure (handle optional root folder)
+                # If everything is in one subfolder, perform processing on that subfolder
+                content = list(temp_extract_path.iterdir())
+                target_root = temp_extract_path
+                if len(content) == 1 and content[0].is_dir():
+                    target_root = content[0]
+
+                init_database(DB_PATH)
+                raw_stats = ingest_raw_landmarks(DB_PATH, LANDMARK_DETECTOR_PATH, target_root, request.dataset_version)
+                normalized_stats = ingest_normalized_landmarks(DB_PATH, request.dataset_version)
+                
+                preprocessing_jobs[job_id]["status"] = "completed"
+                preprocessing_jobs[job_id]["message"] = f"Raw: {raw_stats}, Normalized: {normalized_stats}"
+                
+            finally:
+                # Cleanup temp files
+                if temp_extract_path.exists():
+                    shutil.rmtree(temp_extract_path)
+                    
+                # Cleanup source ZIP (landmarks are now in DB, raw images no longer needed)
+                if zip_path.exists():
+                    try:
+                        zip_path.unlink()
+                        print(f"Deleted processed ZIP: {zip_path}")
+                    except Exception as del_err:
+                        print(f"Warning: Could not delete ZIP {zip_path}: {del_err}")
+
         except Exception as e:
+            print(f"Preprocessing error: {e}")
             preprocessing_jobs[job_id]["status"] = "failed"
             preprocessing_jobs[job_id]["message"] = str(e)
 
@@ -232,10 +292,16 @@ async def list_models():
             })
     
     # Check active model
-    active_model_file = model_path / 'active_model.txt'
+    active_model_file = model_path / 'active_model.json'
     active_model = None
     if active_model_file.exists():
-        active_model = active_model_file.read_text().strip()
+        import json
+        try:
+            with open(active_model_file, 'r') as f:
+                active_data = json.load(f)
+            active_model = active_data.get('model_file')
+        except Exception:
+            pass
     
     return {
         'models': models,

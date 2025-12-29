@@ -41,7 +41,7 @@ def ingest_raw_landmarks(db_path: Path, landmarker_path: Path, raw_images_path: 
 
                 record = {
                     "gesture": gesture_folder,
-                    "image_path": str(image_path.relative_to(RAW_IMAGES_PATH)),
+                    "image_path": str(image_path.relative_to(raw_images_path)),
                     "handedness": results.handedness[0][0].category_name,
                     "landmarks": [[lm.x, lm.y, lm.z] for lm in results.hand_landmarks[0]]
                 }
@@ -79,7 +79,7 @@ def ingest_normalized_landmarks(db_path: Path, dataset_version: str) -> Dict[str
         SELECT id, gesture, image_path, handedness, landmarks 
         FROM gestures_raw
         WHERE dataset_version = ?
-    """, (dataset_version)).fetchall()
+    """, (dataset_version,)).fetchall()
 
     inserted = 0
     discarded = 0
@@ -195,6 +195,9 @@ def _create_database(db_path):
 
 def _extract_landmarks(image_path, landmarker):
     image = cv2.imread(str(image_path))
+    if image is None:
+        print(f"Warning: Could not read image {image_path}, skipping.")
+        return mp.tasks.vision.HandLandmarkerResult(hand_landmarks=[], handedness=[], hand_world_landmarks=[])
     image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=image_rgb)
     results = landmarker.detect(mp_image)
