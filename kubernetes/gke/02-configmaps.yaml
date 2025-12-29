@@ -22,6 +22,3 @@ data:
   ML_TRAINING_API_URL: "http://ml-training-service:8003"
   DEBUG_SAVE: "False"
   PYTHONUNBUFFERED: "1"
-  
-  # Frontend Configuration
-  VITE_WEBRTC_SERVER_URL: "/api/offer/"
