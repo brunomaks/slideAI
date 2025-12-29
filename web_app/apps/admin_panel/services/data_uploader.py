@@ -58,8 +58,15 @@ class DataUploader:
             job_data = resp.json()
             job_id = job_data['job_id']
             
-            # Poll for completion
-            for _ in range(60): # wait up to 60s
+            # Dynamic timeout based on file size
+            # Estimate: ~35 samples/second processing rate + buffer
+            # File size in MB * 100 gives rough sample estimate
+            file_size_mb = uploaded_file.size / (1024 * 1024)
+            estimated_samples = file_size_mb * 100  # rough estimate
+            estimated_time = max(60, min(600, int(estimated_samples / 35) + 30))  # 60s min, 600s max
+            
+            # Poll for completion with dynamic timeout
+            for _ in range(estimated_time):
                 time.sleep(1)
                 status_resp = requests.get(f"{ml_api_url}/preprocess/{job_id}", timeout=5)
                 status_data = status_resp.json()
