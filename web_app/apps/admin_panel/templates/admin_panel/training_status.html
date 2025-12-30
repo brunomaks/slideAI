@@ -79,8 +79,9 @@
                     <div
                         style="background: rgba(0,0,0,0.3); padding: 1rem; border-radius: 4px; max-height: 300px; overflow-y: auto;">
                         {% if run.error_message %}
-                        <div style="color: #ff6b6b; margin-bottom: 0.5rem;"><strong>Error:</strong> {{ run.error_message
-                            }}</div>
+                        <div style="color: #ff6b6b; margin-bottom: 0.5rem;">
+                            <strong>Error</strong> {{ run.error_message }}
+                        </div>
                         {% endif %}
                         {% if run.logs %}
                         <pre style="margin: 0; white-space: pre-wrap; font-size: 0.85rem;">{{ run.logs }}</pre>
