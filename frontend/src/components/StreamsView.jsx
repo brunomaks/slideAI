@@ -26,9 +26,8 @@ export default function StreamsView() {
     };
 
     return (
-        <div className="streams-view">
-            <div className="selfie-video-wrapper-instance video-wrapper-instance">
-                <VideoWrapper>
+        <div>
+            <VideoWrapper>
                     {cameraEnabled && <CameraStream className="camera-stream" onStreamReady={handleStreamReady} />}
                     <CameraOverlay
                         cameraEnabled={cameraEnabled}
@@ -36,7 +35,6 @@ export default function StreamsView() {
                         onDisableCamera={handleDisableCamera}
                     />
                 </VideoWrapper>
-            </div>
         </div>
     );
 }
