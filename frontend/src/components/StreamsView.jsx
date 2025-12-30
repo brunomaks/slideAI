@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import VideoWrapper from './VideoWrapper';
 import CameraStream from './CameraStream';
 import CameraOverlay from './CameraOverlay';
-import ProcessedStream from './ProcessedStream';
 import './StreamsView.css';
 
 export default function StreamsView() {
@@ -28,25 +27,15 @@ export default function StreamsView() {
 
     return (
         <div className="streams-view">
-            <div className="control-topbar">
-                {/* Control buttons will go here */}
-            </div>
-            <div className="video-container">
-                <div className="selfie-video-wrapper-instance video-wrapper-instance">
-                    <VideoWrapper>
-                        {cameraEnabled && <CameraStream className="camera-stream" onStreamReady={handleStreamReady} />}
-                        <CameraOverlay
-                            cameraEnabled={cameraEnabled}
-                            onEnableCamera={handleEnableCamera}
-                            onDisableCamera={handleDisableCamera}
-                        />
-                    </VideoWrapper>
-                </div>
-                <div className="processed-video-wrapper-instance video-wrapper-instance">
-                    <VideoWrapper>
-                        <ProcessedStream />
-                    </VideoWrapper>
-                </div>
+            <div className="selfie-video-wrapper-instance video-wrapper-instance">
+                <VideoWrapper>
+                    {cameraEnabled && <CameraStream className="camera-stream" onStreamReady={handleStreamReady} />}
+                    <CameraOverlay
+                        cameraEnabled={cameraEnabled}
+                        onEnableCamera={handleEnableCamera}
+                        onDisableCamera={handleDisableCamera}
+                    />
+                </VideoWrapper>
             </div>
         </div>
     );
