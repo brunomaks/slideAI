@@ -165,7 +165,10 @@ class TrainingService:
             )
             
             if response.status_code == 404:
-                # Job not found in API - might have been restarted
+                training_run.status = 'failed'
+                training_run.completed_at = timezone.now()
+                training_run.error_message = 'Training job missing from ML API.'
+                training_run.save()
                 return training_run.status
             
             response.raise_for_status()
@@ -180,8 +183,12 @@ class TrainingService:
                 metrics = job_data.get('metrics')
                 if metrics:
                     training_run.final_metrics = metrics
-                self._link_model_version(training_run, metrics)
+                try:
+                    self._link_model_version(training_run, metrics)
+                except Exception as e:
+                    training_run.error_message = f"Training completed but model linking failed: {e}"
                 training_run.save()
+
             elif api_status == 'failed':
                 training_run.status = 'failed'
                 training_run.completed_at = timezone.now()
