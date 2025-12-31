@@ -5,16 +5,19 @@ services:
     volumes:
       - ./ml_service_landmarks:/workspace
       - ./shared_artifacts/models:/models
+      - ./shared_artifacts/images:/images
       - ./shared_artifacts/data:/data
     environment:
       - MODEL_OUTPUT_PATH=/models
       - DATABASE_PATH=/data/landmarks.sqlite
+      - RAW_IMAGES_PATH=/images
+      - LANDMARK_DETECTOR_PATH=/models/hand_landmarker.task
+      - INFERENCE_API_URL=http://ml-inference-landmarks:8000
       - PORT=8003
     ports:
       - "8003:8003"
-    profiles: [ "gpu" ]
+    # profiles: [ "gpu" ]
 
-  # ML Training Service (runs the Training API server)
   ml-training:
     build: ./ml_service
     container_name: ml-training
@@ -31,7 +34,6 @@ services:
     profiles: [ "gpu" ]
     # GPU support is optional via docker-compose.override.yml
 
-    # CPU-only training service for systems without GPU
   ml-training-cpu:
     build: ./ml_service
     container_name: ml-training
@@ -82,13 +84,13 @@ services:
       - DJANGO_SETTINGS_MODULE=config.settings.development
       - MODEL_PATH=/models
       - DATABASE_PATH=/data/database.sqlite
+      - LANDMARKS_DB_PATH=/data/landmarks.sqlite
       - MEDIA_ROOT=/images
       - ALLOWED_HOSTS=localhost,frontend
       - INFERENCE_URL=http://ml-inference-landmarks:8002/inference
-      - RESIZE_URL=http://127.0.0.1:8001/resize/
       - HOST_URL=http://127.0.0.1:8001/
       - DEBUG_SAVE=False
-      - ML_TRAINING_API_URL=http://ml-training:8003
+      - ML_TRAINING_API_URL=http://ml-training-landmarks:8003
 
   frontend:
     build: ./frontend

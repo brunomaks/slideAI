@@ -1,0 +1,57 @@
+{% extends 'admin_panel/base.html' %}
+
+{% block title %}Dataset Statistics{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+    <h1>Dataset Statistics</h1>
+    <a href="{% url 'admin_panel:upload_data' %}" class="btn btn-primary">Upload More Data</a>
+</div>
+
+<div class="card">
+    <h2>Dataset Overview</h2>
+    <div class="stats-grid" style="grid-template-columns: repeat(2, 1fr); margin-bottom: 2rem;">
+        <div class="stat-card">
+            <h3>Total Samples</h3>
+            <div class="value">{{ total_samples }}</div>
+            <div class="change">Samples</div>
+        </div>
+        <div class="stat-card">
+            <h3>Classes</h3>
+            <div class="value">{{ label_stats|length }}</div>
+            <div class="change">Gestures</div>
+        </div>
+    </div>
+
+    <h2>Class Distribution</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Gesture Label</th>
+                <th>Sample Count</th>
+                <th>Percentage</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for stat in label_stats %}
+            <tr>
+                <td><strong>{{ stat.label }}</strong></td>
+                <td>{{ stat.count }}</td>
+                <td>
+                    {% widthratio stat.count total_samples 100 %}%
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="3">No data found. Upload a ZIP file with gesture images.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% comment %}
+Legacy Image Gallery removed. Raw images are processed and deleted after landmark extraction.
+{% endcomment %}
+
+{% endblock %}

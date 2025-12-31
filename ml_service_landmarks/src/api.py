@@ -7,24 +7,29 @@ This allows the web app to start training without needing Docker access.
 import os
 import uuid
 import threading
-import subprocess
 from datetime import datetime
 from pathlib import Path
 from typing import Optional, Dict, Any
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
+from preprocess_data import init_database, ingest_raw_landmarks, ingest_normalized_landmarks
+
+DB_PATH = Path(os.getenv("DATABASE_PATH"))
+RAW_IMAGES_PATH = Path(os.getenv("RAW_IMAGES_PATH"))
+LANDMARK_DETECTOR_PATH = Path(os.getenv("LANDMARK_DETECTOR_PATH"))
 
 app = FastAPI(title="ML Training API", version="1.0.0")
 
 # In-memory store for training jobs (in production, use Redis/DB)
 training_jobs: Dict[str, Dict[str, Any]] = {}
 
+preprocessing_jobs: Dict[str, Dict[str, Any]] = {}
+
 
 # Pydantic models for request/response validation
 class TrainingConfig(BaseModel):
     epochs: int = 10
     batch_size: int = 32
-    image_size: int = 128
     version: Optional[str] = None
 
 
@@ -33,6 +38,9 @@ class TrainingJobResponse(BaseModel):
     status: str
     message: str
 
+class PreprocJobRequest(BaseModel): # for preprocessing
+    dataset_version: str
+    zip_filename: str
 
 class HealthResponse(BaseModel):
     status: str
@@ -40,60 +48,73 @@ class HealthResponse(BaseModel):
 
 
 def run_training(job_id: str, config: dict):
-    """Run training in a subprocess and update job status."""
+    """Run training directly and update job status."""
+    import sys
+    from io import StringIO
+    
     try:
         training_jobs[job_id]['status'] = 'running'
         training_jobs[job_id]['started_at'] = datetime.now().isoformat()
         
-        # Build command
-        cmd = [
-            'python', '-u', 'src/train.py',  # -u for unbuffered output
-            '--epochs', str(config.get('epochs', 10)),
-            '--batch-size', str(config.get('batch_size', 32)),
-            '--img-size', str(config.get('image_size', 128)),
-            '--set-active',
-        ]
+        # Import and run training directly (avoids subprocess + file I/O)
+        from train import train_model
+        import argparse
         
-        if config.get('version'):
-            cmd.extend(['--version', config['version']])
+        # Build args object matching train.py expectations
+        class TrainingArgs:
+            def __init__(self, cfg):
+                self.epochs = cfg.get('epochs', 10)
+                self.batch_size = cfg.get('batch_size', 32)
+                self.version = cfg.get('version')
+                self.no_set_active = False  # Set active by default
+                self.model_output_path = '/models'
         
-        # Run training with streaming output capture
-        process = subprocess.Popen(
-            cmd,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            text=True,
-            cwd='/workspace',
-            bufsize=1  # Line buffered
-        )
+        args = TrainingArgs(config)
         
-        # Stream output to job record
-        stdout_lines = []
-        for line in iter(process.stdout.readline, ''):
-            stdout_lines.append(line)
-            training_jobs[job_id]['stdout'] = ''.join(stdout_lines)
+        # Capture stdout during training
+        old_stdout = sys.stdout
+        sys.stdout = captured_output = StringIO()
         
-        process.wait()
-        
-        training_jobs[job_id]['return_code'] = process.returncode
-        
-        if process.returncode == 0:
+        try:
+            # train_model now returns (test_accuracy, metrics_dict)
+            result = train_model(args)
+            if isinstance(result, tuple):
+                test_accuracy, metrics = result
+            else:
+                # Fallback for backward compatibility
+                test_accuracy = result
+                metrics = None
+            
+            training_jobs[job_id]['stdout'] = captured_output.getvalue()
             training_jobs[job_id]['status'] = 'completed'
-            # Attach metrics if available
-            try:
-                version = config.get('version') or ''
-                metrics_path = Path('/models') / f"gesture_model_{version}.metrics.json"
-                if metrics_path.exists():
-                    import json
-                    with open(metrics_path, 'r') as f:
-                        training_jobs[job_id]['metrics'] = json.load(f)
-                # Always attach model file name
-                training_jobs[job_id]['model_file'] = f"gesture_model_{version}.keras" if version else training_jobs[job_id]['metrics'].get('model_file') if training_jobs[job_id].get('metrics') else None
-            except Exception:
-                pass
-        else:
+            training_jobs[job_id]['return_code'] = 0
+            
+            if metrics:
+                training_jobs[job_id]['metrics'] = metrics
+            
+            version = config.get('version') or ''
+            training_jobs[job_id]['model_file'] = f"gesture_model_{version}.keras" if version else (metrics.get('model_file') if metrics else None)
+            
+            # Trigger inference service reload if active_model.json was updated
+            inference_url = os.getenv('INFERENCE_API_URL')
+            if inference_url:
+                print(f"Triggering inference reload at {inference_url}/reload")
+                import requests
+                try:
+                    r = requests.post(f"{inference_url}/reload", timeout=5)
+                    r.raise_for_status()
+                    training_jobs[job_id]['reload_status'] = 'success'
+                except Exception as re:
+                    print(f"Failed to reload inference service: {re}")
+                    training_jobs[job_id]['reload_status'] = f'failed: {re}'
+                    
+        except Exception as train_error:
+            training_jobs[job_id]['stdout'] = captured_output.getvalue()
             training_jobs[job_id]['status'] = 'failed'
-            training_jobs[job_id]['error'] = 'Training failed with exit code ' + str(process.returncode)
+            training_jobs[job_id]['error'] = str(train_error)
+            training_jobs[job_id]['return_code'] = 1
+        finally:
+            sys.stdout = old_stdout
             
     except Exception as e:
         training_jobs[job_id]['status'] = 'failed'
@@ -168,13 +189,88 @@ async def get_training_logs(job_id: str):
         'stderr': job.get('stderr', ''),
     }
 
-
 @app.get('/train')
 async def list_training_jobs():
     """List all training jobs."""
     return {
         'jobs': list(training_jobs.values())
     }
+
+@app.post("/preprocess", response_model=TrainingJobResponse)
+async def run_preprocessing(request: PreprocJobRequest):
+    job_id = f"preprocess_{uuid.uuid4().hex[:8]}"
+
+    preprocessing_jobs[job_id] = {
+        "status": "pending",
+        "message": "",
+    }
+
+    def task():
+        import shutil
+        import zipfile
+        
+        try:
+            preprocessing_jobs[job_id]["status"] = "running"
+            
+            # Paths
+            # RAW_IMAGES_PATH is /images (mapped volume)
+            zip_path = RAW_IMAGES_PATH / request.zip_filename
+            
+            if not zip_path.exists():
+                raise FileNotFoundError(f"ZIP file not found: {zip_path}")
+
+            # Temp extraction path (local to container, fast I/O)
+            temp_extract_path = Path("/tmp") / f"extract_{job_id}"
+            temp_extract_path.mkdir(parents=True, exist_ok=True)
+            
+            try:
+                print(f"Extracting {zip_path} to {temp_extract_path}")
+                with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+                    zip_ref.extractall(temp_extract_path)
+                
+                # Verify structure (handle optional root folder)
+                # If everything is in one subfolder, perform processing on that subfolder
+                content = list(temp_extract_path.iterdir())
+                target_root = temp_extract_path
+                if len(content) == 1 and content[0].is_dir():
+                    target_root = content[0]
+
+                init_database(DB_PATH)
+                raw_stats = ingest_raw_landmarks(DB_PATH, LANDMARK_DETECTOR_PATH, target_root, request.dataset_version)
+                normalized_stats = ingest_normalized_landmarks(DB_PATH, request.dataset_version)
+                
+                preprocessing_jobs[job_id]["status"] = "completed"
+                preprocessing_jobs[job_id]["message"] = f"Raw: {raw_stats}, Normalized: {normalized_stats}"
+                
+            finally:
+                # Cleanup temp files
+                if temp_extract_path.exists():
+                    shutil.rmtree(temp_extract_path)
+                    
+                # Cleanup source ZIP (landmarks are now in DB, raw images no longer needed)
+                if zip_path.exists():
+                    try:
+                        zip_path.unlink()
+                        print(f"Deleted processed ZIP: {zip_path}")
+                    except Exception as del_err:
+                        print(f"Warning: Could not delete ZIP {zip_path}: {del_err}")
+
+        except Exception as e:
+            print(f"Preprocessing error: {e}")
+            preprocessing_jobs[job_id]["status"] = "failed"
+            preprocessing_jobs[job_id]["message"] = str(e)
+
+    threading.Thread(target=task, daemon=True).start()
+
+    return TrainingJobResponse(job_id=job_id, status="pending", message="Preprocessing started")
+
+@app.get("/preprocess/{job_id}")
+async def get_preprocessing_status(job_id: str):
+    job = preprocessing_jobs.get(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Preprocessing job not found")
+    return job
+
 
 
 @app.get('/models')
@@ -193,10 +289,16 @@ async def list_models():
             })
     
     # Check active model
-    active_model_file = model_path / 'active_model.txt'
+    active_model_file = model_path / 'active_model.json'
     active_model = None
     if active_model_file.exists():
-        active_model = active_model_file.read_text().strip()
+        import json
+        try:
+            with open(active_model_file, 'r') as f:
+                active_data = json.load(f)
+            active_model = active_data.get('model_file')
+        except Exception:
+            pass
     
     return {
         'models': models,

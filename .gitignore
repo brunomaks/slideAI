@@ -227,6 +227,9 @@ ml_service/images/
 shared_artifacts/models/*.pkl
 shared_artifacts/models/*.keras
 shared_artifacts/models/*.pth
+shared_artifacts/models/*.metrics.json
+shared_artifacts/models/active_model.json
+shared_artifacts/models/active_model.txt
 shared_artifacts/data/*.sqlite
 shared_artifacts/images
 shared_artifacts/images-old

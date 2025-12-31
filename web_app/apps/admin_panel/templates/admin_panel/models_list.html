@@ -26,15 +26,12 @@
             <tr>
                 <td>
                     <strong>{{ model.version_id }}</strong>
-                    {% if model.is_active %}
-                    <span class="badge badge-success" style="margin-left: 0.5rem;">ACTIVE</span>
-                    {% endif %}
                 </td>
                 <td>
                     {% if model.is_active %}
-                    <span class="badge badge-success">Deployed</span>
+                    <span class="badge badge-success">Active</span>
                     {% else %}
-                    <span class="badge badge-secondary">Inactive</span>
+                    <span class="badge badge-secondary">Available</span>
                     {% endif %}
                 </td>
                 <td><strong>{{ model.test_accuracy|floatformat:2 }}%</strong></td>
@@ -46,15 +43,18 @@
                         style="padding: 0.25rem 0.5rem; font-size: 0.8rem;">View</a>
                     {% if not model.is_active %}
                     <a href="{% url 'admin_panel:deploy_model' model.id %}" class="btn btn-success"
-                        style="padding: 0.25rem 0.5rem; font-size: 0.8rem;">Deploy</a>
+                        style="padding: 0.25rem 0.5rem; font-size: 0.8rem;">Activate</a>
                     {% else %}
                     <span class="badge badge-info">Current</span>
                     {% endif %}
-                    
+
                     {% if not model.is_active %}
-                    <form action="{% url 'admin_panel:delete_model' model.id %}" method="post" style="display: inline-block; margin-left: 0.5rem;" onsubmit="return confirm('Are you sure you want to delete this model? This cannot be undone.');">
+                    <form action="{% url 'admin_panel:delete_model' model.id %}" method="post"
+                        style="display: inline-block; margin-left: 0.5rem;"
+                        onsubmit="return confirm('Are you sure you want to delete this model? This cannot be undone.');">
                         {% csrf_token %}
-                        <button type="submit" class="btn btn-danger" style="padding: 0.25rem 0.5rem; font-size: 0.8rem; background-color: #dc3545; border-color: #dc3545; color: white;">Delete</button>
+                        <button type="submit" class="btn btn-danger"
+                            style="padding: 0.25rem 0.5rem; font-size: 0.8rem; border-color: #dc3545; color: white;">Delete</button>
                     </form>
                     {% endif %}
                 </td>
