@@ -1,6 +1,5 @@
 from typing import Dict
 import cv2
-import os
 import json
 import sqlite3
 from pathlib import Path
@@ -40,9 +39,9 @@ def ingest_raw_landmarks(db_path: Path, landmarker_path: Path, raw_images_path: 
                         skipped += 1
                         continue
 
-                    gesture = gesture_folder,
-                    image_path = str(image_path.relative_to(raw_images_path)),
-                    handedness = results.handedness[0][0].category_name,
+                    gesture = gesture_folder.name
+                    image_path = str(image_path.relative_to(raw_images_path))
+                    handedness = results.handedness[0][0].category_name
                     landmarks = [[lm.x, lm.y, lm.z] for lm in results.hand_landmarks[0]]
 
                     try:
