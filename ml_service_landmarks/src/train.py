@@ -7,6 +7,8 @@ import sqlite3
 import os
 
 from sklearn.model_selection import train_test_split
+from sklearn.metrics import precision_score, recall_score, f1_score, confusion_matrix
+
 import tensorflow as tf
 from tensorflow.keras import layers, models
 
@@ -48,7 +50,7 @@ def train_model(args):
                 gesture_to_idx[gesture] = len(gesture_to_idx)
 
             y.append(gesture_to_idx[gesture])
-        
+
         X = np.array(X, dtype=np.float32)
         y = np.array(y, dtype=np.int32)
 
@@ -101,7 +103,7 @@ def train_model(args):
 
     model.summary()
 
-    # Stop trainign when val_loss does not improve for 10 consecutive epochs 
+    # Stop trainign when val_loss does not improve for 10 consecutive epochs
     early_stopping = tf.keras.callbacks.EarlyStopping(
         monitor='val_loss',
         patience=10,
@@ -123,6 +125,26 @@ def train_model(args):
 
     test_loss, test_accuracy = model.evaluate(test_dataset, verbose=2)
     print(f"Test Accuracy: {test_accuracy:.4f}")
+
+    # Get predictions for test set
+    y_pred_probs = model.predict(test_dataset)
+    y_pred = np.argmax(y_pred_probs, axis=1)
+
+    # true labels
+    y_true = np.concatenate([y for x, y in test_dataset], axis=0)
+
+    # Compute precision, recall, f1
+    precision = precision_score(y_true, y_pred, average='macro')
+    recall = recall_score(y_true, y_pred, average='macro')
+    f1 = f1_score(y_true, y_pred, average='macro')
+
+    # Compute confusion matrix
+    conf_matrix = confusion_matrix(y_true, y_pred)
+
+    print(f"Test Precision: {precision:.4f}")
+    print(f"Test Recall: {recall:.4f}")
+    print(f"Test F1 Score: {f1:.4f}")
+    print(f"Confusion Matrix:\n{conf_matrix}")
 
     # Save model with versioning
     version = args.version or datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -179,6 +201,10 @@ def train_model(args):
         'test': {
             'accuracy': float(test_accuracy),
             'loss': float(test_loss),
+            'precision': float(precision),
+            'recall': float(recall),
+            'f1_score': float(f1),
+            'confusion_matrix': conf_matrix.tolist()
         }
     }
 
