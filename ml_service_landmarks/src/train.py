@@ -13,7 +13,6 @@ import tensorflow as tf
 from tensorflow.keras import layers, models
 
 DB_PATH = os.getenv('DATABASE_PATH')
-print(f"DATABASE PATH resolved: {DB_PATH}")
 
 def train_model(args):
     print("Training MLP model...")

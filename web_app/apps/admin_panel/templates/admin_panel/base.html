@@ -363,7 +363,10 @@
             <h1>SlideAi Admin Panel</h1>
             <div class="user-info">
                 <span>{{ user.username }}</span>
-                <a href="{% url 'admin_panel:logout' %}" class="btn btn-secondary">Logout</a>
+                <form method="post" action="{% url 'admin_panel:logout' %}" style="display:inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-secondary">Logout</button>
+                </form>
             </div>
         </div>
     </div>

@@ -44,6 +44,7 @@ def register_existing_models():
         # Sensible defaults for required fields
         default_epochs = 10
         default_batch = 32
+        train_data_size = 4588 # default number of entries for dataset featuring (like, stop and two_up_inverted)
 
         ModelVersion.objects.create(
             version_id=version_id,
@@ -53,6 +54,7 @@ def register_existing_models():
             # Hyperparameters (defaults; actual may differ)
             epochs=default_epochs,
             batch_size=default_batch,
+            train_dataset_size=train_data_size,
             # Performance metrics
             test_accuracy=0.0,
             is_active=False
