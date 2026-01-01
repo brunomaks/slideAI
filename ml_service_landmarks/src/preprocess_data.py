@@ -113,8 +113,9 @@ def ingest_normalized_landmarks(db_path: Path, dataset_version: str) -> Dict[str
 def _normalize_and_validate_row(landmarks_json: str, handedness: str) -> np.ndarray | None:
     landmarks = np.array(json.loads(landmarks_json))
     normalized = _normalize_landmarks(landmarks, handedness)
+    normalized_and_rotated = _normalize_rotation(landmarks)
 
-    validation = validate_landmarks(normalized)
+    validation = validate_landmarks(normalized_and_rotated)
     if not validation:
         return None
 
@@ -192,12 +193,16 @@ def _normalize_landmarks(landmarks: np.ndarray, handedness: str, reference_idx: 
     if handedness == "Left":
         landmarks[:, 0] = -landmarks[:, 0]
 
-    return _normalize_rotation(landmarks, reference_idx)
+    return landmarks
 
-# rotate all the landmarks to point in the same direction (down)
-def _normalize_rotation(landmarks: np.ndarray, reference_idx: int) -> np.ndarray:
+# rotate all the landmarks to roughly point in the same direction (down)
+# vector wrist - middle finger MCP must point down 
+def _normalize_rotation(landmarks: np.ndarray, reference_idx: int = 9) -> np.ndarray:
     reference_vector = landmarks[reference_idx]  # Middle finger MCP
+
+    # figure out the angle between positive x axis and the MCP vector 
     current_angle = np.arctan2(reference_vector[1], reference_vector[0])
+
     target_angle = -np.pi / 2
     rotation_angle = target_angle - current_angle
     return _rotate_landmarks(landmarks, rotation_angle)
@@ -229,6 +234,8 @@ def landmarks_within_bounds(landmarks: np.ndarray, x_bounds=(-3, 3), y_bounds=(-
         return False
     return True
 
+# in our case fingers coordinates are actually below the wrist which is at origin because they are all rotated down
+# above here means in terms of coordinates 
 def fingers_above_wrist(landmarks: np.ndarray, tip_ids=(4, 8, 12, 16, 20), max_down=1) -> bool:
     ys = landmarks[:, 1]
     num_down = sum(ys[i] > 0 for i in tip_ids)

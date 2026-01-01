@@ -14,6 +14,7 @@ services:
       - LANDMARK_DETECTOR_PATH=/models/hand_landmarker.task
       - INFERENCE_API_URL=http://ml-inference-landmarks:8000
       - PORT=8003
+      - PYTHONPATH=/workspace # to resolve import via src.preprocess_data in tests
     ports:
       - "8003:8003"
     # profiles: [ "gpu" ]
