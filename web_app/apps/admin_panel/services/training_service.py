@@ -57,38 +57,22 @@ class TrainingService:
             TrainingRun instance
         """
         # Create version name if not provided
-        version_name = config.get('version_name') or timezone.now().strftime("model_%Y%m%d_%H%M%S")
+        dataset = config['dataset_version']
         
-        # Check landmarks database
-        db_path = Path(settings.DATABASES['landmarks']['NAME'])
-        if not db_path.exists():
-             raise ValueError(
-                "Cannot start training: No training data found. "
-                "Please upload gesture images first."
-            )
-            
-        # Optional: check count (rough check if any data exists)
-        try:
-             import sqlite3
-             with sqlite3.connect(db_path) as conn:
-                 cursor = conn.cursor()
-                 cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='gestures_processed'")
-                 if not cursor.fetchone():
-                      raise ValueError("Landmarks database exists but is empty/uninitialized.")
-                     
-                 cursor.execute("SELECT COUNT(*) FROM gestures_processed")
-                 count = cursor.fetchone()[0]
-                 if count == 0:
-                     raise ValueError("Landmarks database is empty.")
-        except Exception as e:
-            # Don't block entirely if check fails, but warn
-            pass
+        dataset_version = dataset.version
+
+        version_name = str(dataset_version) + str(timezone.now().strftime("_%Y%m%d_%H%M%S"))
+
+        sample_count = dataset.validated_preprocessed_samples
+        if sample_count == 0:
+            raise ValueError("There are 0 samples in the dataset.")
         
         # Prepare API request payload
         api_payload = {
             'epochs': config['epochs'],
             'batch_size': config['batch_size'],
-            'version': version_name,
+            'dataset_version': dataset_version,
+            'version_name': version_name
         }
         
         # Call the ML Training API

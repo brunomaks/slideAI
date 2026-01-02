@@ -5,6 +5,7 @@ import sqlite3
 from pathlib import Path
 import numpy as np
 import mediapipe as mp
+from collections import defaultdict
 
 # exposed functions
 __all__ = [
@@ -23,6 +24,7 @@ def ingest_raw_landmarks(db_path: Path, landmarker_path: Path, raw_images_path: 
 
         skipped = 0
         inserted = 0
+        total = 0
 
         with _create_landmarker(landmarker_path) as landmarker:
             for gesture_folder in raw_images_path.iterdir():
@@ -32,6 +34,7 @@ def ingest_raw_landmarks(db_path: Path, landmarker_path: Path, raw_images_path: 
                     continue
 
                 for file in gesture_path.iterdir():
+                    total += 1
                     image_path = gesture_path / file
                     results = _extract_landmarks(image_path, landmarker)
 
@@ -62,8 +65,9 @@ def ingest_raw_landmarks(db_path: Path, landmarker_path: Path, raw_images_path: 
                         skipped += 1
 
         return {
+            "total": total,
             "inserted": inserted,
-            "skipped": skipped,
+            "skipped": skipped
         }
 
 def ingest_normalized_landmarks(db_path: Path, dataset_version: str) -> Dict[str, int]:
@@ -78,6 +82,7 @@ def ingest_normalized_landmarks(db_path: Path, dataset_version: str) -> Dict[str
 
         inserted = 0
         discarded = 0
+        label_stats = defaultdict(int)
 
         for raw_id, gesture, image_path, handedness, landmarks_json in rows:
 
@@ -100,20 +105,22 @@ def ingest_normalized_landmarks(db_path: Path, dataset_version: str) -> Dict[str
                     dataset_version
                 ))
                 inserted += 1
+                label_stats[gesture] += 1
             except sqlite3.IntegrityError:
                 # Duplicate processed record for this dataset_version/image_path
                 discarded += 1
 
         return {
             "inserted": inserted,
-            "discarded": discarded
+            "discarded": discarded,
+            "label_stats": dict(label_stats)
         }
 
 
 def _normalize_and_validate_row(landmarks_json: str, handedness: str) -> np.ndarray | None:
     landmarks = np.array(json.loads(landmarks_json))
     normalized = _normalize_landmarks(landmarks, handedness)
-    normalized_and_rotated = _normalize_rotation(landmarks)
+    normalized_and_rotated = _normalize_rotation(normalized)
 
     validation = validate_landmarks(normalized_and_rotated)
     if not validation:
@@ -220,12 +227,12 @@ def validate_landmarks(landmarks: np.ndarray) -> bool:
     return (
         wrist_at_origin(landmarks)
         and landmarks_within_bounds(landmarks)
-        and fingers_above_wrist(landmarks)
     )
 
 def wrist_at_origin(landmarks: np.ndarray) -> bool:
     return np.allclose(landmarks[0], [0, 0], atol=1e-3)
 
+# helps to discard anomalies when a resting hand is detected instead of the actual gesture
 def landmarks_within_bounds(landmarks: np.ndarray, x_bounds=(-3, 3), y_bounds=(-3, 0)) -> bool:
     xs, ys = landmarks[:, 0], landmarks[:, 1]
     if xs.min() < x_bounds[0] or xs.max() > x_bounds[1]:

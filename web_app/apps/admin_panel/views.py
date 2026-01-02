@@ -13,7 +13,7 @@ import zipfile
 import shutil
 from pathlib import Path
 
-from apps.core.models import ModelVersion, Prediction, TrainingRun
+from apps.core.models import ModelVersion, Prediction, TrainingRun, Dataset
 from .forms import DataUploadForm, TrainingConfigForm, ModelDeploymentForm
 from .services.model_manager import ModelManager
 from .services.training_service import TrainingService
@@ -69,13 +69,9 @@ def dashboard(request):
     # Get model count
     total_models = ModelVersion.objects.count()
     
-    # Get dataset stats (from Landmarks DB)
-    try:
-        uploader = DataUploader()
-        stats = uploader.get_upload_statistics()
-        total_samples = stats['total_samples']
-    except Exception:
-        total_samples = 0
+    # Get dataset stats
+    stats = Dataset.get_latest_statistics()
+    total_samples = stats['total_samples']
     
     # Prediction distribution by class (last 24h)
     class_distribution = Prediction.objects.filter(
@@ -228,10 +224,14 @@ def upload_data(request):
         if form.is_valid():
             try:
                 uploader = DataUploader()
-                counts = uploader.handle_upload(request.FILES['data_file'])
+                data_file = request.FILES['data_file']
+                dataset_version = form.cleaned_data['dataset_version']
+
+                counts = uploader.handle_upload(data_file, dataset_version=dataset_version, user=request.user)
+
                 messages.success(
                     request, 
-                    f"Successfully processed {counts['total']} samples into the dataset."
+                    f"Successfully processed {counts['total']} raw samples resulting in."
                 )
                 return redirect('admin_panel:view_dataset')
             except Exception as e:
@@ -251,9 +251,7 @@ def upload_data(request):
 def view_dataset(request):
     """View training dataset statistics (Landmarks)."""
     
-    # Get stats from DataUploader (which now queries SQLite)
-    uploader = DataUploader()
-    stats = uploader.get_upload_statistics()
+    stats = Dataset.get_latest_statistics()
     
     label_stats = stats.get('by_label', [])
     total_samples = stats.get('total_samples', 0)

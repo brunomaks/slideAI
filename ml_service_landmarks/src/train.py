@@ -20,6 +20,7 @@ def train_model(args):
 
     BATCH_SIZE = args.batch_size
     EPOCHS = args.epochs
+    DATASET_VERSION = args.dataset_version
     INPUT_DIM = 42
     CLASS_NAMES = []
     TRAIN_SAMPLES = 0
@@ -27,12 +28,14 @@ def train_model(args):
     TEST_SAMPLES = 0
 
     try:
+        print(f"DATASET_VERSION in train.py: {DATASET_VERSION}", flush=True)
         conn = sqlite3.connect(DB_PATH)
         cur = conn.cursor()
 
         rows = cur.execute("""
             SELECT gesture, landmarks FROM gestures_processed
-        """).fetchall()
+            WHERE dataset_version = ?
+        """, (DATASET_VERSION,)).fetchall() # pass a tuple of 1 element because of how sqlite binding works
 
         conn.close()
 
@@ -146,7 +149,7 @@ def train_model(args):
     print(f"Confusion Matrix:\n{conf_matrix}")
 
     # Save model with versioning
-    version = args.version or datetime.now().strftime("%Y%m%d_%H%M%S")
+    version = args.version_name
 
     output_path = Path(args.model_output_path)
     output_path.mkdir(parents=True, exist_ok=True)
@@ -207,7 +210,7 @@ def train_model(args):
         }
     }
 
-    return test_accuracy, metrics
+    return metrics
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Train a MLP model for gesture recognition.")

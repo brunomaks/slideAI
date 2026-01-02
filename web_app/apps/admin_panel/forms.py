@@ -1,6 +1,7 @@
 from django import forms
-from apps.core.models import ModelVersion, TrainingRun
+from apps.core.models import Dataset
 from django.core.validators import FileExtensionValidator
+from django.forms import ModelChoiceField
 
 
 class DataUploadForm(forms.Form):
@@ -9,15 +10,21 @@ class DataUploadForm(forms.Form):
         help_text="Upload a ZIP file containing ONLY folders of images (e.g. 'like/', 'stop/').",
         validators=[FileExtensionValidator(['zip'])]
     )
+    dataset_version = forms.CharField(
+        max_length=50,
+        required=True,
+        label='Dataset Version',
+        help_text='Enter a version identifier for this dataset (e.g., v1.0, 2024-01-15)'
+    )
 
 
 class TrainingConfigForm(forms.Form):
     """Form for configuring a new training run."""
-    version_name = forms.CharField(
-        max_length=100,
-        required=False,
-        label='Version Name (optional)',
-        help_text='Leave empty to auto-generate timestamp-based name'
+    dataset_version = forms.ModelChoiceField(
+        queryset=Dataset.objects.all(),
+        label='Dataset Version',
+        help_text='Select which dataset version to use for training',
+        empty_label="Choose a dataset version"
     )
     description = forms.CharField(
         widget=forms.Textarea(attrs={'rows': 3}),

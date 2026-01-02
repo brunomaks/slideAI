@@ -10,7 +10,58 @@ class BaseModel(models.Model):
         abstract = True
 
 
+class Dataset(BaseModel):
+    version = models.CharField(max_length=50, unique=True)
+    uploaded_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+    raw_samples = models.IntegerField()
+    raw_preprocessed_samples = models.IntegerField()
+    validated_preprocessed_samples = models.IntegerField()
+    zip_filename = models.CharField(max_length=255)
+    label_stats = models.JSONField()
 
+    class Meta:
+        ordering = ['-uploaded_at']
+
+    def __str__(self):
+        return f"{self.version} ({self.validated_preprocessed_samples} samples)"
+    
+    @classmethod
+    def get_latest_statistics(cls):
+        """Get statistics from the most recent dataset."""
+        latest_dataset = cls.objects.first()  # Gets latest due to ordering
+        
+        if not latest_dataset:
+            return {
+                'by_label': [],
+                'total_samples': 0,
+            }
+        
+        # Convert {"like": 123} to [{"label": "like", "count": 123}]
+        by_label = [
+            {'label': label, 'count': count}
+            for label, count in latest_dataset.label_stats.items()
+        ]
+        
+        return {
+            'by_label': by_label,
+            'total_samples': latest_dataset.validated_preprocessed_samples,
+        }
+    
+    @classmethod
+    def get_statistics_for_version(cls, version):
+        """Get statistics for a specific dataset version."""
+        try:
+            dataset = cls.objects.get(version=version)
+            return {
+                'by_label': dataset.label_stats,
+                'total_samples': dataset.validated_preprocessed_samples,
+            }
+        except cls.DoesNotExist:
+            return {
+                'by_label': [],
+                'total_samples': 0,
+            }
 
 class ModelVersion(BaseModel):
     """Track trained model versions and their metadata."""

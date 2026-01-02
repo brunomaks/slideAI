@@ -20,6 +20,12 @@
     <form method="post" enctype="multipart/form-data" id="upload-form">
         {% csrf_token %}
 
+        <div class="form-group" style="margin-bottom: 1rem;">
+            {{ form.dataset_version.label_tag }}
+            {{ form.dataset_version }}
+            <small>{{ form.dataset_version.help_text }}</small>
+        </div>
+
         <div class="form-group">
             {{ form.data_file.label_tag }}
             {{ form.data_file }}
