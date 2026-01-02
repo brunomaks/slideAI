@@ -167,6 +167,22 @@ function WebSocketProviderComponent({ children }) {
         setPrediction(null);
     }, [cleanup]);
 
+    const sendMessage = useCallback((message) => {
+        if (wsRef.current?.readyState === WebSocket.OPEN) {
+            try {
+                const payload = typeof message === 'string' ? message : JSON.stringify(message);
+                wsRef.current.send(payload);
+                console.log("Sent message:", payload);
+                return true;
+            } catch (error) {
+                console.error("Error sending message:", error);
+                return false;
+            }
+        }
+        console.warn("WebSocket is not connected");
+        return false;
+    }, []);
+
     const value = {
         stream,
         processedFrame,
@@ -175,6 +191,7 @@ function WebSocketProviderComponent({ children }) {
         connectionError,
         connectStream,
         disconnectStream,
+        sendMessage,
     };
 
     return (

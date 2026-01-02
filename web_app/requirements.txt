@@ -3,6 +3,7 @@ djangorestframework
 joblib
 scikit-learn
 numpy
+seaborn
 opencv-python-headless
 Pillow
 requests
@@ -14,3 +15,4 @@ aiohttp
 tqdm
 channels
 daphne
+av

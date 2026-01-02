@@ -1,6 +1,6 @@
-import React, { useRef, useEffect } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { useWebSocket } from "../contexts/WebSocketContext";
-import { CropperProvider } from "../contexts/MediaPipeCropper";
+import { useHandLandmarks } from "../hooks/useHandLandmarks";
 
 const streamConfig = {
     fps: parseInt(import.meta.env.VITE_MAX_STREAM_FPS) || 5,
@@ -12,7 +12,9 @@ const streamConfig = {
 export default function CameraStream({ onStreamReady }) {
     const videoRef = useRef(null);
     const rawStreamRef = useRef(null);
-    const { connectStream, disconnectStream } = useWebSocket();
+    const { connectStream, disconnectStream, sendMessage } = useWebSocket();
+    const [stream, setStream] = useState(null)
+    const subscribeToLandmarks = useHandLandmarks(stream);
 
     useEffect(() => {
         const startCamera = async () => {
@@ -26,18 +28,16 @@ export default function CameraStream({ onStreamReady }) {
                     audio: false,
                 });
 
-
-                //TODO: mediapipe
-                const croppedStream = CropperProvider(rawStream);
+                setStream(rawStream)
 
                 if (videoRef.current) {
                     videoRef.current.srcObject = rawStream;
                     rawStreamRef.current = rawStream;
 
-                    connectStream(croppedStream);
+                    connectStream(rawStream);
 
                     if (onStreamReady) {
-                        onStreamReady(croppedStream);
+                        onStreamReady(rawStream);
                     }
                 }
             } catch (error) {
@@ -59,6 +59,25 @@ export default function CameraStream({ onStreamReady }) {
             disconnectStream();
         };
     }, []);
+
+    let requestId = 0;
+
+    useEffect(() => {
+        if (!subscribeToLandmarks) return;
+
+        const unsubscribe = subscribeToLandmarks((landmarks_obj) => {
+            requestId += 1
+            const message = {
+                request_id: requestId,
+                landmarks: landmarks_obj.landmarks,
+                handedness: landmarks_obj.handedness
+            }
+
+            sendMessage(message)
+        });
+
+        return () => unsubscribe();
+    }, [subscribeToLandmarks]);
 
     return (
         <div className="camera-stream-wrapper">

@@ -296,6 +296,18 @@
             transition: all 0.3s ease;
         }
 
+        .stats-grid .confusion-matrix {
+            grid-column: span 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .stat-card img {
+            max-width: 100%;
+            height: auto;
+        }
+
         .stat-card:hover {
             transform: translateY(-2px);
             box-shadow: 0 6px 20px rgba(102, 126, 234, 0.3);
@@ -351,7 +363,10 @@
             <h1>SlideAi Admin Panel</h1>
             <div class="user-info">
                 <span>{{ user.username }}</span>
-                <a href="{% url 'admin_panel:logout' %}" class="btn btn-secondary">Logout</a>
+                <form method="post" action="{% url 'admin_panel:logout' %}" style="display:inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-secondary">Logout</button>
+                </form>
             </div>
         </div>
     </div>

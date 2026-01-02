@@ -44,7 +44,7 @@
                 </td>
                 <td style="font-size: 0.85rem;">
                     {% if run.config %}
-                    {{ run.config.epochs }} epochs, batch {{ run.config.batch_size }}, {{ run.config.image_size }}px
+                    {{ run.config.epochs }} epochs, batch {{ run.config.batch_size }}
                     {% endif %}
                 </td>
                 <td>{{ run.started_at|date:"M d, H:i"|default:"-" }}</td>
@@ -63,6 +63,15 @@
                     {% endif %}
                     <button type="button" class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;"
                         onclick="toggleLogs('logs-{{ run.id }}')">Logs</button>
+                    {% if run.status in 'completed,failed,cancelled' %}
+                    <form method="post" action="{% url 'admin_panel:delete_training_run' run.id %}"
+                        style="display:inline; margin-left: 0.25rem;"
+                        onsubmit="return confirm('Delete this training run? This cannot be undone.');">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger"
+                            style="padding: 0.25rem 0.5rem; font-size: 0.8rem;">Delete</button>
+                    </form>
+                    {% endif %}
                 </td>
             </tr>
             <tr id="logs-{{ run.id }}" style="display: none;">
@@ -70,8 +79,9 @@
                     <div
                         style="background: rgba(0,0,0,0.3); padding: 1rem; border-radius: 4px; max-height: 300px; overflow-y: auto;">
                         {% if run.error_message %}
-                        <div style="color: #ff6b6b; margin-bottom: 0.5rem;"><strong>Error:</strong> {{ run.error_message
-                            }}</div>
+                        <div style="color: #ff6b6b; margin-bottom: 0.5rem;">
+                            <strong>Error</strong> {{ run.error_message }}
+                        </div>
                         {% endif %}
                         {% if run.logs %}
                         <pre style="margin: 0; white-space: pre-wrap; font-size: 0.85rem;">{{ run.logs }}</pre>

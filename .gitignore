@@ -131,6 +131,7 @@ celerybeat.pid
 .venv
 env/
 venv/
+venv2/
 ENV/
 env.bak/
 venv.bak/
@@ -226,6 +227,10 @@ model/
 ml_service/images/
 shared_artifacts/models/*.pkl
 shared_artifacts/models/*.keras
+shared_artifacts/models/*.pth
+shared_artifacts/models/*.metrics.json
+shared_artifacts/models/active_model.json
+shared_artifacts/models/active_model.txt
 shared_artifacts/data/*.sqlite
 shared_artifacts/images
 shared_artifacts/images-old
@@ -233,7 +238,6 @@ shared_artifacts/images-old
 .idea/
 .env/
 .vite/
-
 media/
 
 # Ignore large archives and temp artifacts

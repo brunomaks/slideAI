@@ -1,13 +1,13 @@
 import json
+import asyncio
 import aiohttp
 from channels.generic.websocket import AsyncWebsocketConsumer
 from .views import process_frame
 
-class VideoStreamConsumer(AsyncWebsocketConsumer):
+class StreamConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         self.session = aiohttp.ClientSession()
-        self.frame_count = 0
-        self.processing = False
+        self.inference_semaphore = asyncio.Semaphore(3)
         await self.accept()
         print("WS connection accepted")
 
@@ -15,6 +15,7 @@ class VideoStreamConsumer(AsyncWebsocketConsumer):
         if self.session:
             await self.session.close()
             self.session = None
+        print(f"WS connection closed: {close_code}")
 
     async def receive(self, text_data=None, bytes_data=None):
         if text_data:
@@ -22,28 +23,43 @@ class VideoStreamConsumer(AsyncWebsocketConsumer):
                 data = json.loads(text_data)
                 msg_type = data.get("type")
 
-                if msg_type == "frame":
-                    await self.handle_frame(data)
+                if msg_type == "landmarks":
+                    await self.handle_landmarks(data)
                 elif msg_type == "ping":
                     await self.send(text_data=json.dumps({"type": "pong"}))
             except Exception as e:
                 print(f"Error processing message: {e}")
 
-    async def handle_frame(self, data):
-        if self.processing:
-            return
-
-        self.processing = True
+    async def handle_landmarks(self, data):
         try:
-            frame_b64 = data.get("frame")
-            if not frame_b64:
+            request_id = data.get("request_id")
+            landmarks = data.get("landmarks")
+            handedness = data.get("handedness")
+
+            if request_id is None or landmarks is None or handedness is None:
+                print("Missing required fields in landmarks message")
                 return
-            response = await process_frame(self.session, frame_b64)
-            if response:
-                await self.send(text_data=json.dumps(response))
-            self.frame_count += 1
+
+            if self.inference_semaphore.locked() and self.inference_semaphore._value == 0:
+                print(f"All 3 inference slots busy, skipping request {request_id}")
+                return
+            
+            asyncio.create_task(self.process_inference_request(request_id, landmarks, handedness))
 
         except Exception as e:
-            print(f"Error processing frame: {e}")
-        finally:
-            self.processing = False
+            print(f"Error handling landmarks: {e}")
+
+    async def process_inference_request(self, request_id, landmarks, handedness):
+        async with self.inference_semaphore:
+            try:
+                result = await process_frame(self.session, landmarks, handedness)
+                
+                if result:
+                    response = {
+                        "type": "inference_result",
+                        "request_id": request_id,
+                        "result": result
+                    }
+                    await self.send(text_data=json.dumps(response))
+            except Exception as e:
+                print(f"Error processing inference request {request_id}: {e}")

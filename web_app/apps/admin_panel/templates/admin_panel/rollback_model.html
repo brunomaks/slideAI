@@ -11,7 +11,7 @@
     <ul style="margin-left: 2rem; line-height: 1.8;">
         <li>Deactivate the current production model</li>
         <li>Activate this model version as the new production model</li>
-        <li>Update the <code>active_model.txt</code> file</li>
+        <li>Update the <code>active_model.json</code> config file</li>
         <li>All new predictions will use this model</li>
     </ul>
 
@@ -29,8 +29,8 @@
             <td>{{ model.training_date|date:"Y-m-d H:i:s" }}</td>
         </tr>
         <tr>
-            <th>Original Deployment</th>
-            <td>{{ model.deployment_date|date:"Y-m-d H:i:s"|default:"Never deployed" }}</td>
+            <th>Last Activated</th>
+            <td>{{ model.deployment_date|date:"Y-m-d H:i:s"|default:"Never activated" }}</td>
         </tr>
     </table>
 

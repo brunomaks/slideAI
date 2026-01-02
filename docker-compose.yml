@@ -1,5 +1,23 @@
 services:
-  # ML Training Service (runs the Training API server)
+  ml-training-landmarks:
+    build: ./ml_service_landmarks
+    container_name: ml-training-landmarks
+    volumes:
+      - ./ml_service_landmarks:/workspace
+      - ./shared_artifacts/models:/models
+      - ./shared_artifacts/images:/images
+      - ./shared_artifacts/data:/data
+    environment:
+      - MODEL_OUTPUT_PATH=/models
+      - DATABASE_PATH=/data/landmarks.sqlite
+      - RAW_IMAGES_PATH=/images
+      - LANDMARK_DETECTOR_PATH=/models/hand_landmarker.task
+      - INFERENCE_API_URL=http://ml-inference-landmarks:8000
+      - PORT=8003
+    ports:
+      - "8003:8003"
+    # profiles: [ "gpu" ]
+
   ml-training:
     build:
       context: ./ml_service
@@ -18,7 +36,6 @@ services:
     profiles: [ "gpu" ]
     # GPU support is optional via docker-compose.override.yml
 
-    # CPU-only training service for systems without GPU
   ml-training-cpu:
     build:
       context: ./ml_service
@@ -37,6 +54,15 @@ services:
       - "8003:8003"
     profiles: [ "cpu" ]
     # Runs the API server (no GPU available)
+
+  ml-inference-landmarks:
+    build: ./ml_inference_landmarks
+    container_name: ml-inference-landmarks
+    volumes:
+      - ./shared_artifacts/models:/models
+    environment:
+      - ACTIVE_MODEL_PATH=/models/active_model.json
+      - MODEL_PATH=/models
 
   ml-inference:
     build:
@@ -67,16 +93,13 @@ services:
       - DJANGO_SETTINGS_MODULE=config.settings.development
       - MODEL_PATH=/models
       - DATABASE_PATH=/data/database.sqlite
+      - LANDMARKS_DB_PATH=/data/landmarks.sqlite
       - MEDIA_ROOT=/images
       - ALLOWED_HOSTS=localhost,frontend
-      - INFERENCE_URL=http://ml-inference:8002/inference/
-      - RESIZE_URL=http://127.0.0.1:8001/resize/
+      - INFERENCE_URL=http://ml-inference-landmarks:8002/inference
       - HOST_URL=http://127.0.0.1:8001/
       - DEBUG_SAVE=False
-      - ML_TRAINING_API_URL=http://ml-training:8003
-    depends_on:
-      - ml-inference
-      - ml-training
+      - ML_TRAINING_API_URL=http://ml-training-landmarks:8003
 
   frontend:
     build:

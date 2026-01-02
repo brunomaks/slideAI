@@ -19,6 +19,7 @@ export default function SlidesView() {
     const [showDialog, setShowDialog] = useState(false);
     const lastNavigationRef = useRef(0)
     const LOCK_DURATION = 2000
+    const CONFIDENCE_THRESHOLD = 0.9
 
     const { prediction } = useWebSocket();
 
@@ -102,6 +103,11 @@ export default function SlidesView() {
 
         lastNavigationRef.current = now
 
+        if (prediction?.confidence < CONFIDENCE_THRESHOLD) {
+            console.log("Prediction discarded due to low confidence")
+            return
+        }
+
         if (showDialog) {
             if (prediction.predicted_class === "like") {
                 setShowDialog(false)
@@ -115,16 +121,15 @@ export default function SlidesView() {
         if (!deckRef.current || !prediction) return
         if (!deckRef.current.isReady()) return
 
-        switch (prediction.predicted_class) {
-            case "left":
-                deckRef.current.next();
-                break;
-            case "right":
-                deckRef.current.prev();
-                break;
-            case "stop":
-                setShowDialog(true);
-                break;
+
+        if (prediction.predicted_class === "two_up_inverted") {
+            if (prediction.direction === "Left") {
+                deckRef.current.next()
+            } else if (prediction.direction === "Right") {
+                deckRef.current.prev()
+            }
+        } else if (prediction.predicted_class === "stop") {
+            setShowDialog(true);
         }
 
     }, [prediction])

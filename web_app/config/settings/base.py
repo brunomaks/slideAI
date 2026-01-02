@@ -18,7 +18,6 @@ INSTALLED_APPS = [
     'channels',
     'apps.core',
     'apps.main',
-    'apps.resize',
     'apps.admin_panel',
 ]
 
@@ -66,6 +65,10 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': os.environ.get('DATABASE_PATH', '/data/database.sqlite'),
+    },
+    'landmarks': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': os.environ.get('LANDMARKS_DB_PATH', '/data/landmarks.sqlite'),
     }
 }
 
@@ -88,3 +91,6 @@ LOGIN_REDIRECT_URL = reverse_lazy('admin_panel:dashboard')
 LOGOUT_REDIRECT_URL = reverse_lazy('admin_panel:login')
 
 CORS_ALLOWED_ORIGINS = []
+
+# ML Training API URL
+ML_TRAINING_API_URL = os.environ.get('ML_TRAINING_API_URL', 'http://ml-training-landmarks:8003')
