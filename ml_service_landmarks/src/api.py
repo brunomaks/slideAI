@@ -30,6 +30,7 @@ preprocessing_jobs: Dict[str, Dict[str, Any]] = {}
 class TrainingConfig(BaseModel):
     epochs: int = 10
     batch_size: int = 32
+    learning_rate: float = 0.001
     dataset_version: str
     version_name: str
 
@@ -65,6 +66,7 @@ def run_training(job_id: str, config: dict):
             def __init__(self, cfg):
                 self.epochs = cfg.get('epochs', 10)
                 self.batch_size = cfg.get('batch_size', 32)
+                self.learning_rate = cfg.get('learning_rate')
                 self.dataset_version = cfg.get('dataset_version')
                 self.version_name = cfg.get('version_name')
                 self.no_set_active = True
@@ -87,8 +89,8 @@ def run_training(job_id: str, config: dict):
             if metrics:
                 training_jobs[job_id]['metrics'] = metrics
             
-            version = config.get('dataset_version')
-            training_jobs[job_id]['model_file'] = f"gesture_model_{version}.keras" if version else (metrics.get('model_file') if metrics else None)
+            version = config['dataset_version']
+            training_jobs[job_id]['model_file'] = f"gesture_model_{version}.keras"
             
             # Trigger inference service reload if active_model.json was updated
             inference_url = os.getenv('INFERENCE_API_URL')

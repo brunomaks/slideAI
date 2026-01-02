@@ -32,9 +32,8 @@ class TrainingConfigForm(forms.Form):
         label='Description',
         help_text='Describe what makes this training run different'
     )
-    
     epochs = forms.IntegerField(
-        initial=15,
+        initial=30,
         min_value=1,
         max_value=100,
         label='Epochs'
@@ -44,6 +43,12 @@ class TrainingConfigForm(forms.Form):
         min_value=8,
         max_value=128,
         label='Batch Size'
+    )
+    learning_rate = forms.FloatField(
+        initial=0.001,
+        min_value=0.00001,
+        max_value=1.0,
+        label='Learning Rate',
     )
 
 

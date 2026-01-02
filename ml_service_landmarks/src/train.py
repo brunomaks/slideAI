@@ -20,6 +20,7 @@ def train_model(args):
 
     BATCH_SIZE = args.batch_size
     EPOCHS = args.epochs
+    LEARNING_RATE = args.learning_rate
     DATASET_VERSION = args.dataset_version
     INPUT_DIM = 42
     CLASS_NAMES = []
@@ -28,7 +29,6 @@ def train_model(args):
     TEST_SAMPLES = 0
 
     try:
-        print(f"DATASET_VERSION in train.py: {DATASET_VERSION}", flush=True)
         conn = sqlite3.connect(DB_PATH)
         cur = conn.cursor()
 
@@ -98,7 +98,7 @@ def train_model(args):
     ])
 
     model.compile(
-        optimizer=tf.keras.optimizers.Adam(learning_rate=0.001),
+        optimizer=tf.keras.optimizers.Adam(learning_rate=LEARNING_RATE),
         loss='sparse_categorical_crossentropy',
         metrics=['accuracy']
     )

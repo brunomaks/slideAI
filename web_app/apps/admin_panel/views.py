@@ -28,26 +28,6 @@ from .services.training_service import TrainingService
 from .services.data_uploader import DataUploader
 
 
-# Webhook endpoint for training metrics callback
-@csrf_exempt
-@require_POST
-def training_callback(request):
-    """Receive training metrics and register model/metrics directly from ML API."""
-    try:
-        data = json.loads(request.body.decode('utf-8'))
-        job_id = data.get('job_id')
-        version = data.get('version')
-        metrics = data.get('metrics')
-        if not (job_id and version and metrics):
-            return JsonResponse({'error': 'Missing job_id, version, or metrics'}, status=400)
-
-        # Register model and metrics using TrainingService
-        service = TrainingService()
-        service.register_training_callback(job_id, version, metrics)
-        return JsonResponse({'status': 'ok'})
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
-
 def is_staff_or_superuser(user):
     """Check if user is staff or superuser."""
     return user.is_staff or user.is_superuser
@@ -286,7 +266,7 @@ def upload_data(request):
 
                 messages.success(
                     request, 
-                    f"Successfully processed {counts['total']} raw samples resulting in."
+                    f"Successfully processed {counts['total']} raw samples."
                 )
                 return redirect('admin_panel:view_dataset')
             except Exception as e:
