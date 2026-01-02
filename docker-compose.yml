@@ -14,6 +14,7 @@ services:
       - LANDMARK_DETECTOR_PATH=/models/hand_landmarker.task
       - INFERENCE_API_URL=http://ml-inference-landmarks:8000
       - PORT=8003
+      - PYTHONUNBUFFERED=1
     ports:
       - "8003:8003"
     # profiles: [ "gpu" ]
@@ -63,6 +64,8 @@ services:
     environment:
       - ACTIVE_MODEL_PATH=/models/active_model.json
       - MODEL_PATH=/models
+      - PYTHONUNBUFFERED=1
+
 
   ml-inference:
     build:
@@ -100,6 +103,7 @@ services:
       - HOST_URL=http://127.0.0.1:8001/
       - DEBUG_SAVE=False
       - ML_TRAINING_API_URL=http://ml-training-landmarks:8003
+      - PYTHONUNBUFFERED=1
 
   frontend:
     build:
