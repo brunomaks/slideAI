@@ -90,6 +90,31 @@
 </div>
 
 <div class="card">
+    <h2>Evaluation Metrics</h2>
+    <div class="stats-grid" style="grid-template-columns: 1fr 1fr; align-items: start;">
+        <div class="stat-card confusion-matrix">
+            <div class="value" style="text-align: center;">
+                <img src="data:image/png;base64,{{ cm_image }}" alt="Confusion Matrix" />
+            </div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 1rem;">
+            <div class="stat-card">
+                <h3>Test Precision</h3>
+                <div class="value">{{ model.test_precision|floatformat:2 }}%</div>
+            </div>
+            <div class="stat-card">
+                <h3>Test Recall</h3>
+                <div class="value">{{ model.test_recall|floatformat:2 }}%</div>
+            </div>
+            <div class="stat-card">
+                <h3>Test F1 Score</h3>
+                <div class="value">{{ model.test_f1_score|floatformat:2 }}%</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
     <h2>Training Configuration</h2>
     <table>
         <tr>

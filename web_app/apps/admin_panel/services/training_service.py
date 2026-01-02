@@ -48,11 +48,11 @@ class TrainingService:
     def start_training(self, config: dict, user):
         """
         Start a new training run by calling the ML Training API.
-        
+
         Args:
             config: Dictionary with training configuration
             user: User who initiated the training
-            
+
         Returns:
             TrainingRun instance
         """
@@ -74,7 +74,7 @@ class TrainingService:
             'dataset_version': dataset_version,
             'version_name': version_name
         }
-        
+
         # Call the ML Training API
         try:
             response = requests.post(
@@ -92,7 +92,7 @@ class TrainingService:
             )
         except requests.exceptions.RequestException as e:
             raise RuntimeError(f"Failed to start training: {e}")
-        
+
         # Create training run record
         training_run = TrainingRun.objects.create(
             run_id=job_id,
@@ -109,57 +109,57 @@ class TrainingService:
                 'api_job_id': job_id,
             }
         )
-        
+
         return training_run
-    
+
     def cancel_training(self, training_run: TrainingRun):
         """
         Cancel a running training job.
-        
+
         Args:
             training_run: TrainingRun instance to cancel
         """
         if training_run.status not in ['pending', 'running']:
             raise ValueError(f"Cannot cancel training in status: {training_run.status}")
-        
+
         # Note: The current API doesn't support cancellation, so we just mark it locally
         training_run.status = 'cancelled'
         training_run.completed_at = timezone.now()
         training_run.save()
-    
+
     def check_training_status(self, training_run: TrainingRun):
         """
         Check the status of a training run by querying the ML Training API.
-        
+
         Args:
             training_run: TrainingRun instance
-            
+
         Returns:
             Updated status
         """
         if training_run.status not in ['running', 'pending']:
             return training_run.status
-        
+
         job_id = training_run.run_id
-        
+
         try:
             response = requests.get(
                 f"{self.api_url}/train/{job_id}",
                 timeout=10
             )
-            
+
             if response.status_code == 404:
                 training_run.status = 'failed'
                 training_run.completed_at = timezone.now()
                 training_run.error_message = 'Training job missing from ML API.'
                 training_run.save()
                 return training_run.status
-            
+
             response.raise_for_status()
             job_data = response.json()
-            
+
             api_status = job_data.get('status', 'pending')
-            
+
             if api_status == 'completed':
                 training_run.status = 'completed'
                 training_run.completed_at = timezone.now()
@@ -195,22 +195,22 @@ class TrainingService:
                 except requests.exceptions.RequestException:
                     pass
                 training_run.save()
-                
+
         except requests.exceptions.RequestException:
             # API unavailable, keep current status
             pass
-        
+
         return training_run.status
-    
+
     def _link_model_version(self, training_run: TrainingRun, metrics=None):
         """
         Link training run to the created model version.
-        
+
         Args:
             training_run: TrainingRun instance
         """
         version_name = training_run.config.get('version_name')
-        
+
         if not version_name:
             return
 
@@ -263,6 +263,10 @@ class TrainingService:
                 train_loss=(metrics or {}).get('train', {}).get('loss'),
                 validation_loss=(metrics or {}).get('validation', {}).get('loss'),
                 test_loss=(metrics or {}).get('test', {}).get('loss'),
+                test_precision=((metrics or {}).get('test', {}).get('precision') or 0) * 100,
+                test_recall=((metrics or {}).get('test', {}).get('recall') or 0) * 100,
+                test_f1_score=((metrics or {}).get('test', {}).get('f1_score') or 0) * 100,
+                confusion_matrix=(metrics or {}).get('test', {}).get('confusion_matrix'),
                 is_active=is_active,
                 description=training_run.config.get('description', ''),
             )

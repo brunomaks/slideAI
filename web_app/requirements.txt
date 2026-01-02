@@ -3,6 +3,7 @@ djangorestframework
 joblib
 scikit-learn
 numpy
+seaborn
 opencv-python-headless
 Pillow
 requests

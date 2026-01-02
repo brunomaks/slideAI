@@ -52,7 +52,7 @@ def train_model(args):
                 gesture_to_idx[gesture] = len(gesture_to_idx)
 
             y.append(gesture_to_idx[gesture])
-        
+
         X = np.array(X, dtype=np.float32)
         y = np.array(y, dtype=np.int32)
 
@@ -105,7 +105,7 @@ def train_model(args):
 
     model.summary()
 
-    # Stop trainign when val_loss does not improve for 10 consecutive epochs 
+    # Stop trainign when val_loss does not improve for 10 consecutive epochs
     early_stopping = tf.keras.callbacks.EarlyStopping(
         monitor='val_loss',
         patience=10,
