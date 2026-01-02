@@ -57,7 +57,6 @@ class ModelDeploymentForm(forms.Form):
     confirm = forms.BooleanField(
         required=True,
         label='I confirm this activation',
-        help_text='This will replace the currently active model'
     )
     notes = forms.CharField(
         widget=forms.Textarea(attrs={'rows': 2}),

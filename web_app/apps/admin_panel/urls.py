@@ -16,7 +16,6 @@ urlpatterns = [
     path('models/', views.models_list, name='models_list'),
     path('models/<int:model_id>/', views.model_detail, name='model_detail'),
     path('models/<int:model_id>/deploy/', views.deploy_model, name='deploy_model'),
-    path('models/<int:model_id>/rollback/', views.rollback_model, name='rollback_model'),
     path('models/<int:model_id>/delete/', views.delete_model, name='delete_model'),
     path('models/compare/', views.compare_models, name='compare_models'),
     path('models/performance/', views.performance_overview, name='performance_overview'),

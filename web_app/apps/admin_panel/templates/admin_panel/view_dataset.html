@@ -8,18 +8,27 @@
     <a href="{% url 'admin_panel:upload_data' %}" class="btn btn-primary">Upload More Data</a>
 </div>
 
+<div class="form-group" style="display: flex; align-items: center; gap: 1rem; max-width: fit-content;">
+    <label for="version-select">Select Dataset Version:</label>
+    <select id="version-select" onchange="window.location.href='?version='+this.value" style="width: auto;">
+        {% for dataset in dataset_versions %}
+        <option value="{{ dataset.version }}"
+            {% if dataset.version == current_dataset.version %}selected{% endif %}>
+            {{ dataset.version }} ({{ dataset.created_at|date:"M d, Y" }})
+        </option>
+        {% endfor %}
+    </select>
+</div>
+
 <div class="card">
-    <h2>Dataset Overview</h2>
     <div class="stats-grid" style="grid-template-columns: repeat(2, 1fr); margin-bottom: 2rem;">
         <div class="stat-card">
-            <h3>Total Samples</h3>
+            <h3>Total Valid Samples</h3>
             <div class="value">{{ total_samples }}</div>
-            <div class="change">Samples</div>
         </div>
         <div class="stat-card">
             <h3>Classes</h3>
             <div class="value">{{ label_stats|length }}</div>
-            <div class="change">Gestures</div>
         </div>
     </div>
 
@@ -49,9 +58,5 @@
         </tbody>
     </table>
 </div>
-
-{% comment %}
-Legacy Image Gallery removed. Raw images are processed and deleted after landmark extraction.
-{% endcomment %}
 
 {% endblock %}

@@ -29,24 +29,17 @@ class Dataset(BaseModel):
     @classmethod
     def get_latest_statistics(cls):
         """Get statistics from the most recent dataset."""
-        latest_dataset = cls.objects.first()  # Gets latest due to ordering
-        
-        if not latest_dataset:
+        try:
+            dataset = cls.objects.first()
             return {
-                'by_label': [],
+                'label_stats': dataset.label_stats,
+                'total_samples': dataset.validated_preprocessed_samples,
+            }
+        except cls.DoesNotExist:
+            return {
+                'label_stats': [],
                 'total_samples': 0,
             }
-        
-        # Convert {"like": 123} to [{"label": "like", "count": 123}]
-        by_label = [
-            {'label': label, 'count': count}
-            for label, count in latest_dataset.label_stats.items()
-        ]
-        
-        return {
-            'by_label': by_label,
-            'total_samples': latest_dataset.validated_preprocessed_samples,
-        }
     
     @classmethod
     def get_statistics_for_version(cls, version):
@@ -54,12 +47,12 @@ class Dataset(BaseModel):
         try:
             dataset = cls.objects.get(version=version)
             return {
-                'by_label': dataset.label_stats,
+                'label_stats': dataset.label_stats,
                 'total_samples': dataset.validated_preprocessed_samples,
             }
         except cls.DoesNotExist:
             return {
-                'by_label': [],
+                'label_stats': [],
                 'total_samples': 0,
             }
 

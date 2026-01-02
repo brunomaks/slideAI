@@ -35,9 +35,9 @@
     <form method="post">
         {% csrf_token %}
 
-        <div class="form-group">
-            {{ form.confirm }}
+        <div class="form-group" style="display: flex; align-items: center;">
             {{ form.confirm.label_tag }}
+            {{ form.confirm }} 
         </div>
 
         <div class="form-group">

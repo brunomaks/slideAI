@@ -229,29 +229,6 @@ def deploy_model(request, model_id):
 
 @login_required
 @user_passes_test(is_staff_or_superuser)
-def rollback_model(request, model_id):
-    """Rollback to a previous model version."""
-    model = get_object_or_404(ModelVersion, id=model_id)
-
-    if request.method == 'POST':
-        try:
-            ModelManager.rollback_to_model(model, request.user)
-            messages.success(request, f'Rolled back to model {model.version_id}!')
-            return redirect('admin_panel:models_list')
-        except Exception as e:
-            messages.error(request, f'Rollback failed: {str(e)}')
-            return redirect('admin_panel:models_list')
-
-    context = {
-        'model': model,
-    }
-
-    return render(request, 'admin_panel/rollback_model.html', context)
-
-
-
-@login_required
-@user_passes_test(is_staff_or_superuser)
 def upload_data(request):
     """Upload new labeled training data."""
     if request.method == 'POST':
@@ -285,18 +262,34 @@ def upload_data(request):
 @user_passes_test(is_staff_or_superuser)
 def view_dataset(request):
     """View training dataset statistics (Landmarks)."""
-    
-    stats = Dataset.get_latest_statistics()
-    
-    label_stats = stats.get('by_label', [])
-    total_samples = stats.get('total_samples', 0)
 
-    labels = sorted([item['label'] for item in label_stats])
+    dataset_versions = Dataset.objects.all()
+
+    selected_version = request.GET.get('version')
+    if selected_version:
+        current_dataset = dataset_versions.filter(version=selected_version).first()
+    else:
+        current_dataset = dataset_versions.first()
+    
+    stats = Dataset.get_statistics_for_version(current_dataset.version)
+    # {'label_stats': {'like': 1464, 'stop': 1599, 'two_up_inverted': 1525}, 'total_samples': 4588}
+    
+    total_samples = stats['total_samples']
+    label_counts = stats['label_stats']
+
+    label_stats = [
+        {'label': label, 'count': count}
+        for label, count in label_counts.items()
+    ]
+
+    labels = sorted([item for item in label_counts])
 
     context = {
-        'labels': labels,
-        'label_stats': label_stats,
+        'dataset_versions': dataset_versions,
+        'current_dataset': current_dataset,
         'total_samples': total_samples,
+        'labels': labels,
+        'label_stats': label_stats
     }
 
     return render(request, 'admin_panel/view_dataset.html', context)
