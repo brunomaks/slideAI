@@ -122,7 +122,7 @@ def _normalize_and_validate_row(landmarks_json: str, handedness: str) -> np.ndar
     normalized = _normalize_landmarks(landmarks, handedness)
     normalized_and_rotated = _normalize_rotation(normalized)
 
-    validation = validate_landmarks(normalized_and_rotated)
+    validation = _validate_landmarks(normalized_and_rotated)
     if not validation:
         return None
 
@@ -179,10 +179,12 @@ def _extract_landmarks(image_path, landmarker):
     if image is None:
         print(f"Warning: Could not read image {image_path}, skipping.")
         return mp.tasks.vision.HandLandmarkerResult(hand_landmarks=[], handedness=[], hand_world_landmarks=[])
+    return _extract_landmarks_from_image(image, landmarker)
+
+def _extract_landmarks_from_image(image: np.ndarray, landmarker):
     image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=image_rgb)
-    results = landmarker.detect(mp_image)
-    return results
+    return landmarker.detect(mp_image)
 
 # make wrist to be at the origin (0,0), scale all the landmarks to similar scale, 
 # flip gestures performed with left hand to only consider right hand gestures
@@ -223,29 +225,20 @@ def _rotate_landmarks(landmarks: np.ndarray, angle: float) -> np.ndarray:
     return landmarks @ R.T
 
 # validators
-def validate_landmarks(landmarks: np.ndarray) -> bool:
+def _validate_landmarks(landmarks: np.ndarray) -> bool:
     return (
-        wrist_at_origin(landmarks)
-        and landmarks_within_bounds(landmarks)
+        _wrist_at_origin(landmarks)
+        and _landmarks_within_bounds(landmarks)
     )
 
-def wrist_at_origin(landmarks: np.ndarray) -> bool:
+def _wrist_at_origin(landmarks: np.ndarray) -> bool:
     return np.allclose(landmarks[0], [0, 0], atol=1e-3)
 
 # helps to discard anomalies when a resting hand is detected instead of the actual gesture
-def landmarks_within_bounds(landmarks: np.ndarray, x_bounds=(-3, 3), y_bounds=(-3, 0)) -> bool:
+def _landmarks_within_bounds(landmarks: np.ndarray, x_bounds=(-3, 3), y_bounds=(-3, 0)) -> bool:
     xs, ys = landmarks[:, 0], landmarks[:, 1]
     if xs.min() < x_bounds[0] or xs.max() > x_bounds[1]:
         return False
     if ys.min() < y_bounds[0] or ys.max() > y_bounds[1]:
-        return False
-    return True
-
-# in our case fingers coordinates are actually below the wrist which is at origin because they are all rotated down
-# above here means in terms of coordinates 
-def fingers_above_wrist(landmarks: np.ndarray, tip_ids=(4, 8, 12, 16, 20), max_down=1) -> bool:
-    ys = landmarks[:, 1]
-    num_down = sum(ys[i] > 0 for i in tip_ids)
-    if num_down > max_down:
         return False
     return True

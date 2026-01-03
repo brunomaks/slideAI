@@ -15,5 +15,4 @@ COPY . .
 EXPOSE 8003
 
 # Default: run API server (can be overridden for training-only)
-# CMD ["pytest", "test/test_preprocess_data.py"]
-CMD ["python3", "src/api.py"]
+CMD ["pytest", "test/test_preprocess_data.py"]

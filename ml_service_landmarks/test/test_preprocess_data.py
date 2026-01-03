@@ -11,13 +11,11 @@ from src.preprocess_data import (
     _normalize_landmarks,
     _normalize_rotation,
     _rotate_landmarks,
-    wrist_at_origin,
-    landmarks_within_bounds,
-    fingers_above_wrist,
-    validate_landmarks,
-    _normalize_and_validate_row,
+    _wrist_at_origin,
+    _landmarks_within_bounds,
     _create_database,
-    ingest_raw_landmarks,
+    _extract_landmarks,
+    _extract_landmarks_from_image,
     ingest_normalized_landmarks
 )
 
@@ -117,14 +115,6 @@ def valid_landmarks():
 def scaled_landmarks(valid_landmarks):
     """Valid landmarks scaled by the factor of two"""
     return valid_landmarks * 2.0
-
-
-@pytest.fixture
-def in_memory_db():
-    """Each test gonna have fresh and empty database"""
-    conn = sqlite3.connect(':memory:')
-    yield conn
-    conn.close()
 
 
 @pytest.fixture
@@ -307,19 +297,19 @@ class TestWristAtOrigin:
     def test_passes_when_wrist_at_origin(self):
         """18. Should pass when wrist is at origin."""
         landmarks = np.zeros((21, 2))
-        assert wrist_at_origin(landmarks) is True
+        assert _wrist_at_origin(landmarks) is True
     
     def test_fails_when_wrist_offset(self):
         """19. Should fail when wrist is slightly offset."""
         landmarks = np.zeros((21, 2))
         landmarks[0] = [0.002, 0.002]  # Beyond tolerance
-        assert wrist_at_origin(landmarks) is False
+        assert _wrist_at_origin(landmarks) is False
     
     def test_respects_tolerance(self):
         """20. Should respect tolerance of 1e-3."""
         landmarks = np.zeros((21, 2))
         landmarks[0] = [0.0009, 0.0009]  # Within tolerance
-        assert wrist_at_origin(landmarks) is True
+        assert _wrist_at_origin(landmarks) is True
 
 class TestLandmarksWithinBounds:
     """Test the landmarks_within_bounds validator."""
@@ -327,483 +317,301 @@ class TestLandmarksWithinBounds:
     def test_passes_for_landmarks_inside_bounds(self, valid_landmarks):
         """21. Should pass for landmarks inside bounds."""
         landmarks = np.clip(valid_landmarks, -2, 0) * 1.5
-        assert landmarks_within_bounds(landmarks) is True
+        assert _landmarks_within_bounds(landmarks) is True
     
     def test_fails_when_x_less_than_minus_3(self):
         """22. Should fail when x < -3"""
         landmarks = np.zeros((21, 2))
         landmarks[5, 0] = -3.1
-        assert landmarks_within_bounds(landmarks) is False
+        assert _landmarks_within_bounds(landmarks) is False
     
     def test_fails_when_x_greater_than_3(self):
         """23. Should fail when x > 3"""
         landmarks = np.zeros((21, 2))
         landmarks[5, 0] = 3.1
-        assert landmarks_within_bounds(landmarks) is False
+        assert _landmarks_within_bounds(landmarks) is False
     
     def test_fails_when_y_less_than_minus_3(self):
         """24. Should fail when y < -3"""
         landmarks = np.zeros((21, 2))
         landmarks[5, 1] = -3.1
-        assert landmarks_within_bounds(landmarks) is False
+        assert _landmarks_within_bounds(landmarks) is False
     
     def test_fails_when_y_greater_than_0(self):
         """25. Should fail when y > 0"""
         landmarks = np.zeros((21, 2))
         landmarks[5, 1] = 0.1
-        assert landmarks_within_bounds(landmarks) is False
+        assert _landmarks_within_bounds(landmarks) is False
 
     def test_passes_when_on_boundary(self):
         """26. Should pass when at exact boundaries"""
         landmarks = np.zeros((21, 2))
         landmarks[0, :] = [-3, -3]  # bottom-left corner
         landmarks[1, :] = [3, 0]    # top-right corner
-        assert landmarks_within_bounds(landmarks) is True
+        assert _landmarks_within_bounds(landmarks) is True
 
-class TestFingersAboveWrist:
-    """Test the fingers_above_wrist validator."""
-    
-    def test_passes_when_all_fingertips_above_wrist(self):
-        """21. Should pass when all fingertips are above wrist."""
-        landmarks = np.zeros((21, 2))
-        # Set fingertips (4, 8, 12, 16, 20) below wrist (y < 0)
-        for tip in [4, 8, 12, 16, 20]:
-            landmarks[tip, 1] = -1.0
-        assert fingers_above_wrist(landmarks) is True
-    
-    def test_passes_when_exactly_max_down_fingers_down(self):
-        """22. Should pass when exactly max_down fingers are down."""
-        landmarks = np.zeros((21, 2))
-        # Put 2 fingers below (y > 0)
-        landmarks[4, 1] = 1.0
-        landmarks[8, 1] = 1.0
-        # Others above (y < 0)
-        for tip in [12, 16, 20]:
-            landmarks[tip, 1] = -1.0
-        assert fingers_above_wrist(landmarks, max_down=2) is True
-    
-    def test_fails_when_too_many_fingers_down(self):
-        """23. Should fail when max_down + 1 fingers are down."""
-        landmarks = np.zeros((21, 2))
-        # Put 3 fingers down
-        for tip in [4, 8, 12]:
-            landmarks[tip, 1] = -1.0
-        # Others up
-        for tip in [16, 20]:
-            landmarks[tip, 1] = -1.0
-        assert fingers_above_wrist(landmarks, max_down=2) is False
-    
-    def test_correct_fingertip_indices_used(self):
-        """24. Should use correct fingertip indices [4, 8, 12, 16, 20]."""
-        landmarks = np.zeros((21, 2))
-        # Put non-fingertip landmarks down
-        landmarks[1, 1] = 0.1
-        landmarks[2, 1] = 0.1
-        # All fingertips up
-        for tip in [4, 8, 12, 16, 20]:
-            landmarks[tip, 1] = -1.0
-        assert fingers_above_wrist(landmarks) is True
+class TestDatabaseSchema:
+    def test_database_schema_created(self, temp_db_path):
+        """27. Should detect schema drift"""
+        _create_database(temp_db_path)
 
+        conn = sqlite3.connect(temp_db_path)
+        cur = conn.cursor()
 
-# class TestValidateLandmarks:
-#     """Test the validate_landmarks function."""
-    
-#     def test_passes_when_all_validators_pass(self, valid_landmarks):
-#         """25. Should pass when all validators pass."""
-#         # Normalize to ensure validators pass
-#         normalized = _normalize_landmarks(valid_landmarks, handedness='Right')
-#         rotated = _normalize_rotation(normalized)
-#         assert validate_landmarks(rotated) is True
-    
-#     def test_fails_when_any_validator_fails(self):
-#         """26. Should fail when any validator fails."""
-#         landmarks = np.zeros((21, 2))
-#         landmarks[0] = [1.0, 1.0]  # Wrist not at origin
-#         assert validate_landmarks(landmarks) is False
-    
-#     def test_short_circuit_behavior(self):
-#         """27. Should short-circuit on first failure."""
-#         landmarks = np.zeros((21, 2))
-#         landmarks[0] = [1.0, 1.0]  # Wrist not at origin
-        
-#         # Mock validators to track calls
-#         with patch('your_module.wrist_at_origin', return_value=False) as mock_wrist:
-#             with patch('your_module.landmarks_within_bounds') as mock_bounds:
-#                 validate_landmarks(landmarks)
-#                 mock_wrist.assert_called_once()
-#                 # Second validator should not be called due to short-circuit
-#                 mock_bounds.assert_not_called()
+        cur.execute("""
+            SELECT name FROM sqlite_master WHERE type='table'
+        """)
+        tables = {row[0] for row in cur.fetchall()}
 
+        assert "gestures_raw" in tables
+        assert "gestures_processed" in tables
 
-# # ============================================================================
-# # TIER 1-2: ROW-LEVEL PROCESSING TESTS
-# # ============================================================================
+        cur.execute("PRAGMA table_info(gestures_raw)")
+        raw_cols = {row[1] for row in cur.fetchall()}
 
-# class TestNormalizeAndValidateRow:
-#     """Test the _normalize_and_validate_row function."""
-    
-#     def test_valid_row_returns_normalized_landmarks(self, valid_landmarks):
-#         """28. Valid row should return normalized landmarks."""
-#         row = {
-#             'landmarks_json': json.dumps(valid_landmarks.tolist()),
-#             'handedness': 'Right'
-#         }
-#         result = _normalize_and_validate_row(row)
-#         assert result is not None
-#         assert result.shape == (21, 2)
-    
-#     def test_invalid_row_returns_none(self):
-#         """29. Invalid row should return None."""
-#         # Create landmarks that will fail validation
-#         invalid = np.zeros((21, 2))
-#         invalid[0] = [10.0, 10.0]  # Wrist far from origin
-        
-#         row = {
-#             'landmarks_json': json.dumps(invalid.tolist()),
-#             'handedness': 'Right'
-#         }
-#         result = _normalize_and_validate_row(row)
-#         assert result is None
-    
-#     def test_malformed_json_raises_error(self):
-#         """30. Malformed JSON should raise appropriate error."""
-#         row = {
-#             'landmarks_json': 'not valid json{',
-#             'handedness': 'Right'
-#         }
-#         with pytest.raises(json.JSONDecodeError):
-#             _normalize_and_validate_row(row)
-    
-#     def test_output_is_finite(self, valid_landmarks):
-#         """31. Output should be finite."""
-#         row = {
-#             'landmarks_json': json.dumps(valid_landmarks.tolist()),
-#             'handedness': 'Right'
-#         }
-#         result = _normalize_and_validate_row(row)
-#         assert np.isfinite(result).all()
-    
-#     def test_output_satisfies_validation_rules(self, valid_landmarks):
-#         """32. Output should satisfy all validation rules."""
-#         row = {
-#             'landmarks_json': json.dumps(valid_landmarks.tolist()),
-#             'handedness': 'Right'
-#         }
-#         result = _normalize_and_validate_row(row)
-#         assert validate_landmarks(result) is True
+        assert {
+            "id", "gesture", "image_path",
+            "handedness", "landmarks", "dataset_version"
+        }.issubset(raw_cols)
 
+        conn.close()
 
-# # ============================================================================
-# # TIER 2: DATABASE SCHEMA TESTS
-# # ============================================================================
+    def test_raw_landmarks_round_trip(self, temp_db_path, valid_landmarks):
+        """28. Should pass the process of inserting and retrieving raw 3D landamrks"""
+        _create_database(temp_db_path)
 
-# class TestCreateDatabase:
-#     """Test the _create_database function."""
-    
-#     def test_tables_are_created(self, temp_db_path):
-#         """33. Should create all required tables."""
-#         _create_database(temp_db_path)
-        
-#         conn = sqlite3.connect(temp_db_path)
-#         cursor = conn.cursor()
-        
-#         # Check raw_landmarks table
-#         cursor.execute("""
-#             SELECT name FROM sqlite_master 
-#             WHERE type='table' AND name='raw_landmarks'
-#         """)
-#         assert cursor.fetchone() is not None
-        
-#         # Check processed_landmarks table
-#         cursor.execute("""
-#             SELECT name FROM sqlite_master 
-#             WHERE type='table' AND name='processed_landmarks'
-#         """)
-#         assert cursor.fetchone() is not None
-        
-#         conn.close()
-    
-#     def test_unique_constraint_exists(self, temp_db_path):
-#         """34. Should enforce UNIQUE constraint on (dataset_version, image_path)."""
-#         _create_database(temp_db_path)
-        
-#         conn = sqlite3.connect(temp_db_path)
-#         cursor = conn.cursor()
-        
-#         # Try to insert duplicate
-#         cursor.execute("""
-#             INSERT INTO raw_landmarks (dataset_version, image_path, handedness, landmarks_json)
-#             VALUES (?, ?, ?, ?)
-#         """, ('v1', 'test.jpg', 'Right', '[]'))
-        
-#         with pytest.raises(sqlite3.IntegrityError):
-#             cursor.execute("""
-#                 INSERT INTO raw_landmarks (dataset_version, image_path, handedness, landmarks_json)
-#                 VALUES (?, ?, ?, ?)
-#             """, ('v1', 'test.jpg', 'Right', '[]'))
-        
-#         conn.close()
-    
-#     def test_foreign_key_constraint_exists(self, temp_db_path):
-#         """35. Should enforce foreign key constraint."""
-#         _create_database(temp_db_path)
-        
-#         conn = sqlite3.connect(temp_db_path)
-#         conn.execute("PRAGMA foreign_keys = ON")
-#         cursor = conn.cursor()
-        
-#         # Try to insert processed landmark without raw landmark
-#         with pytest.raises(sqlite3.IntegrityError):
-#             cursor.execute("""
-#                 INSERT INTO processed_landmarks (raw_id, landmarks_json)
-#                 VALUES (?, ?)
-#             """, (99999, '[]'))
-        
-#         conn.close()
-    
-#     def test_json_validity_constraint_enforced(self, temp_db_path):
-#         """36. Should enforce JSON validity constraint if applicable."""
-#         _create_database(temp_db_path)
-        
-#         conn = sqlite3.connect(temp_db_path)
-#         cursor = conn.cursor()
-        
-#         # This test depends on whether you have CHECK constraints
-#         # If you do, invalid JSON should fail
-#         try:
-#             cursor.execute("""
-#                 INSERT INTO raw_landmarks (dataset_version, image_path, handedness, landmarks_json)
-#                 VALUES (?, ?, ?, ?)
-#             """, ('v1', 'test.jpg', 'Right', 'not json{'))
-#             conn.commit()
-#         except sqlite3.IntegrityError:
-#             pass  # Expected if CHECK constraint exists
-        
-#         conn.close()
+        conn = sqlite3.connect(temp_db_path)
+        cur = conn.cursor()
+
+        landmarks_3d = np.hstack([valid_landmarks, np.zeros((21, 1))])
+
+        cur.execute("""
+            INSERT INTO gestures_raw
+            (gesture, image_path, handedness, landmarks, dataset_version)
+            VALUES (?, ?, ?, ?, ?)
+        """, (
+            "test",
+            "img.png",
+            "Right",
+            json.dumps(landmarks_3d.tolist()),
+            "v1"
+        ))
+
+        cur.execute("SELECT landmarks FROM gestures_raw")
+        stored = json.loads(cur.fetchone()[0])
+
+        arr = np.array(stored)
+        assert arr.shape == (21, 3)
+        assert np.isfinite(arr).all()
+
+        conn.close()
+
+    def test_raw_unique_constraint_enforced(self, temp_db_path, valid_landmarks):
+        """29. Should pass if unique constraint is enforced"""
+        _create_database(temp_db_path)
+
+        conn = sqlite3.connect(temp_db_path)
+        cur = conn.cursor()
+
+        landmarks_3d = np.hstack([valid_landmarks, np.zeros((21, 1))])
+
+        row = (
+            "gesture",
+            "img.png",
+            "Right",
+            json.dumps(landmarks_3d.tolist()),
+            "v1"
+        )
+
+        cur.execute("""
+            INSERT INTO gestures_raw
+            (gesture, image_path, handedness, landmarks, dataset_version)
+            VALUES (?, ?, ?, ?, ?)
+        """, row)
+
+        with pytest.raises(sqlite3.IntegrityError):
+            cur.execute("""
+                INSERT INTO gestures_raw
+                (gesture, image_path, handedness, landmarks, dataset_version)
+                VALUES (?, ?, ?, ?, ?)
+            """, row)
+
+        conn.close()
+
+    def test_same_image_path_allowed_across_versions(self, temp_db_path, valid_landmarks):
+        """30. Should pass because having the same image in two different dataset versions is valid"""
+        _create_database(temp_db_path)
+
+        conn = sqlite3.connect(temp_db_path)
+        cur = conn.cursor()
+
+        landmarks_3d = np.hstack([valid_landmarks, np.zeros((21, 1))])
+
+        for version in ("v1", "v2"):
+            cur.execute("""
+                INSERT INTO gestures_raw
+                (gesture, image_path, handedness, landmarks, dataset_version)
+                VALUES (?, ?, ?, ?, ?)
+            """, (
+                "gesture",
+                "img.png",
+                "Right",
+                json.dumps(landmarks_3d.tolist()),
+                version
+            ))
+
+        cur.execute("SELECT COUNT(*) FROM gestures_raw")
+        assert cur.fetchone()[0] == 2
+
+        conn.close()
+
+    def test_processed_requires_existing_raw(self, temp_db_path, valid_landmarks):
+        """31. Should raise exception because its not possible to insert a row into processed table without having corresponding raw table row"""
+        _create_database(temp_db_path)
+
+        conn = sqlite3.connect(temp_db_path)
+        conn.execute("PRAGMA foreign_keys = ON") # sqlite does not enforce FK by default
+        cur = conn.cursor()
+
+        with pytest.raises(sqlite3.IntegrityError):
+            cur.execute("""
+                INSERT INTO gestures_processed
+                (raw_id, gesture, image_path, handedness, landmarks, dataset_version)
+                VALUES (?, ?, ?, ?, ?, ?)
+            """, (
+                9999999,
+                "gesture",
+                "img.png",
+                "Right",
+                json.dumps(valid_landmarks.tolist()),
+                "v1"
+            ))
+            conn.commit() 
+
+        conn.close()
+
+class TestIngestNormalizedLandmarks:
+    def test_ingest_normalized_landmarks_happy_path(self, temp_db_path, valid_landmarks):
+        """32. Should normalize, and insert landmarsk correctly"""
+        _create_database(temp_db_path)
+
+        conn = sqlite3.connect(temp_db_path)
+        cur = conn.cursor()
+
+        landmarks_3d = np.hstack([valid_landmarks, np.zeros((21, 1))])
+
+        cur.execute("""
+            INSERT INTO gestures_raw
+            (gesture, image_path, handedness, landmarks, dataset_version)
+            VALUES (?, ?, ?, ?, ?)
+        """, (
+            "gesture",
+            "img.png",
+            "Right",
+            json.dumps(landmarks_3d.tolist()),
+            "v1"
+        ))
+
+        conn.commit()
+        conn.close()
+
+        stats = ingest_normalized_landmarks(temp_db_path, "v1")
+
+        assert stats["inserted"] == 1
+        assert stats["discarded"] == 0
+        assert stats["label_stats"] == {"gesture": 1}
+
+    def test_invalid_normalized_data_is_discarded(self, temp_db_path):
+        """33. Should discard invalid normalized landmarks"""
+        _create_database(temp_db_path)
+
+        conn = sqlite3.connect(temp_db_path)
+        cur = conn.cursor()
+
+        # Construct raw landmarks that will violate bounds AFTER normalization
+        # Wrist at (0,0), middle finger MCP at (1, 0) results in scale = 1
+        # Another point far outside allowed bounds
+        bad_landmarks = np.zeros((21, 3))
+        bad_landmarks[9, :2] = [1.0, 0.0]       # reference point
+        bad_landmarks[5, :2] = [10.0, -10.0]    # violates bounds after normalization
 
 
-# # ============================================================================
-# # TIER 2: RAW INGESTION TESTS
-# # ============================================================================
+        cur.execute("""
+            INSERT INTO gestures_raw
+            (gesture, image_path, handedness, landmarks, dataset_version)
+            VALUES (?, ?, ?, ?, ?)
+        """, (
+            "gesture",
+            "bad.png",
+            "Right",
+            json.dumps(bad_landmarks.tolist()),
+            "v1"
+        ))
 
-# class TestIngestRawLandmarks:
-#     """Test the ingest_raw_landmarks function."""
-    
-#     def test_inserts_one_valid_image(self, temp_db_path, mock_landmarker, synthetic_image):
-#         """37. Should insert one valid image."""
-#         _create_database(temp_db_path)
-        
-#         # Mock successful detection
-#         mock_hand = Mock()
-#         mock_hand.landmark = [Mock(x=0.5, y=0.5) for _ in range(21)]
-#         mock_landmarker.detect.return_value.hand_landmarks = [mock_hand]
-#         mock_landmarker.detect.return_value.handedness = [Mock(category_name='Right')]
-        
-#         with tempfile.TemporaryDirectory() as tmpdir:
-#             img_path = Path(tmpdir) / 'test.jpg'
-#             # Save synthetic image
-#             import cv2
-#             cv2.imwrite(str(img_path), synthetic_image)
-            
-#             inserted, skipped = ingest_raw_landmarks(
-#                 temp_db_path, tmpdir, 'v1', mock_landmarker
-#             )
-        
-#         assert inserted == 1
-#         assert skipped == 0
-    
-#     def test_skips_image_with_no_detected_hand(self, temp_db_path, mock_landmarker, synthetic_image):
-#         """38. Should skip image with no detected hand."""
-#         _create_database(temp_db_path)
-        
-#         # Mock no detection
-#         mock_landmarker.detect.return_value.hand_landmarks = []
-        
-#         with tempfile.TemporaryDirectory() as tmpdir:
-#             img_path = Path(tmpdir) / 'test.jpg'
-#             import cv2
-#             cv2.imwrite(str(img_path), synthetic_image)
-            
-#             inserted, skipped = ingest_raw_landmarks(
-#                 temp_db_path, tmpdir, 'v1', mock_landmarker
-#             )
-        
-#         assert inserted == 0
-#         assert skipped == 1
-    
-#     def test_skips_unreadable_image(self, temp_db_path, mock_landmarker):
-#         """39. Should skip unreadable image."""
-#         _create_database(temp_db_path)
-        
-#         with tempfile.TemporaryDirectory() as tmpdir:
-#             # Create corrupt image file
-#             img_path = Path(tmpdir) / 'corrupt.jpg'
-#             img_path.write_bytes(b'not an image')
-            
-#             inserted, skipped = ingest_raw_landmarks(
-#                 temp_db_path, tmpdir, 'v1', mock_landmarker
-#             )
-        
-#         assert inserted == 0
-#         assert skipped >= 1
-    
-#     def test_correctly_stores_relative_image_path(self, temp_db_path, mock_landmarker, synthetic_image):
-#         """40. Should store relative image path."""
-#         _create_database(temp_db_path)
-        
-#         mock_hand = Mock()
-#         mock_hand.landmark = [Mock(x=0.5, y=0.5) for _ in range(21)]
-#         mock_landmarker.detect.return_value.hand_landmarks = [mock_hand]
-#         mock_landmarker.detect.return_value.handedness = [Mock(category_name='Right')]
-        
-#         with tempfile.TemporaryDirectory() as tmpdir:
-#             img_path = Path(tmpdir) / 'subdir' / 'test.jpg'
-#             img_path.parent.mkdir(parents=True, exist_ok=True)
-#             import cv2
-#             cv2.imwrite(str(img_path), synthetic_image)
-            
-#             ingest_raw_landmarks(temp_db_path, tmpdir, 'v1', mock_landmarker)
-            
-#             conn = sqlite3.connect(temp_db_path)
-#             cursor = conn.cursor()
-#             cursor.execute("SELECT image_path FROM raw_landmarks")
-#             path = cursor.fetchone()[0]
-#             conn.close()
-            
-#             assert path == 'subdir/test.jpg'
-    
-#     def test_correctly_stores_handedness(self, temp_db_path, mock_landmarker, synthetic_image):
-#         """41. Should correctly store handedness."""
-#         _create_database(temp_db_path)
-        
-#         mock_hand = Mock()
-#         mock_hand.landmark = [Mock(x=0.5, y=0.5) for _ in range(21)]
-#         mock_landmarker.detect.return_value.hand_landmarks = [mock_hand]
-#         mock_landmarker.detect.return_value.handedness = [Mock(category_name='Left')]
-        
-#         with tempfile.TemporaryDirectory() as tmpdir:
-#             img_path = Path(tmpdir) / 'test.jpg'
-#             import cv2
-#             cv2.imwrite(str(img_path), synthetic_image)
-            
-#             ingest_raw_landmarks(temp_db_path, tmpdir, 'v1', mock_landmarker)
-            
-#             conn = sqlite3.connect(temp_db_path)
-#             cursor = conn.cursor()
-#             cursor.execute("SELECT handedness FROM raw_landmarks")
-#             handedness = cursor.fetchone()[0]
-#             conn.close()
-            
-#             assert handedness == 'Left'
-    
-#     def test_correctly_serializes_landmarks_json(self, temp_db_path, mock_landmarker, synthetic_image):
-#         """42. Should correctly serialize landmarks as JSON."""
-#         _create_database(temp_db_path)
-        
-#         mock_hand = Mock()
-#         mock_hand.landmark = [Mock(x=float(i), y=float(i*2)) for i in range(21)]
-#         mock_landmarker.detect.return_value.hand_landmarks = [mock_hand]
-#         mock_landmarker.detect.return_value.handedness = [Mock(category_name='Right')]
-        
-#         with tempfile.TemporaryDirectory() as tmpdir:
-#             img_path = Path(tmpdir) / 'test.jpg'
-#             import cv2
-#             cv2.imwrite(str(img_path), synthetic_image)
-            
-#             ingest_raw_landmarks(temp_db_path, tmpdir, 'v1', mock_landmarker)
-            
-#             conn = sqlite3.connect(temp_db_path)
-#             cursor = conn.cursor()
-#             cursor.execute("SELECT landmarks_json FROM raw_landmarks")
-#             landmarks_json = cursor.fetchone()[0]
-#             conn.close()
-            
-#             landmarks = json.loads(landmarks_json)
-#             assert len(landmarks) == 21
-#             assert landmarks[0] == [0.0, 0.0]
-    
-#     def test_duplicate_image_is_skipped(self, temp_db_path, mock_landmarker, synthetic_image):
-#         """43. Should skip duplicate images."""
-#         _create_database(temp_db_path)
-        
-#         mock_hand = Mock()
-#         mock_hand.landmark = [Mock(x=0.5, y=0.5) for _ in range(21)]
-#         mock_landmarker.detect.return_value.hand_landmarks = [mock_hand]
-#         mock_landmarker.detect.return_value.handedness = [Mock(category_name='Right')]
-        
-#         with tempfile.TemporaryDirectory() as tmpdir:
-#             img_path = Path(tmpdir) / 'test.jpg'
-#             import cv2
-#             cv2.imwrite(str(img_path), synthetic_image)
-            
-#             # First ingest
-#             inserted1, skipped1 = ingest_raw_landmarks(
-#                 temp_db_path, tmpdir, 'v1', mock_landmarker
-#             )
-            
-#             # Second ingest (duplicate)
-#             inserted2, skipped2 = ingest_raw_landmarks(
-#                 temp_db_path, tmpdir, 'v1', mock_landmarker
-#             )
-        
-#         assert inserted1 == 1
-#         assert inserted2 == 0
-    
-#     def test_insert_skip_counters_are_correct(self, temp_db_path, mock_landmarker, synthetic_image):
-#         """44. Insert/skip counters should be accurate."""
-#         _create_database(temp_db_path)
-        
-#         with tempfile.TemporaryDirectory() as tmpdir:
-#             # Create 3 valid images
-#             for i in range(3):
-#                 img_path = Path(tmpdir) / f'test{i}.jpg'
-#                 import cv2
-#                 cv2.imwrite(str(img_path), synthetic_image)
-            
-#             # Mock: first 2 succeed, last fails
-#             def mock_detect(image):
-#                 if mock_detect.call_count <= 2:
-#                     mock_hand = Mock()
-#                     mock_hand.landmark = [Mock(x=0.5, y=0.5) for _ in range(21)]
-#                     result = Mock()
-#                     result.hand_landmarks = [mock_hand]
-#                     result.handedness = [Mock(category_name='Right')]
-#                     return result
-#                 else:
-#                     result = Mock()
-#                     result.hand_landmarks = []
-#                     result.handedness = []
-#                     return result
-            
-#             mock_detect.call_count = 0
-            
-#             def side_effect(img):
-#                 mock_detect.call_count += 1
-#                 return mock_detect(img)
-            
-#             mock_landmarker.detect.side_effect = side_effect
-            
-#             inserted, skipped = ingest_raw_landmarks(
-#                 temp_db_path, tmpdir, 'v1', mock_landmarker
-#             )
-            
-#             assert inserted == 2
-#             assert skipped == 1
-    
-#     # def test_dataset_version_isolation(self, temp_db_path, mock_landmarker, synthetic_image):
-#     #     """45. Same image path with different dataset_version should be allowed."""
-#     #     _create_database(temp_db_path)
-        
-#     #     mock_hand = Mock()
-#     #     mock_hand.landmark = [Mock(x=0.5, y=0.5) for _ in range(21)]
-#     #     mock_landmarker.detect.return_value.hand_landmarks = [mock_hand]
-#     #     mock_landmarker.detect.return_value.handedness = [Mock(category_name='Right')]
-        
-#     #     with tempfile.TemporaryDirectory() as tmpdir:
-#     #         img_path = Path(tmpdir) / 'test.jpg'
-#     #         import cv2
-#     #         cv2.imwrite(str(img_path), synthetic_image)
-            
-#     #         # Ingest with v1
-#     #         inserted1, _ = ingest_raw_landmarks(
-#     #             temp_db_path, tmpdir, 'v1', mock
+        conn.commit()
+        conn.close()
+
+        stats = ingest_normalized_landmarks(temp_db_path, "v1")
+
+        assert stats["inserted"] == 0
+        assert stats["discarded"] == 1
+
+
+    def test_processed_landmarks_are_2d_not_3d(self, temp_db_path, valid_landmarks):
+        """34. Should insert normalized 2d landmarks insead of original raw 3d ones"""
+        _create_database(temp_db_path)
+
+        raw_landmarks_3d = np.hstack([valid_landmarks, np.zeros((21, 1))])
+
+        conn = sqlite3.connect(temp_db_path)
+        cur = conn.cursor()
+
+        cur.execute("""
+            INSERT INTO gestures_raw
+            (gesture, image_path, handedness, landmarks, dataset_version)
+            VALUES (?, ?, ?, ?, ?)
+        """, (
+            "gesture",
+            "img.png",
+            "Right",
+            json.dumps(raw_landmarks_3d.tolist()),
+            "v1"
+        ))
+
+        conn.commit()
+        conn.close()
+
+        stats = ingest_normalized_landmarks(temp_db_path, "v1")
+        assert stats["inserted"] == 1
+
+        conn = sqlite3.connect(temp_db_path)
+        cur = conn.cursor()
+
+        cur.execute("""
+            SELECT landmarks FROM gestures_processed
+        """)
+        stored = json.loads(cur.fetchone()[0])
+        arr = np.array(stored)
+
+        assert arr.shape == (21, 2)
+        assert arr.ndim == 2
+        assert arr.shape[1] == 2
+
+        conn.close()
+
+class TestMockLandmarker:
+    def test_extract_landmarks_image_not_found_does_not_call_detect(self, mock_landmarker):
+        """35. Should not return any landmarks as the image does not exist"""
+        result = _extract_landmarks("missing.png", mock_landmarker)
+
+        assert result.hand_landmarks == []
+        assert result.handedness == []
+
+        mock_landmarker.detect.assert_not_called()
+
+    def test_extract_landmarks_from_image_calls_detect(self, mock_landmarker, synthetic_image):
+        """36. Should return default landmarks for an image"""
+        result = _extract_landmarks_from_image(synthetic_image, mock_landmarker)
+
+        mock_landmarker.detect.assert_called_once()
+        assert result is mock_landmarker.detect.return_value
