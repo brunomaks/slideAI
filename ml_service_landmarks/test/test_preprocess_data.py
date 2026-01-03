@@ -4,8 +4,7 @@ import sqlite3
 import json
 import tempfile
 from pathlib import Path
-from unittest.mock import Mock, patch, MagicMock
-from typing import List, Tuple
+from unittest.mock import Mock
 
 from src.preprocess_data import (
     _normalize_landmarks,
