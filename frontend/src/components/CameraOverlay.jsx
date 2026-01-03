@@ -1,7 +1,7 @@
 import React from "react";
 import "./CameraOverlay.css";
 
-export default function CameraOverlay({ cameraEnabled, onEnableCamera, onDisableCamera }) {
+export default function CameraOverlay({ cameraEnabled, onEnableCamera, onDisableCamera, mediapipeStatus }) {
     if (cameraEnabled) {
         return (
             <div className="camera-overlay-controls">
@@ -11,6 +11,15 @@ export default function CameraOverlay({ cameraEnabled, onEnableCamera, onDisable
                 >
                     Disable Camera
                 </button>
+
+                {mediapipeStatus && (
+                    <div className="mediapipe-status">
+                        {mediapipeStatus.isLoading && <span>Loading Mediapipe...</span>}
+                        {mediapipeStatus.isReady && <span>Mediapipe Ready</span>}
+                        {mediapipeStatus.error && <span className="error">Error: {mediapipeStatus.error}</span>}
+                    </div>
+                )}
+                
             </div>
         );
     }

@@ -2,11 +2,14 @@ import React, { useState } from 'react';
 import VideoWrapper from './VideoWrapper';
 import CameraStream from './CameraStream';
 import CameraOverlay from './CameraOverlay';
+import {useHandLandmarks} from '../hooks/useHandLandmarks.jsx';
 import './StreamsView.css';
 
 export default function StreamsView() {
     const [stream, setStream] = useState(null);
     const [cameraEnabled, setCameraEnabled] = useState(false);
+    // Get mediapipe status from the hook
+    const { mediapipeStatus, subscribeToLandmarks } = useHandLandmarks(stream);
 
     const handleStreamReady = (mediaStream) => {
         setStream(mediaStream);
@@ -28,13 +31,14 @@ export default function StreamsView() {
     return (
         <div>
             <VideoWrapper>
-                    {cameraEnabled && <CameraStream className="camera-stream" onStreamReady={handleStreamReady} />}
-                    <CameraOverlay
-                        cameraEnabled={cameraEnabled}
-                        onEnableCamera={handleEnableCamera}
-                        onDisableCamera={handleDisableCamera}
-                    />
-                </VideoWrapper>
+                {cameraEnabled && <CameraStream className="camera-stream" onStreamReady={handleStreamReady} />}
+                <CameraOverlay
+                    cameraEnabled={cameraEnabled}
+                    onEnableCamera={handleEnableCamera}
+                    onDisableCamera={handleDisableCamera}
+                    mediapipeStatus={mediapipeStatus} // Pass mediapipeStatus to overlay
+                />
+            </VideoWrapper>
         </div>
     );
 }

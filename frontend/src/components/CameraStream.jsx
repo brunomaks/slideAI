@@ -16,7 +16,8 @@ export default function CameraStream({ onStreamReady }) {
     const { connectStream, disconnectStream, sendMessage } = useWebRTC();
 
     const [stream, setStream] = useState(null)
-    const subscribeToLandmarks = useHandLandmarks(stream);
+    //const subscribeToLandmarks = useHandLandmarks(stream);
+    const { mediapipeStatus, subscribeToLandmarks } = useHandLandmarks(stream);
 
     useEffect(() => {
         const startCamera = async () => {

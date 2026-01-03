@@ -10,6 +10,7 @@ import { useWebRTC } from '../contexts/WebRTCContext.jsx';
 import workerSrc from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
 
+// Gesture mapping configuration
 const GESTURE_CONFIG = {
     NAVIGATE_NEXT: {
         gesture: "two_up_inverted",
