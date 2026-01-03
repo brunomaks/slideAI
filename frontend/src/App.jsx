@@ -4,6 +4,11 @@ import Landing from './pages/LandingPage'
 import Topbar from './components/TopBar'
 import { WebSocketProvider } from './contexts/WebSocketContext'
 
+const WEBSOCKET_URL = import.meta.env.VITE_WS_URL
+const MAX_RECONNECT_ATTEMPS = 5
+const RECONNECT_DELAY = 3000
+const AUTO_RECONNECT = true
+
 function App() {
   const [showLanding, setShowLanding] = useState(false);
 
@@ -16,7 +21,14 @@ function App() {
   };
 
   return (
-    <WebSocketProvider>
+    <WebSocketProvider 
+      url={WEBSOCKET_URL}
+      options={{
+        maxReconnectAttempts: MAX_RECONNECT_ATTEMPS,
+        reconnectDelay: RECONNECT_DELAY,
+        autoReconnect: AUTO_RECONNECT
+      }}
+    >
       <Topbar onBrandClick={handleReset} />
       {showLanding && <Landing onEnter={handleEnter} />}
       {!showLanding && (

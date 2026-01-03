@@ -116,7 +116,7 @@ services:
       - /app/node_modules
     environment:
       - CHOKIDAR_USEPOLLING=true
-      - VITE_WS_VIDEO_URL=ws://127.0.0.1:8001/ws/video/
+      - VITE_WS_URL=ws://127.0.0.1:8001/ws/landmarks/
       - VITE_MAX_STREAM_FPS=5
       - VITE_FRAME_QUALITY=0.7
       - VITE_MAX_STREAM_WIDTH=1280
