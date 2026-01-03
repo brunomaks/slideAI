@@ -10,7 +10,51 @@ class BaseModel(models.Model):
         abstract = True
 
 
+class Dataset(BaseModel):
+    version = models.CharField(max_length=50, unique=True)
+    uploaded_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+    raw_samples = models.IntegerField()
+    raw_preprocessed_samples = models.IntegerField()
+    validated_preprocessed_samples = models.IntegerField()
+    zip_filename = models.CharField(max_length=255)
+    label_stats = models.JSONField()
 
+    class Meta:
+        ordering = ['-uploaded_at']
+
+    def __str__(self):
+        return f"{self.version} ({self.validated_preprocessed_samples} samples)"
+    
+    @classmethod
+    def get_latest_statistics(cls):
+        """Get statistics from the most recent dataset."""
+        try:
+            dataset = cls.objects.first()
+            return {
+                'label_stats': dataset.label_stats,
+                'total_samples': dataset.validated_preprocessed_samples,
+            }
+        except:
+            return {
+                'label_stats': [],
+                'total_samples': 0,
+            }
+    
+    @classmethod
+    def get_statistics_for_version(cls, version):
+        """Get statistics for a specific dataset version."""
+        try:
+            dataset = cls.objects.get(version=version)
+            return {
+                'label_stats': dataset.label_stats,
+                'total_samples': dataset.validated_preprocessed_samples,
+            }
+        except:
+            return {
+                'label_stats': [],
+                'total_samples': 0,
+            }
 
 class ModelVersion(BaseModel):
     """Track trained model versions and their metadata."""

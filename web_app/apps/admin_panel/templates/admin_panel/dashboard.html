@@ -37,7 +37,7 @@
     </div>
 
     <div class="stat-card">
-        <h3>Dataset Size</h3>
+        <h3>Latest Dataset Size</h3>
         <div class="value">{{ total_samples }}</div>
         <div class="change">Landmark Samples</div>
     </div>
@@ -116,6 +116,7 @@
     <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
         <a href="{% url 'admin_panel:upload_data' %}" class="btn btn-primary">Upload Data</a>
         <a href="{% url 'admin_panel:models_list' %}" class="btn btn-primary">Manage Models</a>
+        <a href="{% url 'admin_panel:view_dataset' %}" class="btn btn-primary">Manage Datasets</a>
     </div>
 </div>
 

@@ -21,32 +21,12 @@ import base64
 
 from pathlib import Path
 
-from apps.core.models import ModelVersion, Prediction, TrainingRun
+from apps.core.models import ModelVersion, Prediction, TrainingRun, Dataset
 from .forms import DataUploadForm, TrainingConfigForm, ModelDeploymentForm
 from .services.model_manager import ModelManager
 from .services.training_service import TrainingService
 from .services.data_uploader import DataUploader
 
-
-# Webhook endpoint for training metrics callback
-@csrf_exempt
-@require_POST
-def training_callback(request):
-    """Receive training metrics and register model/metrics directly from ML API."""
-    try:
-        data = json.loads(request.body.decode('utf-8'))
-        job_id = data.get('job_id')
-        version = data.get('version')
-        metrics = data.get('metrics')
-        if not (job_id and version and metrics):
-            return JsonResponse({'error': 'Missing job_id, version, or metrics'}, status=400)
-
-        # Register model and metrics using TrainingService
-        service = TrainingService()
-        service.register_training_callback(job_id, version, metrics)
-        return JsonResponse({'status': 'ok'})
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
 
 def is_staff_or_superuser(user):
     """Check if user is staff or superuser."""
@@ -76,15 +56,11 @@ def dashboard(request):
 
     # Get model count
     total_models = ModelVersion.objects.count()
-
-    # Get dataset stats (from Landmarks DB)
-    try:
-        uploader = DataUploader()
-        stats = uploader.get_upload_statistics()
-        total_samples = stats['total_samples']
-    except Exception:
-        total_samples = 0
-
+    
+    # Get dataset stats
+    stats = Dataset.get_latest_statistics()
+    total_samples = stats['total_samples']
+    
     # Prediction distribution by class (last 24h)
     class_distribution = Prediction.objects.filter(
         created_at__gte=yesterday
@@ -253,29 +229,6 @@ def deploy_model(request, model_id):
 
 @login_required
 @user_passes_test(is_staff_or_superuser)
-def rollback_model(request, model_id):
-    """Rollback to a previous model version."""
-    model = get_object_or_404(ModelVersion, id=model_id)
-
-    if request.method == 'POST':
-        try:
-            ModelManager.rollback_to_model(model, request.user)
-            messages.success(request, f'Rolled back to model {model.version_id}!')
-            return redirect('admin_panel:models_list')
-        except Exception as e:
-            messages.error(request, f'Rollback failed: {str(e)}')
-            return redirect('admin_panel:models_list')
-
-    context = {
-        'model': model,
-    }
-
-    return render(request, 'admin_panel/rollback_model.html', context)
-
-
-
-@login_required
-@user_passes_test(is_staff_or_superuser)
 def upload_data(request):
     """Upload new labeled training data."""
     if request.method == 'POST':
@@ -283,10 +236,14 @@ def upload_data(request):
         if form.is_valid():
             try:
                 uploader = DataUploader()
-                counts = uploader.handle_upload(request.FILES['data_file'])
+                data_file = request.FILES['data_file']
+                dataset_version = form.cleaned_data['dataset_version']
+
+                counts = uploader.handle_upload(data_file, dataset_version=dataset_version, user=request.user)
+
                 messages.success(
-                    request,
-                    f"Successfully processed {counts['total']} samples into the dataset."
+                    request, 
+                    f"Successfully processed {counts['total']} raw samples."
                 )
                 return redirect('admin_panel:view_dataset')
             except Exception as e:
@@ -306,19 +263,37 @@ def upload_data(request):
 def view_dataset(request):
     """View training dataset statistics (Landmarks)."""
 
-    # Get stats from DataUploader (which now queries SQLite)
-    uploader = DataUploader()
-    stats = uploader.get_upload_statistics()
+    dataset_versions = Dataset.objects.all()
 
-    label_stats = stats.get('by_label', [])
-    total_samples = stats.get('total_samples', 0)
+    selected_version = request.GET.get('version')
+    if selected_version:
+        current_dataset = dataset_versions.filter(version=selected_version).first()
+    else:
+        current_dataset = dataset_versions.first()
+    if not current_dataset:
+        return render(request, 'admin_panel/view_dataset.html', {
+            'dataset_versions': [],
+        })
+    
+    stats = Dataset.get_statistics_for_version(current_dataset.version)
+    # {'label_stats': {'like': 1464, 'stop': 1599, 'two_up_inverted': 1525}, 'total_samples': 4588}
+    
+    total_samples = stats['total_samples']
+    label_counts = stats['label_stats']
 
-    labels = sorted([item['label'] for item in label_stats])
+    label_stats = [
+        {'label': label, 'count': count}
+        for label, count in label_counts.items()
+    ]
+
+    labels = sorted([item for item in label_counts])
 
     context = {
-        'labels': labels,
-        'label_stats': label_stats,
+        'dataset_versions': dataset_versions,
+        'current_dataset': current_dataset,
         'total_samples': total_samples,
+        'labels': labels,
+        'label_stats': label_stats
     }
 
     return render(request, 'admin_panel/view_dataset.html', context)

@@ -20,27 +20,6 @@ ML_TRAINING_API_URL = os.getenv('ML_TRAINING_API_URL', 'http://ml-training:8003'
 
 
 class TrainingService:
-    def register_training_callback(self, job_id, version, metrics):
-        """
-        Register a completed training run and its metrics from a webhook callback.
-        Args:
-            job_id: Training job/run ID
-            version: Model version string
-            metrics: Dict of training metrics
-        """
-        # Find the TrainingRun by job_id
-        training_run = TrainingRun.objects.filter(run_id=job_id).first()
-        if not training_run:
-            raise ValueError(f"TrainingRun with job_id {job_id} not found")
-
-        # Mark as completed and attach metrics
-        training_run.status = 'completed'
-        training_run.completed_at = timezone.now()
-        training_run.final_metrics = metrics
-        # Link model version (creates ModelVersion if needed)
-        self._link_model_version(training_run, metrics)
-        training_run.save()
-
     """Service for initiating and managing model training via HTTP API."""
     def __init__(self):
         self.api_url = ML_TRAINING_API_URL
@@ -57,38 +36,23 @@ class TrainingService:
             TrainingRun instance
         """
         # Create version name if not provided
-        version_name = config.get('version_name') or timezone.now().strftime("model_%Y%m%d_%H%M%S")
+        dataset = config['dataset_version']
+        
+        dataset_version = dataset.version
 
-        # Check landmarks database
-        db_path = Path(settings.DATABASES['landmarks']['NAME'])
-        if not db_path.exists():
-             raise ValueError(
-                "Cannot start training: No training data found. "
-                "Please upload gesture images first."
-            )
+        version_name = str(dataset_version) + str(timezone.now().strftime("_%Y%m%d_%H%M%S"))
 
-        # Optional: check count (rough check if any data exists)
-        try:
-             import sqlite3
-             with sqlite3.connect(db_path) as conn:
-                 cursor = conn.cursor()
-                 cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='gestures_processed'")
-                 if not cursor.fetchone():
-                      raise ValueError("Landmarks database exists but is empty/uninitialized.")
-
-                 cursor.execute("SELECT COUNT(*) FROM gestures_processed")
-                 count = cursor.fetchone()[0]
-                 if count == 0:
-                     raise ValueError("Landmarks database is empty.")
-        except Exception as e:
-            # Don't block entirely if check fails, but warn
-            pass
-
+        sample_count = dataset.validated_preprocessed_samples
+        if sample_count == 0:
+            raise ValueError("There are 0 samples in the dataset.")
+        
         # Prepare API request payload
         api_payload = {
             'epochs': config['epochs'],
             'batch_size': config['batch_size'],
-            'version': version_name,
+            'learning_rate': config['learning_rate'],
+            'dataset_version': dataset_version,
+            'version_name': version_name
         }
 
         # Call the ML Training API
@@ -118,7 +82,7 @@ class TrainingService:
             config={
                 'epochs': config['epochs'],
                 'batch_size': config['batch_size'],
-                'learning_rate': config.get('learning_rate'),
+                'learning_rate': config['learning_rate'],
                 'validation_split': config.get('validation_split', 0.2),
                 'version_name': version_name,
                 'description': config.get('description', ''),
@@ -239,12 +203,6 @@ class TrainingService:
         model_version = ModelVersion.objects.filter(version_id=version_id).first()
 
         if not model_version:
-            # Create a new ModelVersion entry from training context
-            epochs = (metrics or {}).get('config', {}).get('epochs') or training_run.config.get('epochs') or 0
-            batch_size = (metrics or {}).get('config', {}).get('batch_size') or training_run.config.get('batch_size') or 0
-            train_size = (metrics or {}).get('dataset', {}).get('train_count') or 0
-            test_size = (metrics or {}).get('dataset', {}).get('test_count') or 0
-
             # Determine if this model was set active by trainer (active_model.json)
             model_path = Path(settings.MODEL_PATH)
             active_file = model_path / 'active_model.json'
@@ -267,11 +225,14 @@ class TrainingService:
                 framework='tensorflow',
                 training_date=timezone.now(),
                 # Dataset info
-                train_dataset_size=train_size,
-                test_dataset_size=test_size or None,
+                train_dataset_size=(metrics or {}).get('dataset', {}).get('train_count') or 0,
+                test_dataset_size=(metrics or {}).get('dataset', {}).get('test_count') or 0,
+                validation_dataset_size=(metrics or {}).get('dataset', {}).get('validation_count') or 0,
                 # Hyperparameters
-                epochs=epochs,
-                batch_size=batch_size,
+                # Create a new ModelVersion entry from training contexs
+                learning_rate=training_run.config["learning_rate"],
+                epochs=(metrics or {}).get('config', {}).get('epochs') or training_run.config.get('epochs') or 0,
+                batch_size=(metrics or {}).get('config', {}).get('batch_size') or training_run.config.get('batch_size') or 0,
                 # Metrics - convert from 0-1 scale to percentage (0-100)
                 train_accuracy=((metrics or {}).get('train', {}).get('accuracy') or 0) * 100,
                 validation_accuracy=((metrics or {}).get('validation', {}).get('accuracy') or 0) * 100,
