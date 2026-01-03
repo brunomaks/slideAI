@@ -8,16 +8,12 @@ from django.conf import settings
 from django.core.files.uploadedfile import UploadedFile
 from django.db import transaction
 from django.db.models import Count
+from apps.core.models import Dataset
 
 
 class DataUploader:
     """Service for uploading and processing labeled training data."""
-    
-    def __init__(self):
-        self.db_path = Path(settings.DATABASES['landmarks']['NAME'])
-        self.db_path.parent.mkdir(parents=True, exist_ok=True)
-    
-    def handle_upload(self, uploaded_file: UploadedFile):
+    def handle_upload(self, uploaded_file: UploadedFile, dataset_version: str, user: None):
         """
         Handle ZIP file upload containing raw images.
         
@@ -29,6 +25,9 @@ class DataUploader:
         """
         if not uploaded_file.name.lower().endswith('.zip'):
             raise ValueError("Only ZIP files are supported")
+        
+        if Dataset.objects.filter(version=dataset_version).exists():
+            raise ValueError(f"Dataset version '{dataset_version}' already exists")
         
         # 1. Save ZIP locally
         # Use a timestamped filename to avoid collisions
@@ -43,13 +42,12 @@ class DataUploader:
                 
         # 2. Trigger Preprocessing via API
         ml_api_url = settings.ML_TRAINING_API_URL
-        version_id = f"v{timestamp}"
         
         try:
             resp = requests.post(
                 f"{ml_api_url}/preprocess",
                 json={
-                    "dataset_version": version_id,
+                    "dataset_version": dataset_version,
                     "zip_filename": zip_filename
                 },
                 timeout=10
@@ -73,8 +71,18 @@ class DataUploader:
                 
                 if status_data['status'] == 'completed':
                     # Return stats
-                    stats = self.get_upload_statistics()
-                    return {'total': stats['total_samples']}
+                    stats = status_data['message']
+                    dataset = Dataset.objects.create(
+                        version=dataset_version,
+                        uploaded_by=user,
+                        raw_samples=stats['total_raw_samples'],
+                        raw_preprocessed_samples=stats['total_preprocessed_samples'],
+                        validated_preprocessed_samples=stats['valid_preprocessed_samples'],
+                        zip_filename=zip_filename,
+                        label_stats=stats["label_stats"]
+                    )
+
+                    return {'total': stats['total_raw_samples'], 'dataset': dataset}
                     
                 if status_data['status'] == 'failed':
                     raise RuntimeError(f"Preprocessing failed: {status_data.get('message')}")
@@ -88,37 +96,3 @@ class DataUploader:
             # but user might want to keep it as backup. 
             # Current plan says "keep zip", so we leave it.
             pass
-
-    def get_upload_statistics(self):
-        """
-        Get statistics about uploaded data from SQLite.
-        
-        Returns:
-            Dictionary with upload statistics
-        """
-        try:
-            with sqlite3.connect(self.db_path) as conn:
-                cursor = conn.cursor()
-                
-                # Check if table exists
-                cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='gestures_processed'")
-                if not cursor.fetchone():
-                    return {'total_samples': 0, 'by_label': []}
-                
-                # Count total
-                cursor.execute("SELECT COUNT(*) FROM gestures_processed")
-                total = cursor.fetchone()[0]
-                
-                # Count by label
-                cursor.execute("SELECT gesture, COUNT(*) FROM gestures_processed GROUP BY gesture")
-                by_label = [
-                    {'label': row[0], 'count': row[1], 'dataset_type': 'all'} 
-                    for row in cursor.fetchall()
-                ]
-                
-                return {
-                    'total_samples': total,
-                    'by_label': by_label,
-                }
-        except Exception:
-             return {'total_samples': 0, 'by_label': []}

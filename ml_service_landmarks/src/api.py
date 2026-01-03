@@ -30,7 +30,9 @@ preprocessing_jobs: Dict[str, Dict[str, Any]] = {}
 class TrainingConfig(BaseModel):
     epochs: int = 10
     batch_size: int = 32
-    version: Optional[str] = None
+    learning_rate: float = 0.001
+    dataset_version: str
+    version_name: str
 
 
 class TrainingJobResponse(BaseModel):
@@ -58,15 +60,16 @@ def run_training(job_id: str, config: dict):
         
         # Import and run training directly (avoids subprocess + file I/O)
         from train import train_model
-        import argparse
         
         # Build args object matching train.py expectations
         class TrainingArgs:
             def __init__(self, cfg):
                 self.epochs = cfg.get('epochs', 10)
                 self.batch_size = cfg.get('batch_size', 32)
-                self.version = cfg.get('version')
-                self.no_set_active = False  # Set active by default
+                self.learning_rate = cfg.get('learning_rate')
+                self.dataset_version = cfg.get('dataset_version')
+                self.version_name = cfg.get('version_name')
+                self.no_set_active = True
                 self.model_output_path = '/models'
         
         args = TrainingArgs(config)
@@ -76,14 +79,8 @@ def run_training(job_id: str, config: dict):
         sys.stdout = captured_output = StringIO()
         
         try:
-            # train_model now returns (test_accuracy, metrics_dict)
             result = train_model(args)
-            if isinstance(result, tuple):
-                test_accuracy, metrics = result
-            else:
-                # Fallback for backward compatibility
-                test_accuracy = result
-                metrics = None
+            metrics = result
             
             training_jobs[job_id]['stdout'] = captured_output.getvalue()
             training_jobs[job_id]['status'] = 'completed'
@@ -92,8 +89,8 @@ def run_training(job_id: str, config: dict):
             if metrics:
                 training_jobs[job_id]['metrics'] = metrics
             
-            version = config.get('version') or ''
-            training_jobs[job_id]['model_file'] = f"gesture_model_{version}.keras" if version else (metrics.get('model_file') if metrics else None)
+            version = config['dataset_version']
+            training_jobs[job_id]['model_file'] = f"gesture_model_{version}.keras"
             
             # Trigger inference service reload if active_model.json was updated
             inference_url = os.getenv('INFERENCE_API_URL')
@@ -240,7 +237,12 @@ async def run_preprocessing(request: PreprocJobRequest):
                 normalized_stats = ingest_normalized_landmarks(DB_PATH, request.dataset_version)
                 
                 preprocessing_jobs[job_id]["status"] = "completed"
-                preprocessing_jobs[job_id]["message"] = f"Raw: {raw_stats}, Normalized: {normalized_stats}"
+                preprocessing_jobs[job_id]["message"] = {
+                    "total_raw_samples": raw_stats["total"],
+                    "total_preprocessed_samples": raw_stats["inserted"],
+                    "valid_preprocessed_samples": normalized_stats["inserted"],
+                    "label_stats": normalized_stats["label_stats"]
+                }
                 
             finally:
                 # Cleanup temp files

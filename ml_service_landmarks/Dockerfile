@@ -15,4 +15,4 @@ COPY . .
 EXPOSE 8003
 
 # Default: run API server (can be overridden for training-only)
-CMD ["python", "src/api.py"]
+CMD ["python3", "src/api.py"]
