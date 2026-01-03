@@ -1,0 +1,17 @@
+image: python:3.10-slim
+
+stages:
+  - test
+
+variables:
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+  PIP_NO_CACHE_DIR: "1"
+
+before_script:
+  - python -m pip install --upgrade pip
+  - pip install -r ml_service_landmarks/requirements.txt
+
+test:
+  stage: test
+  script:
+    - pytest ml_service_landmarks/test/test_preprocess_data.py
