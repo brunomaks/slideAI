@@ -4,10 +4,11 @@ import aiohttp
 from channels.generic.websocket import AsyncWebsocketConsumer
 from .views import process_frame
 
-class StreamConsumer(AsyncWebsocketConsumer):
+GLOBAL_INFERENCE_SEMAPHORE = asyncio.Semaphore(4)
+
+class LandmarksConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         self.session = aiohttp.ClientSession()
-        self.inference_semaphore = asyncio.Semaphore(3)
         await self.accept()
         print("WS connection accepted")
 
@@ -18,30 +19,24 @@ class StreamConsumer(AsyncWebsocketConsumer):
         print(f"WS connection closed: {close_code}")
 
     async def receive(self, text_data=None, bytes_data=None):
-        if text_data:
-            try:
-                data = json.loads(text_data)
-                msg_type = data.get("type")
-
-                if msg_type == "landmarks":
-                    await self.handle_landmarks(data)
-                elif msg_type == "ping":
-                    await self.send(text_data=json.dumps({"type": "pong"}))
-            except Exception as e:
-                print(f"Error processing message: {e}")
+        try:
+            data = json.loads(text_data)
+            await self.handle_landmarks(data)
+        except Exception as e:
+            print(f"Error processing message: {e}")
 
     async def handle_landmarks(self, data):
         try:
-            request_id = data.get("request_id")
-            landmarks = data.get("landmarks")
-            handedness = data.get("handedness")
+            request_id = data["request_id"]
+            landmarks = data["landmarks"]
+            handedness = data["handedness"]
 
             if request_id is None or landmarks is None or handedness is None:
                 print("Missing required fields in landmarks message")
                 return
 
-            if self.inference_semaphore.locked() and self.inference_semaphore._value == 0:
-                print(f"All 3 inference slots busy, skipping request {request_id}")
+            if GLOBAL_INFERENCE_SEMAPHORE.locked():
+                print(f"All inference slots busy, skipping request {request_id}")
                 return
             
             asyncio.create_task(self.process_inference_request(request_id, landmarks, handedness))
@@ -50,16 +45,11 @@ class StreamConsumer(AsyncWebsocketConsumer):
             print(f"Error handling landmarks: {e}")
 
     async def process_inference_request(self, request_id, landmarks, handedness):
-        async with self.inference_semaphore:
+        async with GLOBAL_INFERENCE_SEMAPHORE:
             try:
                 result = await process_frame(self.session, landmarks, handedness)
                 
                 if result:
-                    response = {
-                        "type": "inference_result",
-                        "request_id": request_id,
-                        "result": result
-                    }
-                    await self.send(text_data=json.dumps(response))
+                    await self.send(text_data=json.dumps(result))
             except Exception as e:
                 print(f"Error processing inference request {request_id}: {e}")

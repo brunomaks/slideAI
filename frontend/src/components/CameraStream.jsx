@@ -12,7 +12,7 @@ const streamConfig = {
 export default function CameraStream({ onStreamReady }) {
     const videoRef = useRef(null);
     const rawStreamRef = useRef(null);
-    const { connectStream, disconnectStream, sendMessage } = useWebSocket();
+    const { connect, disconnect, send } = useWebSocket();
     const [stream, setStream] = useState(null)
     const subscribeToLandmarks = useHandLandmarks(stream);
 
@@ -34,8 +34,6 @@ export default function CameraStream({ onStreamReady }) {
                     videoRef.current.srcObject = rawStream;
                     rawStreamRef.current = rawStream;
 
-                    connectStream(rawStream);
-
                     if (onStreamReady) {
                         onStreamReady(rawStream);
                     }
@@ -51,12 +49,13 @@ export default function CameraStream({ onStreamReady }) {
         };
 
         startCamera();
+        connect(); // connect ws
 
         return () => {
             if (rawStreamRef.current) {
                 rawStreamRef.current.getTracks().forEach((track) => track.stop());
             }
-            disconnectStream();
+            disconnect(); // disconnect ws
         };
     }, []);
 
@@ -73,7 +72,7 @@ export default function CameraStream({ onStreamReady }) {
                 handedness: landmarks_obj.handedness
             }
 
-            sendMessage(message)
+            send(message)
         });
 
         return () => unsubscribe();

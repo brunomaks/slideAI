@@ -21,7 +21,7 @@ export default function SlidesView() {
     const LOCK_DURATION = 2000
     const CONFIDENCE_THRESHOLD = 0.9
 
-    const { prediction } = useWebSocket();
+    const { lastMessage: prediction } = useWebSocket();
 
     const [uiVisible, setUiVisible] = useState(true);
 
