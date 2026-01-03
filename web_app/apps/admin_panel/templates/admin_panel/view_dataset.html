@@ -5,9 +5,10 @@
 {% block content %}
 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
     <h1>Dataset Statistics</h1>
-    <a href="{% url 'admin_panel:upload_data' %}" class="btn btn-primary">Upload More Data</a>
 </div>
 
+
+{% if dataset_versions %}
 <div class="form-group" style="display: flex; align-items: center; gap: 1rem; max-width: fit-content;">
     <label for="version-select">Select Dataset Version:</label>
     <select id="version-select" onchange="window.location.href='?version='+this.value" style="width: auto;">
@@ -59,4 +60,9 @@
     </table>
 </div>
 
+{% else %}
+<div class="card">
+    <p>No datasets found. <a href="{% url 'admin_panel:upload_data' %}">Upload your first dataset</a>.</p>
+</div>
+{% endif %}
 {% endblock %}

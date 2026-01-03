@@ -270,6 +270,10 @@ def view_dataset(request):
         current_dataset = dataset_versions.filter(version=selected_version).first()
     else:
         current_dataset = dataset_versions.first()
+    if not current_dataset:
+        return render(request, 'admin_panel/view_dataset.html', {
+            'dataset_versions': [],
+        })
     
     stats = Dataset.get_statistics_for_version(current_dataset.version)
     # {'label_stats': {'like': 1464, 'stop': 1599, 'two_up_inverted': 1525}, 'total_samples': 4588}

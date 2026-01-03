@@ -35,7 +35,7 @@ class Dataset(BaseModel):
                 'label_stats': dataset.label_stats,
                 'total_samples': dataset.validated_preprocessed_samples,
             }
-        except cls.DoesNotExist:
+        except:
             return {
                 'label_stats': [],
                 'total_samples': 0,
@@ -50,7 +50,7 @@ class Dataset(BaseModel):
                 'label_stats': dataset.label_stats,
                 'total_samples': dataset.validated_preprocessed_samples,
             }
-        except cls.DoesNotExist:
+        except:
             return {
                 'label_stats': [],
                 'total_samples': 0,
