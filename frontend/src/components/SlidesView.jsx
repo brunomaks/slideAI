@@ -36,7 +36,7 @@ export default function SlidesView() {
     const revealRootRef = useRef(null);
     const [showDialog, setShowDialog] = useState(false);
     const lastNavigationRef = useRef(0)
-    const LOCK_DURATION = 2000
+    const LOCK_DURATION = 1000
     const CONFIDENCE_THRESHOLD = 0.9
 
     const { lastMessage: prediction } = useWebSocket();

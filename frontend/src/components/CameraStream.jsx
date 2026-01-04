@@ -3,7 +3,7 @@ import { useWebSocket } from "../contexts/WebSocketContext";
 import { useHandLandmarks } from "../hooks/useHandLandmarks";
 
 const streamConfig = {
-    fps: parseInt(import.meta.env.VITE_MAX_STREAM_FPS) || 5,
+    fps: parseInt(import.meta.env.VITE_MAX_STREAM_FPS) || 30,
     width: parseInt(import.meta.env.VITE_MAX_STREAM_WIDTH) || 1280,
     height: parseInt(import.meta.env.VITE_MAX_STREAM_HEIGHT) || 720,
     delay: parseInt(import.meta.env.VITE_ORIGINAL_STREAM_VIEW_DELAY_MS) || 2000,
