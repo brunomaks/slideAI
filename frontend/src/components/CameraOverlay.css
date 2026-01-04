@@ -53,8 +53,19 @@
 }
 
 .mediapipe-status {
-    margin-top: 0vh;
     font-size: 11px;
     font-weight: bold;
-    color: rgb(55, 177, 83);
+    opacity: 0.8;
+}
+
+.status-ready {
+    color: #4CAF50;
+}
+
+.status-loading {
+    color: #FFA500;
+}
+
+.status-error {
+    color: #f44336;
 }
