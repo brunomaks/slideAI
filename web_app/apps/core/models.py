@@ -10,54 +10,73 @@ class BaseModel(models.Model):
         abstract = True
 
 
-class ImageMetadata(BaseModel):
-    """Store metadata for training images."""
-    filename = models.CharField(max_length=255)
-    label = models.CharField(max_length=50, db_index=True)
-    width = models.IntegerField()
-    height = models.IntegerField()
-    file_path = models.CharField(max_length=512)
-    dataset_type = models.CharField(
-        max_length=10, 
-        choices=[('train', 'Training'), ('test', 'Test'), ('validation', 'Validation')],
-        default='train',
-        db_index=True
-    )
-    is_synthetic = models.BooleanField(default=False)
-    source_dataset = models.CharField(max_length=100, default='hagrid')
+class Dataset(BaseModel):
+    version = models.CharField(max_length=50, unique=True)
+    uploaded_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+    raw_samples = models.IntegerField()
+    raw_preprocessed_samples = models.IntegerField()
+    validated_preprocessed_samples = models.IntegerField()
+    zip_filename = models.CharField(max_length=255)
+    label_stats = models.JSONField()
 
     class Meta:
-        db_table = 'image_metadata'
-        indexes = [
-            models.Index(fields=['label', 'dataset_type']),
-        ]
+        ordering = ['-uploaded_at']
 
     def __str__(self):
-        return f"{self.filename} ({self.label})"
-
+        return f"{self.version} ({self.validated_preprocessed_samples} samples)"
+    
+    @classmethod
+    def get_latest_statistics(cls):
+        """Get statistics from the most recent dataset."""
+        try:
+            dataset = cls.objects.first()
+            return {
+                'label_stats': dataset.label_stats,
+                'total_samples': dataset.validated_preprocessed_samples,
+            }
+        except:
+            return {
+                'label_stats': [],
+                'total_samples': 0,
+            }
+    
+    @classmethod
+    def get_statistics_for_version(cls, version):
+        """Get statistics for a specific dataset version."""
+        try:
+            dataset = cls.objects.get(version=version)
+            return {
+                'label_stats': dataset.label_stats,
+                'total_samples': dataset.validated_preprocessed_samples,
+            }
+        except:
+            return {
+                'label_stats': [],
+                'total_samples': 0,
+            }
 
 class ModelVersion(BaseModel):
     """Track trained model versions and their metadata."""
     version_id = models.CharField(max_length=100, unique=True, db_index=True)
     model_file = models.CharField(max_length=255)
     framework = models.CharField(max_length=50, default='tensorflow')
-    
+
     # Training metadata
     training_date = models.DateTimeField()
     trained_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
     training_duration_seconds = models.IntegerField(null=True, blank=True)
-    
+
     # Dataset info
     train_dataset_size = models.IntegerField()
     test_dataset_size = models.IntegerField(null=True, blank=True)
     validation_dataset_size = models.IntegerField(null=True, blank=True)
-    
+
     # Hyperparameters
     epochs = models.IntegerField()
     batch_size = models.IntegerField()
     learning_rate = models.FloatField(null=True, blank=True)
-    image_size = models.IntegerField()
-    
+
     # Performance metrics
     train_accuracy = models.FloatField(null=True, blank=True)
     validation_accuracy = models.FloatField(null=True, blank=True)
@@ -65,18 +84,24 @@ class ModelVersion(BaseModel):
     train_loss = models.FloatField(null=True, blank=True)
     validation_loss = models.FloatField(null=True, blank=True)
     test_loss = models.FloatField(null=True, blank=True)
-    
+
+    # Evaluation metrics
+    test_precision = models.FloatField(null=True, blank=True)
+    test_recall = models.FloatField(null=True, blank=True)
+    test_f1_score = models.FloatField(null=True, blank=True)
+    confusion_matrix = models.JSONField(null=True, blank=True)
+
     # Deployment status
     is_active = models.BooleanField(default=False, db_index=True)
     deployment_date = models.DateTimeField(null=True, blank=True)
     deployed_by = models.ForeignKey(
-        User, 
-        on_delete=models.SET_NULL, 
-        null=True, 
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
         blank=True,
         related_name='deployed_models'
     )
-    
+
     # Notes
     description = models.TextField(blank=True)
     notes = models.TextField(blank=True)
@@ -94,30 +119,30 @@ class Prediction(BaseModel):
     """Log all predictions made by the system."""
     session_id = models.CharField(max_length=100, db_index=True, blank=True)
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
-    
+
     # Model info
     model_version = models.ForeignKey(
-        ModelVersion, 
-        on_delete=models.SET_NULL, 
+        ModelVersion,
+        on_delete=models.SET_NULL,
         null=True,
         related_name='predictions'
     )
-    
+
     # Prediction details
     predicted_class = models.CharField(max_length=50)
     confidence = models.FloatField()
     all_probabilities = models.JSONField(null=True, blank=True)  # Store all class probabilities
-    
+
     # Input metadata
     image_width = models.IntegerField(null=True, blank=True)
     image_height = models.IntegerField(null=True, blank=True)
-    
+
     # Performance tracking
     inference_time_ms = models.FloatField(null=True, blank=True)
-    
+
     # Optional feedback
     user_feedback = models.CharField(
-        max_length=20, 
+        max_length=20,
         choices=[('correct', 'Correct'), ('incorrect', 'Incorrect'), ('unknown', 'Unknown')],
         default='unknown',
         blank=True
@@ -140,13 +165,13 @@ class TrainingRun(BaseModel):
     """Track model training runs and their outcomes."""
     run_id = models.CharField(max_length=100, unique=True)
     model_version = models.OneToOneField(
-        ModelVersion, 
+        ModelVersion,
         on_delete=models.CASCADE,
         related_name='training_run',
         null=True,
         blank=True
     )
-    
+
     # Status tracking
     status = models.CharField(
         max_length=20,
@@ -160,15 +185,15 @@ class TrainingRun(BaseModel):
         default='pending',
         db_index=True
     )
-    
+
     # Training details
     started_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
     started_at = models.DateTimeField(null=True, blank=True)
     completed_at = models.DateTimeField(null=True, blank=True)
-    
+
     # Configuration
     config = models.JSONField(default=dict)  # Store all hyperparameters
-    
+
     # Results
     final_metrics = models.JSONField(null=True, blank=True)
     error_message = models.TextField(blank=True)
@@ -187,7 +212,7 @@ class UploadTask(BaseModel):
     task_id = models.CharField(max_length=100, unique=True, db_index=True)
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
     filename = models.CharField(max_length=255)
-    
+
     # Progress tracking
     status = models.CharField(
         max_length=20,
@@ -203,7 +228,7 @@ class UploadTask(BaseModel):
     processed_files = models.IntegerField(default=0)
     train_count = models.IntegerField(default=0)
     test_count = models.IntegerField(default=0)
-    
+
     # Results
     error_message = models.TextField(blank=True)
     completed_at = models.DateTimeField(null=True, blank=True)
@@ -214,7 +239,7 @@ class UploadTask(BaseModel):
 
     def __str__(self):
         return f"Upload {self.task_id} - {self.status}"
-    
+
     @property
     def progress_percentage(self):
         if self.total_files == 0:

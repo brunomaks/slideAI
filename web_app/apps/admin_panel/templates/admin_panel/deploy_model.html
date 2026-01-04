@@ -1,13 +1,13 @@
 {% extends 'admin_panel/base.html' %}
 
-{% block title %}Deploy Model{% endblock %}
+{% block title %}Activate Model{% endblock %}
 
 {% block content %}
-<h1 style="margin-bottom: 2rem;">Deploy Model: {{ model.version_id }}</h1>
+<h1 style="margin-bottom: 2rem;">Activate Model: {{ model.version_id }}</h1>
 
 <div class="card">
-    <h2>Deployment Confirmation</h2>
-    <p style="margin: 1rem 0;">You are about to deploy this model as the active production model.</p>
+    <h2>Activation Confirmation</h2>
+    <p style="margin: 1rem 0;">You are about to make this model the active production model.</p>
 
     <table style="margin: 1.5rem 0;">
         <tr>
@@ -28,16 +28,16 @@
         </tr>
         <tr>
             <th>Dataset Size</th>
-            <td>{{ model.train_dataset_size }} training images</td>
+            <td>{{ model.train_dataset_size }} samples</td>
         </tr>
     </table>
 
     <form method="post">
         {% csrf_token %}
 
-        <div class="form-group">
-            {{ form.confirm }}
+        <div class="form-group" style="display: flex; align-items: center;">
             {{ form.confirm.label_tag }}
+            {{ form.confirm }} 
         </div>
 
         <div class="form-group">
@@ -45,7 +45,7 @@
             {{ form.notes }}
         </div>
 
-        <button type="submit" class="btn btn-success">Deploy Model</button>
+        <button type="submit" class="btn btn-success">Activate Model</button>
         <a href="{% url 'admin_panel:models_list' %}" class="btn btn-secondary">Cancel</a>
     </form>
 </div>

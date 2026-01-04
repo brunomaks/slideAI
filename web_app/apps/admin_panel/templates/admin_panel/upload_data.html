@@ -8,12 +8,10 @@
 <div class="card">
     <h2>Upload Instructions</h2>
     <p style="margin-top: 1rem; line-height: 1.8;">
-        Upload a ZIP file containing <strong>train/</strong> and <strong>test/</strong> folders.<br>
-        Inside each folder, create subfolders for each gesture label (e.g., "like", "stop").<br>
-        Place images for each gesture in its corresponding folder.<br><br>
+        Upload a <strong>ZIP file</strong> containing folders of raw images.<br>
     </p>
     <p style="margin-top: 1rem;">
-        <strong>Supported formats:</strong> JPG, JPEG, PNG
+        <strong>Supported formats:</strong> ZIP containing JPG/PNG images
     </p>
 </div>
 
@@ -22,6 +20,12 @@
     <form method="post" enctype="multipart/form-data" id="upload-form">
         {% csrf_token %}
 
+        <div class="form-group" style="margin-bottom: 1rem;">
+            {{ form.dataset_version.label_tag }}
+            {{ form.dataset_version }}
+            <small>{{ form.dataset_version.help_text }}</small>
+        </div>
+
         <div class="form-group">
             {{ form.data_file.label_tag }}
             {{ form.data_file }}
@@ -29,7 +33,6 @@
         </div>
 
         <button type="submit" class="btn btn-primary" id="submit-btn">Upload Data</button>
-        <a href="{% url 'admin_panel:view_images' %}" class="btn btn-secondary">View Uploaded Images</a>
 
         <div id="upload-spinner" style="display: none; margin-top: 1rem; text-align: center;">
             <div style="

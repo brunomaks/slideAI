@@ -7,11 +7,12 @@ import sqlite3
 import os
 
 from sklearn.model_selection import train_test_split
+from sklearn.metrics import precision_score, recall_score, f1_score, confusion_matrix
+
 import tensorflow as tf
 from tensorflow.keras import layers, models
 
 DB_PATH = os.getenv('DATABASE_PATH')
-print(f"DATABASE PATH resolved: {DB_PATH}")
 
 def train_model(args):
     print("Training MLP model...")
@@ -19,6 +20,8 @@ def train_model(args):
 
     BATCH_SIZE = args.batch_size
     EPOCHS = args.epochs
+    LEARNING_RATE = args.learning_rate
+    DATASET_VERSION = args.dataset_version
     INPUT_DIM = 42
     CLASS_NAMES = []
     TRAIN_SAMPLES = 0
@@ -31,7 +34,8 @@ def train_model(args):
 
         rows = cur.execute("""
             SELECT gesture, landmarks FROM gestures_processed
-        """).fetchall()
+            WHERE dataset_version = ?
+        """, (DATASET_VERSION,)).fetchall() # pass a tuple of 1 element because of how sqlite binding works
 
         conn.close()
 
@@ -48,7 +52,7 @@ def train_model(args):
                 gesture_to_idx[gesture] = len(gesture_to_idx)
 
             y.append(gesture_to_idx[gesture])
-        
+
         X = np.array(X, dtype=np.float32)
         y = np.array(y, dtype=np.int32)
 
@@ -94,14 +98,14 @@ def train_model(args):
     ])
 
     model.compile(
-        optimizer=tf.keras.optimizers.Adam(learning_rate=0.001),
+        optimizer=tf.keras.optimizers.Adam(learning_rate=LEARNING_RATE),
         loss='sparse_categorical_crossentropy',
         metrics=['accuracy']
     )
 
     model.summary()
 
-    # Stop trainign when val_loss does not improve for 10 consecutive epochs 
+    # Stop trainign when val_loss does not improve for 10 consecutive epochs
     early_stopping = tf.keras.callbacks.EarlyStopping(
         monitor='val_loss',
         patience=10,
@@ -124,8 +128,28 @@ def train_model(args):
     test_loss, test_accuracy = model.evaluate(test_dataset, verbose=2)
     print(f"Test Accuracy: {test_accuracy:.4f}")
 
+    # Get predictions for test set
+    y_pred_probs = model.predict(test_dataset)
+    y_pred = np.argmax(y_pred_probs, axis=1)
+
+    # true labels
+    y_true = np.concatenate([y for x, y in test_dataset], axis=0)
+
+    # Compute precision, recall, f1
+    precision = precision_score(y_true, y_pred, average='macro')
+    recall = recall_score(y_true, y_pred, average='macro')
+    f1 = f1_score(y_true, y_pred, average='macro')
+
+    # Compute confusion matrix
+    conf_matrix = confusion_matrix(y_true, y_pred)
+
+    print(f"Test Precision: {precision:.4f}")
+    print(f"Test Recall: {recall:.4f}")
+    print(f"Test F1 Score: {f1:.4f}")
+    print(f"Confusion Matrix:\n{conf_matrix}")
+
     # Save model with versioning
-    version = args.version or datetime.now().strftime("%Y%m%d_%H%M%S")
+    version = args.version_name
 
     output_path = Path(args.model_output_path)
     output_path.mkdir(parents=True, exist_ok=True)
@@ -151,47 +175,42 @@ def train_model(args):
             print(f"Failed to write active model file: {e}")
 
 
+    # Build metrics dict for API/callback (stored in DB, not file)
+    # Training metrics from history
+    train_acc = float(history.history.get('accuracy', [0.0])[-1])
+    train_loss_val = float(history.history.get('loss', [0.0])[-1])
 
-    # Export metrics alongside the model for downstream registration
-    try:
-        # Training metrics from history
-        train_acc = float(history.history.get('accuracy', [0.0])[-1])
-        train_loss = float(history.history.get('loss', [0.0])[-1])
-
-        metrics = {
-            'model_file': f"gesture_model_{version}.keras",
-            'version': version,
-            'config': {
-                'epochs': EPOCHS,
-                'batch_size': BATCH_SIZE,
-            },
-            'dataset': {
-                'train_count': TRAIN_SAMPLES,
-                'validation_count': VAL_SAMPLES,
-                'test_count': TEST_SAMPLES,
-            },
-            'train': {
-                'accuracy': float(train_acc),
-                'loss': float(train_loss),
-            },
-            'validation': {
-                'accuracy': float(val_accuracy),
-                'loss': float(val_loss),
-            },
-            'test': {
-                'accuracy': float(test_accuracy),
-                'loss': float(test_loss),
-            }
+    metrics = {
+        'model_file': f"gesture_model_{version}.keras",
+        'version': version,
+        'config': {
+            'epochs': EPOCHS,
+            'batch_size': BATCH_SIZE,
+        },
+        'dataset': {
+            'train_count': TRAIN_SAMPLES,
+            'validation_count': VAL_SAMPLES,
+            'test_count': TEST_SAMPLES,
+        },
+        'train': {
+            'accuracy': float(train_acc),
+            'loss': float(train_loss_val),
+        },
+        'validation': {
+            'accuracy': float(val_accuracy),
+            'loss': float(val_loss),
+        },
+        'test': {
+            'accuracy': float(test_accuracy),
+            'loss': float(test_loss),
+            'precision': float(precision),
+            'recall': float(recall),
+            'f1_score': float(f1),
+            'confusion_matrix': conf_matrix.tolist()
         }
+    }
 
-        metrics_path = Path(args.model_output_path) / f"gesture_model_{version}.metrics.json"
-        with open(metrics_path, 'w') as f:
-            json.dump(metrics, f, indent=2)
-        print(f"Metrics saved: {metrics_path}")
-    except Exception as e:
-        print(f"Failed to write metrics file: {e}")
-
-    return test_accuracy
+    return metrics
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Train a MLP model for gesture recognition.")

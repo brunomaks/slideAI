@@ -11,34 +11,22 @@ from datetime import datetime, timedelta
 import os
 import zipfile
 import shutil
+
+from matplotlib.colors import LinearSegmentedColormap
+import matplotlib.pyplot as plt
+import seaborn as sns
+import numpy as np
+import io
+import base64
+
 from pathlib import Path
 
-from apps.core.models import ModelVersion, Prediction, TrainingRun
+from apps.core.models import ModelVersion, Prediction, TrainingRun, Dataset
 from .forms import DataUploadForm, TrainingConfigForm, ModelDeploymentForm
 from .services.model_manager import ModelManager
 from .services.training_service import TrainingService
 from .services.data_uploader import DataUploader
 
-
-# Webhook endpoint for training metrics callback
-@csrf_exempt
-@require_POST
-def training_callback(request):
-    """Receive training metrics and register model/metrics directly from ML API."""
-    try:
-        data = json.loads(request.body.decode('utf-8'))
-        job_id = data.get('job_id')
-        version = data.get('version')
-        metrics = data.get('metrics')
-        if not (job_id and version and metrics):
-            return JsonResponse({'error': 'Missing job_id, version, or metrics'}, status=400)
-
-        # Register model and metrics using TrainingService
-        service = TrainingService()
-        service.register_training_callback(job_id, version, metrics)
-        return JsonResponse({'status': 'ok'})
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
 
 def is_staff_or_superuser(user):
     """Check if user is staff or superuser."""
@@ -51,33 +39,33 @@ def dashboard(request):
     """Admin dashboard with overview of system status."""
     # Get active model
     active_model = ModelVersion.objects.filter(is_active=True).first()
-    
+
     # Get recent predictions
     recent_predictions = Prediction.objects.select_related('model_version').order_by('-created_at')[:10]
-    
+
     # Get prediction stats (last 24 hours)
     yesterday = timezone.now() - timedelta(hours=24)
     predictions_24h = Prediction.objects.filter(created_at__gte=yesterday).count()
     avg_confidence_24h = Prediction.objects.filter(
         created_at__gte=yesterday
     ).aggregate(avg_conf=Avg('confidence'))['avg_conf'] or 0
-    
+
     # Get training runs
     active_training = TrainingRun.objects.filter(status='running').first()
     recent_trainings = TrainingRun.objects.order_by('-created_at')[:5]
-    
+
     # Get model count
     total_models = ModelVersion.objects.count()
     
     # Get dataset stats
-    train_images = ImageMetadata.objects.filter(dataset_type='train').count()
-    test_images = ImageMetadata.objects.filter(dataset_type='test').count()
+    stats = Dataset.get_latest_statistics()
+    total_samples = stats['total_samples']
     
     # Prediction distribution by class (last 24h)
     class_distribution = Prediction.objects.filter(
         created_at__gte=yesterday
     ).values('predicted_class').annotate(count=Count('id')).order_by('-count')
-    
+
     # Calculate percentages
     class_dist_with_percentage = []
     for item in class_distribution:
@@ -87,7 +75,7 @@ def dashboard(request):
             'count': item['count'],
             'percentage': round(percentage, 1)
         })
-    
+
     context = {
         'active_model': active_model,
         'recent_predictions': recent_predictions,
@@ -96,11 +84,10 @@ def dashboard(request):
         'active_training': active_training,
         'recent_trainings': recent_trainings,
         'total_models': total_models,
-        'train_images': train_images,
-        'test_images': test_images,
+        'total_samples': total_samples,
         'class_distribution': class_dist_with_percentage,
     }
-    
+
     return render(request, 'admin_panel/dashboard.html', context)
 
 
@@ -108,12 +95,25 @@ def dashboard(request):
 @user_passes_test(is_staff_or_superuser)
 def models_list(request):
     """List all model versions."""
+    # Sync any completed training runs that might not have models linked yet
+    # This handles the case where user navigates directly to models without visiting training status
+    service = TrainingService()
+    pending_sync_runs = TrainingRun.objects.filter(
+        status__in=['running', 'pending'],
+    ).select_related('model_version')
+
+    for run in pending_sync_runs:
+        try:
+            service.check_training_status(run)
+        except Exception:
+            pass  # Don't block page load for API errors
+
     models = ModelVersion.objects.all()
-    
+
     context = {
         'models': models,
     }
-    
+
     return render(request, 'admin_panel/models_list.html', context)
 
 
@@ -122,17 +122,17 @@ def models_list(request):
 def model_detail(request, model_id):
     """View details of a specific model."""
     model = get_object_or_404(ModelVersion, id=model_id)
-    
+
     # Get predictions made by this model
     predictions = model.predictions.order_by('-created_at')[:100]
     prediction_count = model.predictions.count()
     avg_confidence = model.predictions.aggregate(avg=Avg('confidence'))['avg'] or 0
-    
+
     # Get class distribution
     class_dist = model.predictions.values('predicted_class').annotate(
         count=Count('id')
     ).order_by('-count')
-    
+
     # Calculate percentages
     class_dist_with_percentage = []
     for item in class_dist:
@@ -142,65 +142,89 @@ def model_detail(request, model_id):
             'count': item['count'],
             'percentage': round(percentage, 1)
         })
-    
+
+    # Generate confusion matrix image if available
+    cm = model.confusion_matrix
+    if model.confusion_matrix:
+        cm = np.array(model.confusion_matrix)
+        cm_image = plot_confusion_matrix(cm)
+    else:
+        cm_image = None
+
     context = {
         'model': model,
         'predictions': predictions,
+        'cm_image': cm_image,
         'prediction_count': prediction_count,
         'avg_confidence': avg_confidence,
         'class_dist': class_dist_with_percentage,
     }
-    
+
     return render(request, 'admin_panel/model_detail.html', context)
 
+
+def plot_confusion_matrix(cm, fig_bg_color='#262c49', ax_bg_color='#2c3355', text_color='white'):
+    labels = [f"Class {i}" for i in range(cm.shape[0])]
+
+    # Create custom colormap
+    custom_cmap = LinearSegmentedColormap.from_list('dark_theme', ['#2c3355', '#6f5bdc'])
+    fig, ax = plt.subplots(figsize=(6, 5))
+    fig.patch.set_facecolor(fig_bg_color)
+    ax.set_facecolor(ax_bg_color)
+
+    # Create heatmap
+    heatmap = sns.heatmap(
+        cm, annot=True, fmt='d', cmap=custom_cmap,
+        xticklabels=labels, yticklabels=labels,
+        annot_kws={"color": text_color, "weight": "bold"},
+        ax=ax, cbar=True, linewidths=0.5, linecolor='#1f2233'
+    )
+    cbar = heatmap.collections[0].colorbar
+    cbar.ax.yaxis.set_tick_params(color=text_color)
+    plt.setp(cbar.ax.get_yticklabels(), color=text_color)
+    if cbar.ax.get_ylabel():
+        cbar.ax.yaxis.label.set_color(text_color)
+
+    # Labels and title
+    ax.set_xlabel('Predicted', color=text_color)
+    ax.set_ylabel('Actual', color=text_color)
+    ax.set_title('Confusion Matrix', color=text_color)
+    ax.tick_params(colors=text_color)
+
+    # Save to buffer
+    buf = io.BytesIO()
+    fig.tight_layout()
+    fig.savefig(buf, format='png', facecolor=fig_bg_color)
+    plt.close(fig)
+    buf.seek(0)
+
+    img_base64 = base64.b64encode(buf.getvalue()).decode('utf-8')
+    return img_base64
 
 @login_required
 @user_passes_test(is_staff_or_superuser)
 def deploy_model(request, model_id):
-    """Deploy a model version as the active model."""
+    """Activate a model version as the active model."""
     model = get_object_or_404(ModelVersion, id=model_id)
-    
+
     if request.method == 'POST':
         form = ModelDeploymentForm(request.POST)
         if form.is_valid():
             try:
                 ModelManager.deploy_model(model, request.user, form.cleaned_data.get('notes', ''))
-                messages.success(request, f'Model {model.version_id} deployed successfully!')
+                messages.success(request, f'Model {model.version_id} activated successfully!')
                 return redirect('admin_panel:models_list')
             except Exception as e:
-                messages.error(request, f'Deployment failed: {str(e)}')
+                messages.error(request, f'Activation failed: {str(e)}')
     else:
         form = ModelDeploymentForm()
-    
+
     context = {
         'model': model,
         'form': form,
     }
-    
+
     return render(request, 'admin_panel/deploy_model.html', context)
-
-
-@login_required
-@user_passes_test(is_staff_or_superuser)
-def rollback_model(request, model_id):
-    """Rollback to a previous model version."""
-    model = get_object_or_404(ModelVersion, id=model_id)
-    
-    if request.method == 'POST':
-        try:
-            ModelManager.rollback_to_model(model, request.user)
-            messages.success(request, f'Rolled back to model {model.version_id}!')
-            return redirect('admin_panel:models_list')
-        except Exception as e:
-            messages.error(request, f'Rollback failed: {str(e)}')
-            return redirect('admin_panel:models_list')
-    
-    context = {
-        'model': model,
-    }
-    
-    return render(request, 'admin_panel/rollback_model.html', context)
-
 
 
 @login_required
@@ -212,55 +236,67 @@ def upload_data(request):
         if form.is_valid():
             try:
                 uploader = DataUploader()
-                counts = uploader.handle_upload(request.FILES['data_file'])
+                data_file = request.FILES['data_file']
+                dataset_version = form.cleaned_data['dataset_version']
+
+                counts = uploader.handle_upload(data_file, dataset_version=dataset_version, user=request.user)
+
                 messages.success(
                     request, 
-                    f"Successfully uploaded {counts['train']} train and {counts['test']} test images."
+                    f"Successfully processed {counts['total']} raw samples."
                 )
-                return redirect('admin_panel:view_images')
+                return redirect('admin_panel:view_dataset')
             except Exception as e:
                 messages.error(request, f'Upload failed: {str(e)}')
     else:
         form = DataUploadForm()
-    
+
     context = {
         'form': form,
     }
-    
+
     return render(request, 'admin_panel/upload_data.html', context)
 
 
 @login_required
 @user_passes_test(is_staff_or_superuser)
-def view_images(request):
-    """View uploaded images by label."""
-    label_filter = request.GET.get('label', '')
-    dataset_type = request.GET.get('dataset_type', 'train')
+def view_dataset(request):
+    """View training dataset statistics (Landmarks)."""
+
+    dataset_versions = Dataset.objects.all()
+
+    selected_version = request.GET.get('version')
+    if selected_version:
+        current_dataset = dataset_versions.filter(version=selected_version).first()
+    else:
+        current_dataset = dataset_versions.first()
+    if not current_dataset:
+        return render(request, 'admin_panel/view_dataset.html', {
+            'dataset_versions': [],
+        })
     
-    images_query = ImageMetadata.objects.filter(dataset_type=dataset_type)
+    stats = Dataset.get_statistics_for_version(current_dataset.version)
+    # {'label_stats': {'like': 1464, 'stop': 1599, 'two_up_inverted': 1525}, 'total_samples': 4588}
     
-    if label_filter:
-        images_query = images_query.filter(label=label_filter)
-    
-    images = images_query.order_by('-created_at')[:100]
-    
-    # Get available labels
-    labels = ImageMetadata.objects.values_list('label', flat=True).distinct().order_by('label')
-    
-    # Get stats by label
-    label_stats = ImageMetadata.objects.filter(dataset_type=dataset_type).values('label').annotate(
-        count=Count('id')
-    ).order_by('label')
-    
+    total_samples = stats['total_samples']
+    label_counts = stats['label_stats']
+
+    label_stats = [
+        {'label': label, 'count': count}
+        for label, count in label_counts.items()
+    ]
+
+    labels = sorted([item for item in label_counts])
+
     context = {
-        'images': images,
+        'dataset_versions': dataset_versions,
+        'current_dataset': current_dataset,
+        'total_samples': total_samples,
         'labels': labels,
-        'label_stats': label_stats,
-        'selected_label': label_filter,
-        'dataset_type': dataset_type,
+        'label_stats': label_stats
     }
-    
-    return render(request, 'admin_panel/view_images.html', context)
+
+    return render(request, 'admin_panel/view_dataset.html', context)
 
 
 @login_required
@@ -328,7 +364,7 @@ def start_training(request):
                 service = TrainingService()
                 training_run = service.start_training(form.cleaned_data, request.user)
                 messages.success(
-                    request, 
+                    request,
                     f"Training run {training_run.run_id} created! "
                     f"View the Training Status page for the command to run."
                 )
@@ -385,11 +421,33 @@ def delete_model(request, model_id):
     """Delete a model version."""
     model = get_object_or_404(ModelVersion, id=model_id)
     version_id = model.version_id
-    
+
     try:
         ModelManager.delete_model(model)
         messages.success(request, f"Model {version_id} deleted successfully.")
     except Exception as e:
         messages.error(request, f"Failed to delete model {version_id}: {str(e)}")
-        
+
     return redirect('admin_panel:models_list')
+
+
+@login_required
+@user_passes_test(is_staff_or_superuser)
+@require_POST
+def delete_training_run(request, run_id):
+    """Delete a training run record."""
+    run = get_object_or_404(TrainingRun, id=run_id)
+    run_id_str = run.run_id
+
+    # Only allow deleting completed, failed, or cancelled runs
+    if run.status in ['pending', 'running']:
+        messages.error(request, f"Cannot delete a {run.status} training run. Cancel it first.")
+        return redirect('admin_panel:training_status')
+
+    try:
+        run.delete()
+        messages.success(request, f"Training run {run_id_str} deleted successfully.")
+    except Exception as e:
+        messages.error(request, f"Failed to delete training run: {str(e)}")
+
+    return redirect('admin_panel:training_status')

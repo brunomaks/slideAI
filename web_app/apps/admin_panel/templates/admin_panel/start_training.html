@@ -5,38 +5,37 @@
 {% block content %}
 <div class="card">
     <h2>Start New Training</h2>
-    <form method="post">
-        {% csrf_token %}
-        <div class="form-group">
-            {{ form.version_name.label_tag }}
-            {{ form.version_name }}
-            <small>{{ form.version_name.help_text }}</small>
+    {% if form.dataset_version.field.queryset.count == 0 %}
+        <div class="alert alert-warning">
+            <strong>No datasets available!</strong> 
+            Please <a href="{% url 'admin_panel:upload_data' %}">upload a dataset</a> first before configuring training.
         </div>
-        <div class="form-group">
-            {{ form.description.label_tag }}
-            {{ form.description }}
-        </div>
-        <div class="form-group">
-            {{ form.epochs.label_tag }}
-            {{ form.epochs }}
-        </div>
-        <div class="form-group">
-            {{ form.batch_size.label_tag }}
-            {{ form.batch_size }}
-        </div>
-        <div class="form-group">
-            {{ form.learning_rate.label_tag }}
-            {{ form.learning_rate }}
-        </div>
-        <div class="form-group">
-            {{ form.image_size.label_tag }}
-            {{ form.image_size }}
-        </div>
-        <div class="form-group">
-            {{ form.validation_split.label_tag }}
-            {{ form.validation_split }}
-        </div>
-        <button type="submit" class="btn btn-primary">Start Training</button>
-    </form>
+    {% else %}
+        <form method="post">
+            {% csrf_token %}
+            <div class="form-group">
+                {{ form.dataset_version.label_tag }}
+                {{ form.dataset_version }}
+                <small class="form-text text-muted">{{ form.dataset_version.help_text }}</small>
+            </div>
+            <div class="form-group">
+                {{ form.description.label_tag }}
+                {{ form.description }}
+            </div>
+            <div class="form-group">
+                {{ form.epochs.label_tag }}
+                {{ form.epochs }}
+            </div>
+            <div class="form-group">
+                {{ form.batch_size.label_tag }}
+                {{ form.batch_size }}
+            </div>
+            <div class="form-group">
+                {{ form.learning_rate.label_tag }}
+                {{ form.learning_rate }}
+            </div>
+            <button type="submit" class="btn btn-primary">Start Training</button>
+        </form>
+    {% endif %}
 </div>
 {% endblock %}

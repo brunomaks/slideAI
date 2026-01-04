@@ -1,0 +1,68 @@
+{% extends 'admin_panel/base.html' %}
+
+{% block title %}Dataset Statistics{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+    <h1>Dataset Statistics</h1>
+</div>
+
+
+{% if dataset_versions %}
+<div class="form-group" style="display: flex; align-items: center; gap: 1rem; max-width: fit-content;">
+    <label for="version-select">Select Dataset Version:</label>
+    <select id="version-select" onchange="window.location.href='?version='+this.value" style="width: auto;">
+        {% for dataset in dataset_versions %}
+        <option value="{{ dataset.version }}"
+            {% if dataset.version == current_dataset.version %}selected{% endif %}>
+            {{ dataset.version }} ({{ dataset.created_at|date:"M d, Y" }})
+        </option>
+        {% endfor %}
+    </select>
+</div>
+
+<div class="card">
+    <div class="stats-grid" style="grid-template-columns: repeat(2, 1fr); margin-bottom: 2rem;">
+        <div class="stat-card">
+            <h3>Total Valid Samples</h3>
+            <div class="value">{{ total_samples }}</div>
+        </div>
+        <div class="stat-card">
+            <h3>Classes</h3>
+            <div class="value">{{ label_stats|length }}</div>
+        </div>
+    </div>
+
+    <h2>Class Distribution</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Gesture Label</th>
+                <th>Sample Count</th>
+                <th>Percentage</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for stat in label_stats %}
+            <tr>
+                <td><strong>{{ stat.label }}</strong></td>
+                <td>{{ stat.count }}</td>
+                <td>
+                    {% widthratio stat.count total_samples 100 %}%
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="3">No data found. Upload a ZIP file with gesture images.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% else %}
+<div class="card">
+    <p>No datasets found. <a href="{% url 'admin_panel:upload_data' %}">Upload your first dataset</a>.</p>
+</div>
+{% endif %}
+{% endblock %}
