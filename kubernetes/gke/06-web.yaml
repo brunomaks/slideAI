@@ -55,10 +55,13 @@ spec:
               subPath: images
       volumes:
         - name: shared-storage
-          persistentVolumeClaim:
-            claimName: shared-data-pvc
+          nfs:
+            server: nfs-server-service.slideai.svc.cluster.local
+            path: /
         - name: database-storage
-          emptyDir: {}  # Ephemeral local storage - fast, free, lost on pod restart
+          nfs:
+            server: nfs-server-service.slideai.svc.cluster.local
+            path: /data
 ---
 apiVersion: v1
 kind: Service

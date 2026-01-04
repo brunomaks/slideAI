@@ -14,11 +14,21 @@ data:
   DATABASE_PATH: "/data/database.sqlite"
   MEDIA_ROOT: "/images"
   MODEL_OUTPUT_PATH: "/models"
+  LANDMARKS_DB_PATH: "/data/landmarks.sqlite"
+  LANDMARK_DETECTOR_PATH: "/models/hand_landmarker.task"
+  ACTIVE_MODEL_PATH: "/models/active_model.json"
+  RAW_IMAGES_PATH: "/images"
   
   # Service URLs (internal K8s DNS)
-  INFERENCE_URL: "http://inference-service:8002/inference/"
-  RESIZE_URL: "http://web-service:8001/resize/"
   HOST_URL: "http://web-service:8001/"
-  ML_TRAINING_API_URL: "http://ml-training-service:8003"
+  INFERENCE_URL: "http://ml-inference-landmarks-service:8002/inference"
+  ML_TRAINING_API_URL: "http://ml-training-landmarks-service:8003"
+  INFERENCE_API_URL: "http://ml-inference-landmarks-service:8002"
+  
+  # ML Training Landmarks Service
+  PORT: "8003"
+  
+  # Python Settings
   DEBUG_SAVE: "False"
+  PYTHONPATH: "/workspace"
   PYTHONUNBUFFERED: "1"

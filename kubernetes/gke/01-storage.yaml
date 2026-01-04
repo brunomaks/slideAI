@@ -6,12 +6,97 @@ metadata:
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: shared-data-pvc
+  name: nfs-server-storage
   namespace: slideai
 spec:
   accessModes:
     - ReadWriteOnce
-  storageClassName: standard
   resources:
     requests:
-      storage: 10Gi
+      storage: 20Gi
+  storageClassName: standard-rwo
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: nfs-server
+  namespace: slideai
+spec:
+  serviceName: nfs-server
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nfs-server
+  volumeClaimTemplates:
+  - metadata:
+      name: nfs-storage
+    spec:
+      accessModes:
+        - ReadWriteOnce
+      storageClassName: standard-rwo
+      resources:
+        requests:
+          storage: 20Gi
+  template:
+    metadata:
+      labels:
+        app: nfs-server
+    spec:
+      containers:
+      - name: nfs-server
+        image: itsthenetwork/nfs-server-alpine:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 2049
+          name: nfs
+        - containerPort: 111
+          name: portmapper
+        securityContext:
+          privileged: true
+        env:
+        - name: SHARED_DIRECTORY
+          value: /exports
+        volumeMounts:
+        - name: nfs-storage
+          mountPath: /exports
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nfs-server
+  namespace: slideai
+spec:
+  clusterIP: None
+  selector:
+    app: nfs-server
+  ports:
+  - port: 2049
+    targetPort: 2049
+    name: nfs
+  - port: 111
+    targetPort: 111
+    name: portmapper
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nfs-server-service
+  namespace: slideai
+spec:
+  type: ClusterIP
+  selector:
+    app: nfs-server
+  ports:
+  - port: 2049
+    targetPort: 2049
+    name: nfs
+  - port: 111
+    targetPort: 111
+    name: portmapper

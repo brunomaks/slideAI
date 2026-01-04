@@ -1,21 +1,21 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ml-training
+  name: ml-training-landmarks
   namespace: slideai
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: ml-training
+      app: ml-training-landmarks
   template:
     metadata:
       labels:
-        app: ml-training
+        app: ml-training-landmarks
     spec:
       containers:
-        - name: ml-training
-          image: registry.git.chalmers.se/courses/dit826/2025/team4/ml-training:latest
+        - name: ml-training-landmarks
+          image: registry.git.chalmers.se/courses/dit826/2025/team4/ml-training-landmarks:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 8003
@@ -45,28 +45,33 @@ spec:
             httpGet:
               path: /health
               port: 8003
-            initialDelaySeconds: 30
+            initialDelaySeconds: 60
             periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
           readinessProbe:
             httpGet:
               path: /health
               port: 8003
-            initialDelaySeconds: 10
-            periodSeconds: 10
+            initialDelaySeconds: 45
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
       volumes:
         - name: shared-storage
-          persistentVolumeClaim:
-            claimName: shared-data-pvc
+          nfs:
+            server: nfs-server-service.slideai.svc.cluster.local
+            path: /
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: ml-training-service
+  name: ml-training-landmarks-service
   namespace: slideai
 spec:
   type: ClusterIP
   selector:
-    app: ml-training
+    app: ml-training-landmarks
   ports:
     - protocol: TCP
       port: 8003
