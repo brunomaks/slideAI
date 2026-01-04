@@ -9,12 +9,13 @@ services:
       - ./shared_artifacts/data:/data
     environment:
       - MODEL_OUTPUT_PATH=/models
-      - DATABASE_PATH=/data/landmarks.sqlite
+      - LANDMARKS_DB_PATH=/data/landmarks.sqlite
       - RAW_IMAGES_PATH=/images
       - LANDMARK_DETECTOR_PATH=/models/hand_landmarker.task
       - INFERENCE_API_URL=http://ml-inference-landmarks:8000
       - PORT=8003
-      - PYTHONUNBUFFERED=1
+      - PYTHONPATH=/workspace # to resolve import via src.preprocess_data in tests
+      - PYTHONBUFFERED=1
     ports:
       - "8003:8003"
     # profiles: [ "gpu" ]
@@ -103,7 +104,7 @@ services:
       - HOST_URL=http://127.0.0.1:8001/
       - DEBUG_SAVE=False
       - ML_TRAINING_API_URL=http://ml-training-landmarks:8003
-      - PYTHONUNBUFFERED=1
+      - PYTHONBUFFERED=1
 
   frontend:
     build:
@@ -115,9 +116,5 @@ services:
       - ./frontend:/app
       - /app/node_modules
     environment:
+      - VITE_WS_URL=ws://localhost:8001/ws/landmarks/
       - CHOKIDAR_USEPOLLING=true
-      - VITE_WS_URL=ws://127.0.0.1:8001/ws/landmarks/
-      - VITE_MAX_STREAM_FPS=5
-      - VITE_FRAME_QUALITY=0.7
-      - VITE_MAX_STREAM_WIDTH=1280
-      - VITE_MAX_STREAM_HEIGHT=720

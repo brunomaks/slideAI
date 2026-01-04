@@ -14,7 +14,7 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from preprocess_data import init_database, ingest_raw_landmarks, ingest_normalized_landmarks
 
-DB_PATH = Path(os.getenv("DATABASE_PATH"))
+DB_PATH = Path(os.getenv("LANDMARKS_DB_PATH"))
 RAW_IMAGES_PATH = Path(os.getenv("RAW_IMAGES_PATH"))
 LANDMARK_DETECTOR_PATH = Path(os.getenv("LANDMARK_DETECTOR_PATH"))
 
