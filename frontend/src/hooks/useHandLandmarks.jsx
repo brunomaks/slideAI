@@ -1,4 +1,4 @@
-import { useRef, useEffect, useCallback } from "react";
+import { useRef, useEffect, useCallback, useState } from "react";
 import {
   HandLandmarker,
   FilesetResolver,
@@ -36,6 +36,13 @@ export function useHandLandmarks(inputStream) {
   const lastPredictionTimeMs = useRef(0);
   const PREDICTION_INTERVAL_MS = 100;
 
+  const [mediapipeStatus, setMediapipeStatus] = useState({
+    isLoading: true,
+    isReady: false,
+    error: null,
+  });
+
+  // Create or update the video element when inputStream changes
   useEffect(() => {
     if (!inputStream) return;
 
@@ -99,8 +106,15 @@ export function useHandLandmarks(inputStream) {
       animationIdRef.current = requestAnimationFrame(processFrame);
     };
 
+    setMediapipeStatus({ isLoading: true, isReady: false, error: null });
+
+    // Wait for handLandmarker to be ready then start processing
     initHandLandmarker().then(() => {
+      setMediapipeStatus({ isLoading: false, isReady: true, error: null });
       animationIdRef.current = requestAnimationFrame(processFrame);
+    }).catch((error) => {
+      console.error("Error initializing Hand Landmarker:", error);
+      setMediapipeStatus({ isLoading: false, isReady: false, error: error.message });
     });
 
     return () => {
@@ -118,7 +132,7 @@ export function useHandLandmarks(inputStream) {
     };
   }, []);
 
-  return subscribeToLandmarks;
+  return { mediapipeStatus, subscribeToLandmarks };
 }
 
 export default useHandLandmarks;

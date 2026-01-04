@@ -2,14 +2,15 @@
   position: relative;
 }
 
-/* Floating webcam stream */
+/* webcam stream window */
 .streams-overlay {
   position: fixed;
-  left: 20px;   /* distance from left edge */
-  bottom: 20px; /* distance from bottom */
+  left: 1vw;   /* distance from left edge */
+  bottom: 1vw; /* distance from bottom */
+  width: 20vw;
+  height: auto;
   z-index: 9999; /* must be very high to stay above reveal.js */
-  background: rgba(0, 0, 0, 0.4); /* optional: nice overlay bg */
-  border-radius: 12px;
-  padding: 6px;
-  backdrop-filter: blur(6px);
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 5px;
+  padding: 5px;
 }
