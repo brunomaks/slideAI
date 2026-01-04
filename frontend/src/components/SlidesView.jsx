@@ -10,6 +10,24 @@ import { useWebRTC } from '../contexts/WebRTCContext.jsx';
 import workerSrc from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
 
+// Gesture mapping configuration
+const GESTURE_CONFIG = {
+    NAVIGATE_NEXT: {
+        gesture: "two_up_inverted",
+        direction: "Left"
+    },
+    NAVIGATE_PREV: {
+        gesture: "two_up_inverted", 
+        direction: "Right"
+    },
+    OPEN_EXIT_POPUP: {
+        gesture: "stop"
+    },
+    CONFIRM_EXIT: {
+        gesture: "like"
+    }
+};
+
 export default function SlidesView() {
     const [fileURL, setFileURL] = useState(null);
     const fileInputRef = useRef(null);
@@ -41,6 +59,12 @@ export default function SlidesView() {
         setUiVisible(true);
         slidesRef.current.innerHTML = "";
     }
+
+    const matchesGesture = (prediction, config) => {
+        if (prediction.predicted_class !== config.gesture) return false;
+        if (config.direction && prediction.direction !== config.direction) return false;
+        return true;
+    };
 
     useEffect(() => {
         if (!fileURL) return;
@@ -109,10 +133,10 @@ export default function SlidesView() {
         }
 
         if (showPopup) {
-            if (prediction.predicted_class === "like") {
+            if (matchesGesture(prediction, GESTURE_CONFIG.CONFIRM_EXIT)) {
                 setShowPopup(false)
                 exitPreview()
-            } else if(prediction.predicted_class === "stop") {
+            } else if(matchesGesture(prediction, GESTURE_CONFIG.OPEN_EXIT_POPUP)) {
                 setShowPopup(false)
             }
             return; // critical, otherwise the popup will open up again
@@ -122,13 +146,11 @@ export default function SlidesView() {
         if (!deckRef.current.isReady()) return
 
 
-        if (prediction.predicted_class === "two_up_inverted") {
-            if (prediction.direction === "Left") {
-                deckRef.current.next()
-            } else if (prediction.direction === "Right") {
-                deckRef.current.prev()
-            }
-        } else if (prediction.predicted_class === "stop") {
+        if (matchesGesture(prediction, GESTURE_CONFIG.NAVIGATE_NEXT)) {
+            deckRef.current.next()
+        } else if (matchesGesture(prediction, GESTURE_CONFIG.NAVIGATE_PREV)) {
+            deckRef.current.prev()
+        } else if (matchesGesture(prediction, GESTURE_CONFIG.OPEN_EXIT_POPUP)) {
             setShowPopup(true);
         }
 
