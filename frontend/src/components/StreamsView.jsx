@@ -9,7 +9,7 @@ export default function StreamsView() {
     const [stream, setStream] = useState(null);
     const [cameraEnabled, setCameraEnabled] = useState(false);
     // Get mediapipe status from the hook
-    const { mediapipeStatus, subscribeToLandmarks } = useHandLandmarks(stream);
+    const { mediapipeStatus } = useHandLandmarks(stream);
 
     const handleStreamReady = (mediaStream) => {
         setStream(mediaStream);

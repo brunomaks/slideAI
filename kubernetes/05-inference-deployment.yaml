@@ -1,0 +1,67 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: inference
+  namespace: slideai
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: inference
+  template:
+    metadata:
+      labels:
+        app: inference
+    spec:
+      imagePullSecrets:
+        - name: gitlab-registry
+      containers:
+        - name: inference
+          image: registry.git.chalmers.se/courses/dit826/2025/team4/inference:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8002
+          envFrom:
+            - configMapRef:
+                name: app-config
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "1Gi"
+              cpu: "500m"
+          volumeMounts:
+            - mountPath: /models
+              name: shared-storage
+              subPath: models
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8002
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8002
+            initialDelaySeconds: 5
+            periodSeconds: 10
+      volumes:
+        - name: shared-storage
+          persistentVolumeClaim:
+            claimName: shared-data-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: inference-service
+  namespace: slideai
+spec:
+  type: ClusterIP
+  selector:
+    app: inference
+  ports:
+    - protocol: TCP
+      port: 8002
+      targetPort: 8002

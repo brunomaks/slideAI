@@ -12,7 +12,7 @@ from sklearn.metrics import precision_score, recall_score, f1_score, confusion_m
 import tensorflow as tf
 from tensorflow.keras import layers, models
 
-DB_PATH = os.getenv('DATABASE_PATH')
+DB_PATH = os.getenv('LANDMARKS_DB_PATH')
 
 def train_model(args):
     print("Training MLP model...")

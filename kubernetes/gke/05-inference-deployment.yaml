@@ -1,0 +1,73 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ml-inference-landmarks
+  namespace: slideai
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ml-inference-landmarks
+  template:
+    metadata:
+      labels:
+        app: ml-inference-landmarks
+    spec:
+      containers:
+        - name: ml-inference-landmarks
+          image: registry.git.chalmers.se/courses/dit826/2025/team4/ml-inference-landmarks:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8002
+          envFrom:
+            - configMapRef:
+                name: app-config
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "1Gi"
+              cpu: "500m"
+          volumeMounts:
+            - mountPath: /models
+              name: shared-storage
+              subPath: models
+            - mountPath: /images
+              name: shared-storage
+              subPath: images
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8002
+            initialDelaySeconds: 45
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8002
+            initialDelaySeconds: 40
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+      volumes:
+        - name: shared-storage
+          nfs:
+            server: nfs-server-service.slideai.svc.cluster.local
+            path: /
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ml-inference-landmarks-service
+  namespace: slideai
+spec:
+  type: ClusterIP
+  selector:
+    app: ml-inference-landmarks
+  ports:
+    - protocol: TCP
+      port: 8002
+      targetPort: 8002

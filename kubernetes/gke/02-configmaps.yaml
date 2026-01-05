@@ -1,0 +1,39 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+  namespace: slideai
+data:
+  # Django Settings
+  DJANGO_SETTINGS_MODULE: "config.settings.production"
+  ALLOWED_HOSTS: "slideai.dedyn.io"
+  CSRF_TRUSTED_ORIGINS: "https://slideai.dedyn.io,http://slideai.dedyn.io"
+  
+  # Authentication redirects with /api prefix for GKE
+  LOGIN_URL: "/api/admin/login/"
+  LOGIN_REDIRECT_URL: "/api/admin/"
+  LOGOUT_REDIRECT_URL: "/api/admin/login/"
+  
+  # Storage Paths
+  MODEL_PATH: "/models"
+  DATABASE_PATH: "/data/database.sqlite"
+  MEDIA_ROOT: "/images"
+  MODEL_OUTPUT_PATH: "/models"
+  LANDMARKS_DB_PATH: "/data/landmarks.sqlite"
+  LANDMARK_DETECTOR_PATH: "/models/hand_landmarker.task"
+  ACTIVE_MODEL_PATH: "/models/active_model.json"
+  RAW_IMAGES_PATH: "/images"
+  
+  # Service URLs (internal K8s DNS)
+  HOST_URL: "http://web-service:8001/"
+  INFERENCE_URL: "http://ml-inference-landmarks-service:8002/inference"
+  ML_TRAINING_API_URL: "http://ml-training-landmarks-service:8003"
+  INFERENCE_API_URL: "http://ml-inference-landmarks-service:8002"
+  
+  # ML Training Landmarks Service
+  PORT: "8003"
+  
+  # Python Settings
+  DEBUG_SAVE: "False"
+  PYTHONPATH: "/workspace"
+  PYTHONUNBUFFERED: "1"

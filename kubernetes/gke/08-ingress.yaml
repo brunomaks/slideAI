@@ -1,0 +1,60 @@
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-prod
+spec:
+  acme:
+    server: https://acme-v02.api.letsencrypt.org/directory
+    email: admin@slideai.dedyn.io
+    privateKeySecretRef:
+      name: letsencrypt-prod
+    solvers:
+    - http01:
+        ingress:
+          class: nginx
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: slideai-ingress
+  namespace: slideai
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "60"
+    nginx.ingress.kubernetes.io/proxy-body-size: "500m"
+    nginx.ingress.kubernetes.io/websocket-services: "web-service"
+spec:
+  ingressClassName: nginx
+  tls:
+  - hosts:
+    - slideai.dedyn.io
+    secretName: slideai-dedyn-tls
+  rules:
+    - host: slideai.dedyn.io
+      http:
+        paths:
+          - path: /api(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: web-service
+                port:
+                  number: 8001
+          - path: /inference(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: inference-service
+                port:
+                  number: 8002
+          - path: /()(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: frontend-service
+                port:
+                  number: 80

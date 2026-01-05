@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+  namespace: slideai
+data:
+  # Django Settings
+  DJANGO_SETTINGS_MODULE: "config.settings.production"
+  ALLOWED_HOSTS: "*"
+  
+  # Storage Paths
+  MODEL_PATH: "/models"
+  DATABASE_PATH: "/data/database.sqlite"
+  MEDIA_ROOT: "/images"
+  MODEL_OUTPUT_PATH: "/models"
+  
+  # Service URLs (internal K8s DNS)
+  INFERENCE_URL: "http://inference-service:8002/inference/"
+  RESIZE_URL: "http://web-service:8001/resize/"
+  HOST_URL: "http://web-service:8001/"
+  ML_TRAINING_API_URL: "http://ml-training-service:8003"
+  DEBUG_SAVE: "False"
+  PYTHONUNBUFFERED: "1"

@@ -1,12 +1,11 @@
-import { useRef, useState, useEffect } from "react";
-import { useWebRTC } from "../contexts/WebRTCContext";
+import React, { useRef, useState, useEffect } from "react";
+import { useWebSocket } from "../contexts/WebSocketContext";
 import { useHandLandmarks } from "../hooks/useHandLandmarks";
 
 const streamConfig = {
-    fps: parseInt(import.meta.env.VITE_MAX_STREAM_FPS) || 5,
+    fps: parseInt(import.meta.env.VITE_MAX_STREAM_FPS) || 30,
     width: parseInt(import.meta.env.VITE_MAX_STREAM_WIDTH) || 1280,
     height: parseInt(import.meta.env.VITE_MAX_STREAM_HEIGHT) || 720,
-    bitrate: parseInt(import.meta.env.VITE_MAX_STREAM_BITRATE) || 2500000,
     delay: parseInt(import.meta.env.VITE_ORIGINAL_STREAM_VIEW_DELAY_MS) || 2000,
 };
 
@@ -14,10 +13,9 @@ export default function CameraStream({ onStreamReady }) {
     const videoRef = useRef(null);
     const canvasRef = useRef(null);
     const rawStreamRef = useRef(null);
-    const { connectStream, disconnectStream, sendMessage } = useWebRTC();
-
-    const [stream, setStream] = useState(null);
-    const { mediapipeStatus, subscribeToLandmarks } = useHandLandmarks(stream);
+    const { connect, disconnect, send } = useWebSocket();
+    const [stream, setStream] = useState(null)
+    const { subscribeToLandmarks } = useHandLandmarks(stream);
 
     // draw bounding box on canvas
     const drawBoundingBox = (landmarks, canvas, video) => {
@@ -84,8 +82,6 @@ export default function CameraStream({ onStreamReady }) {
                     videoRef.current.srcObject = rawStream;
                     rawStreamRef.current = rawStream;
 
-                    connectStream(rawStream);
-
                     if (onStreamReady) {
                         onStreamReady(rawStream);
                     }
@@ -101,12 +97,13 @@ export default function CameraStream({ onStreamReady }) {
         };
 
         startCamera();
+        connect(); // connect ws
 
         return () => {
             if (rawStreamRef.current) {
                 rawStreamRef.current.getTracks().forEach((track) => track.stop());
             }
-            disconnectStream();
+            disconnect(); // disconnect ws
         };
     }, []);
 
@@ -166,7 +163,7 @@ export default function CameraStream({ onStreamReady }) {
                 handedness: landmarks_obj.handedness
             };
 
-            sendMessage(message);
+            send(message)
 
             // Draw bounding box
             if (canvasRef.current && videoRef.current) {

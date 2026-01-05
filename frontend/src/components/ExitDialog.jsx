@@ -1,9 +1,9 @@
-// We don't want to render the popup inside Reveal or PDF containers. 
+// We don't want to render the dialog inside Reveal or PDF containers. 
 // Portal allows to render it into document.body
 import { createPortal } from "react-dom"; 
-import './ExitPopup.css';
+import './ExitDialog.css';
 
-const ExitPopup = () => {
+const ExitDialog = () => {
     return createPortal(
         <div className="popup-overlay">
             <div className="popup">
@@ -18,4 +18,4 @@ const ExitPopup = () => {
     );
 };
 
-export default ExitPopup;
+export default ExitDialog;

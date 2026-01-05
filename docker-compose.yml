@@ -9,18 +9,21 @@ services:
       - ./shared_artifacts/data:/data
     environment:
       - MODEL_OUTPUT_PATH=/models
-      - DATABASE_PATH=/data/landmarks.sqlite
+      - LANDMARKS_DB_PATH=/data/landmarks.sqlite
       - RAW_IMAGES_PATH=/images
       - LANDMARK_DETECTOR_PATH=/models/hand_landmarker.task
       - INFERENCE_API_URL=http://ml-inference-landmarks:8000
       - PORT=8003
       - PYTHONPATH=/workspace # to resolve import via src.preprocess_data in tests
+      - PYTHONBUFFERED=1
     ports:
       - "8003:8003"
     # profiles: [ "gpu" ]
 
   ml-training:
-    build: ./ml_service
+    build:
+      context: ./ml_service
+      target: dev
     container_name: ml-training
     volumes:
       - ./ml_service:/workspace
@@ -36,7 +39,9 @@ services:
     # GPU support is optional via docker-compose.override.yml
 
   ml-training-cpu:
-    build: ./ml_service
+    build:
+      context: ./ml_service
+      target: dev
     container_name: ml-training
     volumes:
       - ./ml_service:/workspace
@@ -60,17 +65,24 @@ services:
     environment:
       - ACTIVE_MODEL_PATH=/models/active_model.json
       - MODEL_PATH=/models
+      - PYTHONUNBUFFERED=1
+
 
   ml-inference:
-    build: ./inference
+    build:
+      context: ./inference
+      target: dev
     container_name: ml-inference
     volumes:
       - ./shared_artifacts/models:/models
+      - ./inference:/app
     environment:
       - MODEL_PATH=/models
 
   web:
-    build: ./web_app
+    build:
+      context: ./web_app
+      target: dev
     container_name: web
     volumes:
       - ./web_app:/app
@@ -92,14 +104,17 @@ services:
       - HOST_URL=http://127.0.0.1:8001/
       - DEBUG_SAVE=False
       - ML_TRAINING_API_URL=http://ml-training-landmarks:8003
+      - PYTHONBUFFERED=1
 
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
+      target: dev
     ports:
       - "5173:5173"
     volumes:
       - ./frontend:/app
       - /app/node_modules
     environment:
-      - VITE_API_URL=http://localhost:8000
+      - VITE_WS_URL=ws://localhost:8001/ws/landmarks/
       - CHOKIDAR_USEPOLLING=true
