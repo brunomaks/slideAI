@@ -9,6 +9,11 @@ data:
   ALLOWED_HOSTS: "slideai.dedyn.io"
   CSRF_TRUSTED_ORIGINS: "https://slideai.dedyn.io,http://slideai.dedyn.io"
   
+  # Authentication redirects with /api prefix for GKE
+  LOGIN_URL: "/api/admin/login/"
+  LOGIN_REDIRECT_URL: "/api/admin/"
+  LOGOUT_REDIRECT_URL: "/api/admin/login/"
+  
   # Storage Paths
   MODEL_PATH: "/models"
   DATABASE_PATH: "/data/database.sqlite"
