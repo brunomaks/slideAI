@@ -7,7 +7,6 @@ import {
 let handLandmarker = null;
 let handLandmarkerReadyPromise = null;
 
-// Initialize handLandmarker once and reuse
 const initHandLandmarker = () => {
   if (!handLandmarkerReadyPromise) {
     handLandmarkerReadyPromise = (async () => {
@@ -55,7 +54,6 @@ export function useHandLandmarks(inputStream) {
     video.playsInline = true;
     videoRef.current = video;
 
-    // Clean up on unmount or inputStream change
     return () => {
       if (animationIdRef.current) {
         cancelAnimationFrame(animationIdRef.current);
@@ -86,7 +84,6 @@ export function useHandLandmarks(inputStream) {
 
         lastPredictionTimeMs.current = startTimeMs
 
-        // TODO: cap the mediapipe predictions somehow
         const results = handLandmarker.detectForVideo(
           videoRef.current,
           startTimeMs
@@ -97,7 +94,6 @@ export function useHandLandmarks(inputStream) {
 
           const flippedHandedness = handedness === "Left" ? "Right" : "Left";
 
-          console.log("Flipped handedness: ", flippedHandedness)
           const message = {
             landmarks: results.landmarks[0],
             handedness: flippedHandedness
@@ -128,11 +124,9 @@ export function useHandLandmarks(inputStream) {
     };
   }, [inputStream]);
 
-  // The subscribe function exposed to user
   const subscribeToLandmarks = useCallback((callback) => {
     onLandmarksRef.current = callback;
 
-    // Unsubscribe function
     return () => {
       onLandmarksRef.current = null;
     };

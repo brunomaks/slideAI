@@ -3,9 +3,9 @@ import Reveal from 'reveal.js';
 import * as pdfjsLib from 'pdfjs-dist';
 import 'reveal.js/dist/reveal.css';
 import './SlidesView.css';
-import ExitPopup from './ExitPopup.jsx';
+import ExitDialog from './ExitDialog.jsx';
 
-import { useWebRTC } from '../contexts/WebRTCContext.jsx';
+import { useWebSocket } from '../contexts/WebSocketContext.jsx';
 
 import workerSrc from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
@@ -34,12 +34,12 @@ export default function SlidesView() {
     const slidesRef = useRef(null);
     const deckRef = useRef(null);
     const revealRootRef = useRef(null);
-    const [showPopup, setShowPopup] = useState(false);
+    const [showDialog, setShowDialog] = useState(false);
     const lastNavigationRef = useRef(0)
-    const LOCK_DURATION = 2000
+    const LOCK_DURATION = 1000
     const CONFIDENCE_THRESHOLD = 0.9
 
-    const { prediction } = useWebRTC();
+    const { lastMessage: prediction } = useWebSocket();
 
     const [uiVisible, setUiVisible] = useState(true);
 
@@ -132,12 +132,12 @@ export default function SlidesView() {
             return
         }
 
-        if (showPopup) {
+        if (showDialog) {
             if (matchesGesture(prediction, GESTURE_CONFIG.CONFIRM_EXIT)) {
-                setShowPopup(false)
+                setShowDialog(false)
                 exitPreview()
             } else if(matchesGesture(prediction, GESTURE_CONFIG.OPEN_EXIT_POPUP)) {
-                setShowPopup(false)
+                setShowDialog(false)
             }
             return; // critical, otherwise the popup will open up again
         }
@@ -151,7 +151,7 @@ export default function SlidesView() {
         } else if (matchesGesture(prediction, GESTURE_CONFIG.NAVIGATE_PREV)) {
             deckRef.current.prev()
         } else if (matchesGesture(prediction, GESTURE_CONFIG.OPEN_EXIT_POPUP)) {
-            setShowPopup(true);
+            setShowDialog(true);
         }
 
     }, [prediction])
@@ -191,8 +191,8 @@ export default function SlidesView() {
                         </button>
 
                     )}
-                    {!uiVisible && showPopup && (
-                        <ExitPopup/>
+                    {!uiVisible && showDialog && (
+                        <ExitDialog/>
                     )}
                     <div className="reveal" ref={revealRootRef}>
                         <div className="slides" ref={slidesRef}></div>

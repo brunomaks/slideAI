@@ -1,16 +1,35 @@
-FROM node:24-slim
+# ============ BUILD STAGE (for production) ============
+FROM node:24-slim AS build
 
 WORKDIR /app
 
-# Copy package files and install dependencies
+COPY package*.json ./
+RUN npm ci
+
+COPY . .
+RUN npm run build
+
+# ============ DEVELOPMENT STAGE ============
+FROM node:24-slim AS dev
+
+WORKDIR /app
+
 COPY package*.json ./
 RUN npm install
 
-# Copy the rest of the code
 COPY . .
 
-# Expose Vite's default port
 EXPOSE 5173
-
-# Start development server with host exposure
 CMD ["npm", "run", "dev", "--", "--host"]
+
+# ============ PRODUCTION STAGE ============
+FROM nginx:alpine AS prod
+
+# Copy built static files from build stage
+COPY --from=build /app/dist /usr/share/nginx/html
+
+# Copy nginx configuration
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]

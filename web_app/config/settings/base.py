@@ -6,6 +6,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 SECRET_KEY = 'django-insecure-dev-key'
 
 INSTALLED_APPS = [
+    'daphne',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -13,6 +14,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'corsheaders',
+    'channels',
     'apps.core',
     'apps.main',
     'apps.admin_panel',
@@ -52,6 +54,12 @@ TEMPLATES = [{
 WSGI_APPLICATION = 'config.wsgi.application'
 ASGI_APPLICATION = 'config.asgi.application'
 
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels.layers.InMemoryChannelLayer"
+    }
+}
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
@@ -77,9 +85,9 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 MODEL_PATH = os.environ.get('MODEL_PATH', '/models')
 
 # Authentication settings
-LOGIN_URL = '/admin/login/'
-LOGIN_REDIRECT_URL = '/admin/'
-LOGOUT_REDIRECT_URL = '/admin/login/'
+LOGIN_URL = os.environ.get('LOGIN_URL', '/admin/login/')
+LOGIN_REDIRECT_URL = os.environ.get('LOGIN_REDIRECT_URL', '/admin/')
+LOGOUT_REDIRECT_URL = os.environ.get('LOGOUT_REDIRECT_URL', '/admin/login/')
 
 CORS_ALLOWED_ORIGINS = []
 

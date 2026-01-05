@@ -1,0 +1,75 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ml-training
+  namespace: slideai
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ml-training
+  template:
+    metadata:
+      labels:
+        app: ml-training
+    spec:
+      imagePullSecrets:
+        - name: gitlab-registry
+      containers:
+        - name: ml-training
+          image: registry.git.chalmers.se/courses/dit826/2025/team4/ml-training:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8003
+          envFrom:
+            - configMapRef:
+                name: app-config
+            - secretRef:
+                name: app-secrets
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+            limits:
+              memory: "4Gi"
+              cpu: "2000m"
+          volumeMounts:
+            - mountPath: /models
+              name: shared-storage
+              subPath: models
+            - mountPath: /data
+              name: shared-storage
+              subPath: data
+            - mountPath: /images
+              name: shared-storage
+              subPath: images
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8003
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8003
+            initialDelaySeconds: 10
+            periodSeconds: 10
+      volumes:
+        - name: shared-storage
+          persistentVolumeClaim:
+            claimName: shared-data-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ml-training-service
+  namespace: slideai
+spec:
+  type: ClusterIP
+  selector:
+    app: ml-training
+  ports:
+    - protocol: TCP
+      port: 8003
+      targetPort: 8003
