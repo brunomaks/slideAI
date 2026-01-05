@@ -6,8 +6,8 @@ metadata:
 data:
   # Django Settings
   DJANGO_SETTINGS_MODULE: "config.settings.production"
-  ALLOWED_HOSTS: "*"
-  CSRF_TRUSTED_ORIGINS: "https://slideai.duckdns.org,http://slideai.duckdns.org"
+  ALLOWED_HOSTS: "slideai.dedyn.io"
+  CSRF_TRUSTED_ORIGINS: "https://slideai.dedyn.io,http://slideai.dedyn.io"
   
   # Storage Paths
   MODEL_PATH: "/models"

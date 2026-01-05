@@ -5,7 +5,7 @@ metadata:
 spec:
   acme:
     server: https://acme-v02.api.letsencrypt.org/directory
-    email: admin@slideai.duckdns.org
+    email: admin@slideai.dedyn.io
     privateKeySecretRef:
       name: letsencrypt-prod
     solvers:
@@ -31,10 +31,10 @@ spec:
   ingressClassName: nginx
   tls:
   - hosts:
-    - slideai.duckdns.org
-    secretName: slideai-tls
+    - slideai.dedyn.io
+    secretName: slideai-dedyn-tls
   rules:
-    - host: slideai.duckdns.org
+    - host: slideai.dedyn.io
       http:
         paths:
           - path: /api(/|$)(.*)
