@@ -117,8 +117,7 @@ class ModelVersion(BaseModel):
 
 class Prediction(BaseModel):
     """Log all predictions made by the system."""
-    session_id = models.CharField(max_length=100, db_index=True, blank=True)
-    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    request_id = models.CharField(max_length=100, db_index=True, blank=True)
 
     # Model info
     model_version = models.ForeignKey(
@@ -131,29 +130,20 @@ class Prediction(BaseModel):
     # Prediction details
     predicted_class = models.CharField(max_length=50)
     confidence = models.FloatField()
-    all_probabilities = models.JSONField(null=True, blank=True)  # Store all class probabilities
+    direction = models.CharField(max_length=5, null=True, blank=True)
 
-    # Input metadata
-    image_width = models.IntegerField(null=True, blank=True)
-    image_height = models.IntegerField(null=True, blank=True)
+    # Landmarks details
+    handedness = models.CharField(max_length=5, null=True, blank=True)
+    landmarks = models.JSONField(null=True, blank=True)
 
     # Performance tracking
     inference_time_ms = models.FloatField(null=True, blank=True)
-
-    # Optional feedback
-    user_feedback = models.CharField(
-        max_length=20,
-        choices=[('correct', 'Correct'), ('incorrect', 'Incorrect'), ('unknown', 'Unknown')],
-        default='unknown',
-        blank=True
-    )
-    correct_label = models.CharField(max_length=50, blank=True)
 
     class Meta:
         db_table = 'predictions'
         ordering = ['-created_at']
         indexes = [
-            models.Index(fields=['session_id', 'created_at']),
+            models.Index(fields=['request_id', 'created_at']),
             models.Index(fields=['model_version', 'created_at']),
         ]
 

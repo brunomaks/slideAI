@@ -3,6 +3,7 @@ import asyncio
 import aiohttp
 from channels.generic.websocket import AsyncWebsocketConsumer
 from .views import process_frame
+from .views import log_prediction
 
 GLOBAL_INFERENCE_SEMAPHORE = asyncio.Semaphore(4)
 
@@ -48,7 +49,10 @@ class LandmarksConsumer(AsyncWebsocketConsumer):
         async with GLOBAL_INFERENCE_SEMAPHORE:
             try:
                 result = await process_frame(self.session, landmarks, handedness)
-                
+               
+                # Store predition in the database
+                await log_prediction(result, request_id, landmarks, handedness)
+
                 if result:
                     await self.send(text_data=json.dumps(result))
             except Exception as e:
