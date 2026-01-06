@@ -68,6 +68,7 @@ class ModelVersion(BaseModel):
     training_duration_seconds = models.IntegerField(null=True, blank=True)
 
     # Dataset info
+    class_labels = models.JSONField(null=True, blank=True)
     train_dataset_size = models.IntegerField()
     test_dataset_size = models.IntegerField(null=True, blank=True)
     validation_dataset_size = models.IntegerField(null=True, blank=True)
