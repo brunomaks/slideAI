@@ -32,9 +32,10 @@ export function useHandLandmarks(inputStream) {
   const onLandmarksRef = useRef(null);
   const videoRef = useRef(null);
   const animationIdRef = useRef(null);
+
+  const lastTimestampMsRef = useRef(-1);
   const lastVideoTimeRef = useRef(-1);
-  const lastPredictionTimeMs = useRef(0);
-  const PREDICTION_INTERVAL_MS = 100;
+
 
   const [mediapipeStatus, setMediapipeStatus] = useState({
     isLoading: true,
@@ -54,57 +55,102 @@ export function useHandLandmarks(inputStream) {
     video.playsInline = true;
     videoRef.current = video;
 
+    video.style.position = "fixed";
+    video.style.top = "0";
+    video.style.left = "-9999px";
+    video.width = 640;
+    video.height = 480;
+
+    document.body.appendChild(video);
+    video.play().catch((error) => {
+      console.error("Error playing video:", error);
+    });
+    videoRef.current = video;
+
+  
     return () => {
       if (animationIdRef.current) {
         cancelAnimationFrame(animationIdRef.current);
       }
+      
       video.srcObject = null;
+      document.body.removeChild(video);
       videoRef.current = null;
     };
   }, [inputStream]);
 
-  // Main loop: process frames and call callback with landmarks
+  // main loop for frame processing and callback with landmarks
   useEffect(() => {
     const processFrame = () => {
-      if (!videoRef.current || videoRef.current.readyState < 2 || !handLandmarker) {
+      const video = videoRef.current;
+
+      if (!video || video.readyState < 2 || !handLandmarker) {
         // Wait and try again
         animationIdRef.current = requestAnimationFrame(processFrame);
         return;
       }
 
-      // Only process new frames
-      if (lastVideoTimeRef.current !== videoRef.current.currentTime) {
-        lastVideoTimeRef.current = videoRef.current.currentTime;
-        const startTimeMs = performance.now();
 
-        if ((startTimeMs - lastPredictionTimeMs.current) < PREDICTION_INTERVAL_MS) {
-          animationIdRef.current = requestAnimationFrame(processFrame);
-          return
-        }
+      if (video.videoWidth === 0 || video.videoHeight === 0) {
+        animationIdRef.current = requestAnimationFrame(processFrame);
+        return;
+      }
 
-        lastPredictionTimeMs.current = startTimeMs
+      if (video.currentTime === lastVideoTimeRef.current) {
+        animationIdRef.current = requestAnimationFrame(processFrame);
+        return;
+      }
 
+      lastVideoTimeRef.current = video.currentTime;
+      
+      // Use performance.now() for reliable monotonically increasing timestamps
+      const timestampMs = performance.now();
+      
+      // Ensure timestamp is strictly greater than last timestamp
+      if (timestampMs <= lastTimestampMsRef.current) {
+        // If performance.now() somehow didn't increase enough, force increment
+        const adjustedTimestamp = lastTimestampMsRef.current + 1;
+        lastTimestampMsRef.current = adjustedTimestamp;
+        
         const results = handLandmarker.detectForVideo(
-          videoRef.current,
-          startTimeMs
+          video,
+          adjustedTimestamp
         );
-
+        
         if (results.landmarks && results.landmarks.length > 0 && onLandmarksRef.current) {
-          let handedness = results.handednesses[0][0].categoryName
-
+          let handedness = results.handednesses[0][0].categoryName;
           const flippedHandedness = handedness === "Left" ? "Right" : "Left";
-
           const message = {
             landmarks: results.landmarks[0],
             handedness: flippedHandedness
-          }
+          };
           onLandmarksRef.current(message);
         }
+      } else {
+        lastTimestampMsRef.current = timestampMs;
+        
+        const results = handLandmarker.detectForVideo(
+          video,
+          timestampMs
+        );
 
+        if (results.landmarks && results.landmarks.length > 0 && onLandmarksRef.current) {
+          let handedness = results.handednesses[0][0].categoryName;
+          const flippedHandedness = handedness === "Left" ? "Right" : "Left";
+          const message = {
+            landmarks: results.landmarks[0],
+            handedness: flippedHandedness
+          };
+          onLandmarksRef.current(message);
+        }
       }
 
       animationIdRef.current = requestAnimationFrame(processFrame);
     };
+
+    // Reset timestamp tracking when stream changes
+    lastTimestampMsRef.current = -1;
+    lastVideoTimeRef.current = -1;
 
     setMediapipeStatus({ isLoading: true, isReady: false, error: null });
 
