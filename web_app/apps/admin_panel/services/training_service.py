@@ -225,6 +225,7 @@ class TrainingService:
                 framework='tensorflow',
                 training_date=timezone.now(),
                 # Dataset info
+                class_labels=(metrics or {}).get('dataset', {}).get('class_labels') or [],
                 train_dataset_size=(metrics or {}).get('dataset', {}).get('train_count') or 0,
                 test_dataset_size=(metrics or {}).get('dataset', {}).get('test_count') or 0,
                 validation_dataset_size=(metrics or {}).get('dataset', {}).get('validation_count') or 0,

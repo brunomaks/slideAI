@@ -145,9 +145,10 @@ def model_detail(request, model_id):
 
     # Generate confusion matrix image if available
     cm = model.confusion_matrix
-    if model.confusion_matrix:
+    labels = model.class_labels
+    if model.confusion_matrix and model.class_labels:
         cm = np.array(model.confusion_matrix)
-        cm_image = plot_confusion_matrix(cm)
+        cm_image = plot_confusion_matrix(cm, labels)
     else:
         cm_image = None
 
@@ -163,9 +164,7 @@ def model_detail(request, model_id):
     return render(request, 'admin_panel/model_detail.html', context)
 
 
-def plot_confusion_matrix(cm, fig_bg_color='#262c49', ax_bg_color='#2c3355', text_color='white'):
-    labels = [f"Class {i}" for i in range(cm.shape[0])]
-
+def plot_confusion_matrix(cm, labels, fig_bg_color='#262c49', ax_bg_color='#2c3355', text_color='white'):
     # Create custom colormap
     custom_cmap = LinearSegmentedColormap.from_list('dark_theme', ['#2c3355', '#6f5bdc'])
     fig, ax = plt.subplots(figsize=(6, 5))
