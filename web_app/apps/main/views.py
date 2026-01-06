@@ -32,7 +32,7 @@ def log_prediction(result, request_id, landmarks, handedness):
     try:
         # Prediction result details
         predicted_class = result['predicted_class']
-        confidence = result['confidence']
+        confidence = result['confidence'] * 100
         inference_time_ms = result['timestamp']
         direction = result['direction']
         
