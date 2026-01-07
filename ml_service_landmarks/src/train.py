@@ -128,19 +128,15 @@ def train_model(args):
     test_loss, test_accuracy = model.evaluate(test_dataset, verbose=2)
     print(f"Test Accuracy: {test_accuracy:.4f}")
 
-    # Get predictions for test set
     y_pred_probs = model.predict(test_dataset)
     y_pred = np.argmax(y_pred_probs, axis=1)
 
-    # true labels
     y_true = np.concatenate([y for x, y in test_dataset], axis=0)
 
-    # Compute precision, recall, f1
     precision = precision_score(y_true, y_pred, average='macro')
     recall = recall_score(y_true, y_pred, average='macro')
     f1 = f1_score(y_true, y_pred, average='macro')
 
-    # Compute confusion matrix
     conf_matrix = confusion_matrix(y_true, y_pred)
 
     print(f"Test Precision: {precision:.4f}")
@@ -188,6 +184,7 @@ def train_model(args):
             'batch_size': BATCH_SIZE,
         },
         'dataset': {
+            'class_labels': CLASS_NAMES,
             'train_count': TRAIN_SAMPLES,
             'validation_count': VAL_SAMPLES,
             'test_count': TEST_SAMPLES,
