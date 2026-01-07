@@ -18,44 +18,6 @@ services:
       - PYTHONBUFFERED=1
     ports:
       - "8003:8003"
-    # profiles: [ "gpu" ]
-
-  ml-training:
-    build:
-      context: ./ml_service
-      target: dev
-    container_name: ml-training
-    volumes:
-      - ./ml_service:/workspace
-      - ./shared_artifacts/models:/models
-      - ./shared_artifacts/data:/data
-      - ./shared_artifacts/images:/images
-    environment:
-      - MODEL_OUTPUT_PATH=/models
-      - PORT=8003
-    ports:
-      - "8003:8003"
-    profiles: [ "gpu" ]
-    # GPU support is optional via docker-compose.override.yml
-
-  ml-training-cpu:
-    build:
-      context: ./ml_service
-      target: dev
-    container_name: ml-training
-    volumes:
-      - ./ml_service:/workspace
-      - ./shared_artifacts/models:/models
-      - ./shared_artifacts/data:/data
-      - ./shared_artifacts/images:/images
-    environment:
-      - CUDA_VISIBLE_DEVICES=-1
-      - MODEL_OUTPUT_PATH=/models
-      - PORT=8003
-    ports:
-      - "8003:8003"
-    profiles: [ "cpu" ]
-    # Runs the API server (no GPU available)
 
   ml-inference-landmarks:
     build: ./ml_inference_landmarks
@@ -66,18 +28,6 @@ services:
       - ACTIVE_MODEL_PATH=/models/active_model.json
       - MODEL_PATH=/models
       - PYTHONUNBUFFERED=1
-
-
-  ml-inference:
-    build:
-      context: ./inference
-      target: dev
-    container_name: ml-inference
-    volumes:
-      - ./shared_artifacts/models:/models
-      - ./inference:/app
-    environment:
-      - MODEL_PATH=/models
 
   web:
     build:
