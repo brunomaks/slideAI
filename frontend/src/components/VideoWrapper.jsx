@@ -1,3 +1,10 @@
+/*
+ Contributors:
+- Ahmet
+- 
+
+*/
+
 import React from "react"
 import "./VideoWrapper.css"
 

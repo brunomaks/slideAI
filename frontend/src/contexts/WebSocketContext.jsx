@@ -1,3 +1,10 @@
+/*
+ Contributors:
+- 
+- 
+
+*/
+
 import { createContext, useContext, useEffect, useState, useCallback, useRef } from "react";
 import { createWebSocketService } from "../services/websocket-service";
 

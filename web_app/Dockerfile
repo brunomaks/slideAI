@@ -1,3 +1,7 @@
+# Contributors:
+# - Mahmoud
+# - Maksym
+
 # ============ BASE STAGE ============
 FROM python:3.12-slim AS base
 

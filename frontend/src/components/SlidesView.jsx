@@ -1,3 +1,10 @@
+/*
+ Contributors:
+- Yaroslav
+- 
+
+*/
+
 import { useEffect, useRef, useState } from 'react';
 import Reveal from 'reveal.js';
 import * as pdfjsLib from 'pdfjs-dist';

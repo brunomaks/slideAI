@@ -1,3 +1,10 @@
+/*
+ Contributors:
+- Ahmet
+- 
+
+*/
+
 import '../pages/LandingPage.css';
 
 export default function Topbar({ onBrandClick }) {

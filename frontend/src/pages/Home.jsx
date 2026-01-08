@@ -1,3 +1,10 @@
+/*
+ Contributors:
+- Ahmet
+- Yaroslav
+
+*/
+
 import StreamsView from "../components/StreamsView";
 import SlidesView from "../components/SlidesView";
 import './Home.css';

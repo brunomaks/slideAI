@@ -1,3 +1,10 @@
+/*
+ Contributors:
+- Ahmet
+- 
+
+*/
+
 import './LandingPage.css';
 
 export default function Landing({ onEnter }) {

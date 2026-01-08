@@ -1,3 +1,11 @@
+/*
+ Contributors:
+- Yaroslav
+- 
+
+*/
+
+
 import React from "react";
 import "./CameraOverlay.css";
 

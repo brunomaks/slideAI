@@ -1,3 +1,10 @@
+/*
+ Contributors:
+- Yaroslav
+- 
+
+*/
+
 import React, { useRef, useState, useEffect } from "react";
 import { useWebSocket } from "../contexts/WebSocketContext";
 import { useHandLandmarks } from "../hooks/useHandLandmarks";

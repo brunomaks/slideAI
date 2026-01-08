@@ -1,3 +1,10 @@
+/*
+ Contributors:
+- Yaroslav
+- 
+
+*/
+
 import React, { useState } from 'react';
 import VideoWrapper from './VideoWrapper';
 import CameraStream from './CameraStream';

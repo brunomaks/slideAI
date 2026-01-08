@@ -1,3 +1,10 @@
+/*
+ Contributors:
+- Ahmet
+- 
+
+*/
+
 import { useState } from 'react'
 import Home from './pages/Home'
 import Landing from './pages/LandingPage'

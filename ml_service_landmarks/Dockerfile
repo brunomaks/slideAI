@@ -1,3 +1,7 @@
+# Contributors:
+# - Mahmoud
+# - Maksym
+
 FROM tensorflow/tensorflow:2.16.1-gpu
 
 WORKDIR /workspace

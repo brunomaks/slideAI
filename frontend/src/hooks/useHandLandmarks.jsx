@@ -1,3 +1,10 @@
+/*
+ Contributors:
+- Yaroslav
+- 
+
+*/
+
 import { useRef, useEffect, useCallback, useState } from "react";
 import {
   HandLandmarker,

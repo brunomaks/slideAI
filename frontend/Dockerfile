@@ -1,3 +1,7 @@
+# Contributors:
+# - Mahmoud
+# - 
+
 # ============ BUILD STAGE (for production) ============
 FROM node:24-slim AS build
 
