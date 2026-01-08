@@ -1,4 +1,7 @@
 #!/usr/bin/env python
+# Contributors:
+# - Mahmoud
+
 import os
 import sys
 

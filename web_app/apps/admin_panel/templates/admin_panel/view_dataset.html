@@ -1,3 +1,6 @@
+<!-- Contributors:
+ - Mahmoud
+-->
 {% extends 'admin_panel/base.html' %}
 
 {% block title %}Dataset Statistics{% endblock %}
@@ -13,8 +16,7 @@
     <label for="version-select">Select Dataset Version:</label>
     <select id="version-select" onchange="window.location.href='?version='+this.value" style="width: auto;">
         {% for dataset in dataset_versions %}
-        <option value="{{ dataset.version }}"
-            {% if dataset.version == current_dataset.version %}selected{% endif %}>
+        <option value="{{ dataset.version }}" {% if dataset.version==current_dataset.version %}selected{% endif %}>
             {{ dataset.version }} ({{ dataset.created_at|date:"M d, Y" }})
         </option>
         {% endfor %}

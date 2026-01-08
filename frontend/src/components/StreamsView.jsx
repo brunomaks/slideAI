@@ -1,7 +1,7 @@
 /*
  Contributors:
 - Yaroslav
-- 
+- Mahmoud
 
 */
 
@@ -9,7 +9,7 @@ import React, { useState } from 'react';
 import VideoWrapper from './VideoWrapper';
 import CameraStream from './CameraStream';
 import CameraOverlay from './CameraOverlay';
-import {useHandLandmarks} from '../hooks/useHandLandmarks.jsx';
+import { useHandLandmarks } from '../hooks/useHandLandmarks.jsx';
 import './StreamsView.css';
 
 export default function StreamsView() {

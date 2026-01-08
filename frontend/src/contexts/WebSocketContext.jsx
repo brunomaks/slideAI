@@ -1,7 +1,6 @@
 /*
  Contributors:
-- 
-- 
+- Mahmoud
 
 */
 
@@ -14,7 +13,7 @@ export function WebSocketProvider({ children, url, options = {} }) {
     const [isConnected, setIsConnected] = useState(false);
     const [lastMessage, setLastMessage] = useState(null);
     const [error, setError] = useState(null);
-    
+
     const serviceRef = useRef(null);
 
     useEffect(() => {
@@ -75,10 +74,10 @@ export function WebSocketProvider({ children, url, options = {} }) {
 
 export function useWebSocket() {
     const context = useContext(WebSocketContext);
-    
+
     if (!context) {
         throw new Error("useWebSocket must be used within a WebSocketProvider");
     }
-    
+
     return context;
 }

@@ -1,4 +1,8 @@
-﻿# Admin Panel Setup
+﻿<!-- Contributors:
+ - Mahmoud
+-->
+
+# Admin Panel Setup
 
 ## 1. Run migrations
 

@@ -1,3 +1,6 @@
+# Contributors:
+# - Mahmoud
+
 from typing import Dict
 import cv2
 import json

@@ -1,3 +1,6 @@
+# Contributors:
+# - Mahmoud
+
 """Model management service for deploying, rolling back, and comparing models."""
 from django.utils import timezone
 from django.conf import settings

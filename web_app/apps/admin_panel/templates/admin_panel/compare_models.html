@@ -1,3 +1,6 @@
+<!-- Contributors:
+ - Mahmoud
+-->
 {% extends 'admin_panel/base.html' %}
 
 {% block title %}Compare Models{% endblock %}
@@ -11,7 +14,7 @@
             <select id="candidate" name="candidate">
                 <option value="">-- Choose model --</option>
                 {% for m in models %}
-                <option value="{{ m.id }}" {% if candidate and candidate.id == m.id %}selected{% endif %}>
+                <option value="{{ m.id }}" {% if candidate and candidate.id==m.id %}selected{% endif %}>
                     {{ m.version_id }}{% if m.is_active %} (active){% endif %}
                 </option>
                 {% endfor %}

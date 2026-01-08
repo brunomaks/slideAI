@@ -1,3 +1,6 @@
+<!-- Contributors:
+ - Mahmoud
+-->
 {% extends 'admin_panel/base.html' %}
 
 {% block title %}Performance Overview{% endblock %}
@@ -9,10 +12,10 @@
         <div class="form-group" style="max-width:240px;">
             <label for="days">Window (days)</label>
             <select id="days" name="days">
-                <option value="1" {% if days == 1 %}selected{% endif %}>1</option>
-                <option value="7" {% if days == 7 %}selected{% endif %}>7</option>
-                <option value="14" {% if days == 14 %}selected{% endif %}>14</option>
-                <option value="30" {% if days == 30 %}selected{% endif %}>30</option>
+                <option value="1" {% if days==1 %}selected{% endif %}>1</option>
+                <option value="7" {% if days==7 %}selected{% endif %}>7</option>
+                <option value="14" {% if days==14 %}selected{% endif %}>14</option>
+                <option value="30" {% if days==30 %}selected{% endif %}>30</option>
             </select>
         </div>
         <button type="submit" class="btn btn-primary">Update</button>
@@ -22,7 +25,8 @@
         <tbody>
             <tr>
                 <td><strong>Active Model</strong></td>
-                <td>{% if active_model %}{{ active_model.version_id }} ({{ active_model.test_accuracy|default:"-" }}%){% else %}-{% endif %}</td>
+                <td>{% if active_model %}{{ active_model.version_id }} ({{ active_model.test_accuracy|default:"-" }}%){%
+                    else %}-{% endif %}</td>
             </tr>
             <tr>
                 <td><strong>Total Predictions</strong></td>

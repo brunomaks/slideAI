@@ -1,7 +1,7 @@
 /*
  Contributors:
 - Ahmet
-- 
+- Mahmoud
 
 */
 
@@ -28,7 +28,7 @@ function App() {
   };
 
   return (
-    <WebSocketProvider 
+    <WebSocketProvider
       url={WEBSOCKET_URL}
       options={{
         maxReconnectAttempts: MAX_RECONNECT_ATTEMPS,
