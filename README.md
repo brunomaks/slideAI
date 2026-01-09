@@ -9,7 +9,6 @@ AI-powered web application that uses a standard webcam to interpret hand gesture
 
 ## Table of Contents
 
-* [Architecture Overview](#architecture-overview)
 * [Prerequisites](#prerequisites)
 * [Running the application with a pretrained model](#running-the-application-with-a-pretrained-model)
 * [Dataset for model training](#dataset-for-model-training)
@@ -17,42 +16,6 @@ AI-powered web application that uses a standard webcam to interpret hand gesture
 
 ---
 
-## Architecture Overview
-
-This project follows a **microservices architecture** with separate containers for ML training and web serving:
-
-```text
-┌─────────────────────────────────────────────────────────┐
-│                   Docker Compose                        │
-├──────────────────────┬──────────────────────────────────┤
-│   ML Training        │      Django Web App              │
-│   Container          │      Container                   │
-│                      │                                  │
-│   • TensorFlow GPU   │   • REST API                     │
-│   • Model Training   │   • User Interface               │
-│   • Data Validation  │   • Admin Panel                  │
-│   • Versioning       │   • Model Inference              │
-└──────────┬───────────┴──────────────┬───────────────────┘
-           │                          │
-           └────────┬─────────────────┘
-                    │
-          ┌─────────▼─────────┐
-          │  Shared Volumes   │
-          │  • Models         │
-          │  • Database       │
-          └───────────────────┘
-```
-
-### Key Features
-
-* **GPU/CPU Support**: Automatic hardware detection with fallback
-* **Model Versioning**: Track and rollback models (Requirement E)
-* **Data Validation**: Schema checks and quality verification (Requirement C)
-* **Admin Interface**: Dynamic retraining and management (Requirement F)
-* **REST API**: JSON endpoints for predictions (Requirement D)
-* **Kubernetes Ready**: Production deployment configs included (Requirement G)
-
----
 
 ## Prerequisites
 
