@@ -1,3 +1,6 @@
+# Contributors:
+# - Pavlo
+
 import tensorflow as tf
 import torch
 import tf2onnx

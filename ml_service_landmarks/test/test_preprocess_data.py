@@ -1,6 +1,7 @@
 # Contributors:
 # - Maksym
 # - Yaroslav
+# - Ahmet
 
 import pytest
 import numpy as np

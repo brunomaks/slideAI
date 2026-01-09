@@ -1,3 +1,6 @@
+# Contributors:
+# - Maksym
+
 import zipfile
 import os
 import shutil

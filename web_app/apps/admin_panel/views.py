@@ -2,6 +2,7 @@
 # - Mahmoud
 # - Mykhailo
 # - Yaroslav
+# - Maksym
 
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST

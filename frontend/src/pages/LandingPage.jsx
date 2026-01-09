@@ -2,7 +2,7 @@
  Contributors:
 - Ahmet
 - Mahmoud
-
+- Pavlo
 */
 
 import './LandingPage.css';
