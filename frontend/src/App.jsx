@@ -10,7 +10,7 @@ const RECONNECT_DELAY = 3000
 const AUTO_RECONNECT = true
 
 function App() {
-  const [showLanding, setShowLanding] = useState(false);
+  const [showLanding, setShowLanding] = useState(true);
 
   const handleEnter = () => {
     setShowLanding(false);
