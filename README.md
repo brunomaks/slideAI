@@ -59,7 +59,8 @@ This project follows a **microservices architecture** with separate containers f
 
 ### Required
 
-* **Docker Desktop** (latest version)
+To use run the application locally, depending on your OS you are required to have:
+
 * **Windows:** Docker Desktop with WSL2 backend
 * **macOS:** Docker Desktop
 * **Linux:** Docker Engine + Docker Compose
@@ -147,7 +148,7 @@ services:
 
 ---
 
-## Quick Start
+## Quick Start (running the application with a pretrained model)
 
 ### 1. Clone the Repository
 
