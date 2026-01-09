@@ -1,3 +1,7 @@
+# Contributors:
+# - Mahmoud
+# - Yaroslav
+
 import json
 import sqlite3
 import requests

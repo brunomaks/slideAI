@@ -1,3 +1,12 @@
+/*
+ Contributors:
+- Yaroslav
+- Mahmoud
+- Ahmet
+
+*/
+
+
 import React from "react";
 import "./CameraOverlay.css";
 
@@ -20,13 +29,13 @@ export default function CameraOverlay({ cameraEnabled, onEnableCamera, onDisable
                                 <span>Loading...</span>
                             </div>
                         )}
-                        
+
                         {mediapipeStatus.isReady && (
                             <div className="status-ready">
                                 <span>Hand Detection: On</span>
                             </div>
                         )}
-                        
+
                         {mediapipeStatus.error && (
                             <div className="status-error">
                                 <span>Error: {mediapipeStatus.error}</span>

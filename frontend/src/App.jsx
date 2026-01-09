@@ -1,3 +1,10 @@
+/*
+ Contributors:
+- Ahmet
+- Mahmoud
+
+*/
+
 import { useState } from 'react'
 import Home from './pages/Home'
 import Landing from './pages/LandingPage'
@@ -21,7 +28,7 @@ function App() {
   };
 
   return (
-    <WebSocketProvider 
+    <WebSocketProvider
       url={WEBSOCKET_URL}
       options={{
         maxReconnectAttempts: MAX_RECONNECT_ATTEMPS,

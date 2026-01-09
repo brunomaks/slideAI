@@ -1,6 +1,9 @@
 /*
-Adapted from: https://websocket.org/guides/languages/javascript/
+ Contributors:
+ - Maksym
+ - Ahmet
 */
+
 
 export class WebSocketService {
     constructor(url, options = {}) {

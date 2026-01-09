@@ -1,3 +1,7 @@
+# Contributors:
+# - Mahmoud
+# - Mykhailo
+
 """Training service for managing model training runs.
 
 This implementation calls the ML Training API service via HTTP.
@@ -37,7 +41,7 @@ class TrainingService:
         """
         # Create version name if not provided
         dataset = config['dataset_version']
-        
+
         dataset_version = dataset.version
 
         version_name = str(dataset_version) + str(timezone.now().strftime("_%Y%m%d_%H%M%S"))
@@ -45,7 +49,7 @@ class TrainingService:
         sample_count = dataset.validated_preprocessed_samples
         if sample_count == 0:
             raise ValueError("There are 0 samples in the dataset.")
-        
+
         # Prepare API request payload
         api_payload = {
             'epochs': config['epochs'],
