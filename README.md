@@ -1,8 +1,9 @@
-# Data-Intensive AI Applications
+# SlideAI
 
-## Software Engineering for Data-Intensive AI Applications
+## Description
 
-A production-ready machine learning application built with Django and TensorFlow, featuring automated model training, versioning, and web-based inference.
+AI-powered web application that uses a standard webcam to interpret hand gestures in real time. A cloud-deployed machine learning pipeline processes the video stream directly in the user’s browser, detects hand positions, and classifies gestures. These recognized gestures are then mapped to slide navigation actions or other on-screen controls. The result is a fully contactless, accessible, and user-friendly way to interact with slideshows, no hardware required.
+
 
 ---
 
@@ -10,10 +11,8 @@ A production-ready machine learning application built with Django and TensorFlow
 
 * [Architecture Overview](#architecture-overview)
 * [Prerequisites](#prerequisites)
-* [Quick Start](#quick-start)
-* [Development Workflow](#development-workflow)
-* [Deployment](#deployment)
-* [Debugging](#debugging)
+* [Running the application with a pretrained model](#running-the-application-with-a-pretrained-model)
+* [Dataset for model training](#dataset-for-model-training)
 * [License](#license)
 
 ---
@@ -148,7 +147,7 @@ services:
 
 ---
 
-## Quick Start (running the application with a pretrained model)
+## Running the application with a pretrained model
 
 ### 1. Clone the Repository
 
@@ -185,114 +184,12 @@ docker compose --profile cpu up
 
 ---
 
-## Development Workflow
+## Dataset for model training
+The source dataset we used for training can be found [here](https://www.kaggle.com/datasets/innominate817/hagrid-classification-512p).
 
-### Running Services Individually
+We recommend using [this](https://chalmers-my.sharepoint.com/:f:/g/personal/maksymm_chalmers_se/IgA0dUolF7dFQ5A2M11-G8a3Adir32hl0w7KakaoqvU3cYc?e=PbbTAV) dataset for local training, as we have already trimmed it to only include the gestures supported by the application.
+If you are having troubles accessing the link, try using incognito mode.
 
-```bash
-docker compose --profile gpu up frontend
-docker compose --profile gpu up web
-docker compose --profile gpu up ml-training
-docker compose --profile cpu up ml-training-cpu
-```
-
-### Common Tasks
-
-Train model:
-
-```bash
-docker compose run --rm ml-training python src/train.py \
-  --epochs 100 \
-  --version v2 \
-  --set-active
-```
-
-Django commands:
-
-```bash
-docker compose run --rm web python manage.py startapp new_app
-docker compose run --rm web python manage.py makemigrations
-docker compose run --rm web python manage.py shell
-```
-
-Run tests:
-
-```bash
-docker compose run --rm ml-training pytest
-docker compose run --rm web pytest
-```
-
-### Live Development
-
-* `ml_service/` mounted for live ML edits
-* `web_app/` auto-reloads Django
-* No rebuilds needed during development
-
-### Adding Python Packages
-
-Edit `requirements.txt` and rebuild:
-
-```bash
-docker compose build ml-training
-docker compose build web
-```
-
-### Database Management
-
-* Location: `shared_artifacts/data/database.sqlite`
-* Reset:
-
-```bash
-rm shared_artifacts/data/database.sqlite
-docker compose run --rm web python manage.py migrate
-```
-
----
-
-## Deployment
-
-### Production Checklist
-
-1. Set environment variables (`SECRET_KEY`, `ALLOWED_HOSTS`, `DEBUG=False`).
-2. Build and push images:
-
-```bash
-docker build -t <your-repo>/web:latest ./web_app
-docker build -t <your-repo>/ml-training:latest ./ml_service
-
-docker push <your-repo>/web:latest
-docker push <your-repo>/ml-training:latest
-```
-
-3. Deploy to Kubernetes:
-
-```bash
-kubectl apply -f kubernetes/01-storage.yaml
-kubectl apply -f kubernetes/02-ml-deployment.yaml
-kubectl apply -f kubernetes/03-web.yaml
-kubectl apply -f kubernetes/04-frontend.yaml
-
-kubectl get pods
-kubectl get services
-```
-
-4. Trigger initial training:
-
-```bash
-kubectl create job --from=cronjob/ml-training manual-training-1
-```
-
----
-
-## Debugging
-
-```bash
-docker compose logs -f web
-docker compose logs -f ml-training
-
-docker compose exec web bash
-docker compose exec ml-training bash
-```
 
 ---
 
