@@ -93,3 +93,5 @@ CORS_ALLOWED_ORIGINS = []
 
 # ML Training API URL
 ML_TRAINING_API_URL = os.environ.get('ML_TRAINING_API_URL', 'http://ml-training-landmarks:8003')
+# ML Inference API URL
+ML_INFERENCE_API_URL = os.environ.get('ML_INFERENCE_API_URL', 'http://ml-inference-landmarks:8002')

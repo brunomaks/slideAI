@@ -22,6 +22,8 @@ services:
   ml-inference-landmarks:
     build: ./ml_inference_landmarks
     container_name: ml-inference-landmarks
+    ports:
+      - "8002:8002"
     volumes:
       - ./shared_artifacts/models:/models
     environment:
@@ -54,6 +56,7 @@ services:
       - HOST_URL=http://127.0.0.1:8001/
       - DEBUG_SAVE=False
       - ML_TRAINING_API_URL=http://ml-training-landmarks:8003
+      - ML_INFERENCE_API_URL=http://ml-inference-landmarks:8002
       - PYTHONBUFFERED=1
 
   frontend:

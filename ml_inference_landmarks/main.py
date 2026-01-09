@@ -10,6 +10,7 @@ import time
 
 ACTIVE_MODEL_PATH = os.getenv('ACTIVE_MODEL_PATH')
 MODEL_PATH = os.getenv('MODEL_PATH')
+MODEL_DIR = os.getenv('MODEL_PATH')
 
 def load_active_model_info():
     active_json_path = Path(ACTIVE_MODEL_PATH)
@@ -26,7 +27,7 @@ def load_active_model_info():
     if not model_file:
         raise ValueError("Model file not specified in active_model.json")
     
-    model_path = Path(MODEL_PATH) / model_file
+    model_path = Path(MODEL_DIR) / model_file
 
     if not model_path.exists():
         raise FileNotFoundError(f"Model file {model_path} does not exist")
