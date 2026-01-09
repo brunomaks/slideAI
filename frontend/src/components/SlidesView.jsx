@@ -179,7 +179,7 @@ export default function SlidesView() {
 
                     <button onClick={openPicker}>Load PDF as Slides</button>
 
-                    <h2 className="hint-title">hint: press F to enter fullscreen mode</h2>
+                    <h2 className="hint-title">hint: press F to enter fullscreen mode after uploading the presentation</h2>
                 </div>
             )}
 
