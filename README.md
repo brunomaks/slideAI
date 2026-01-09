@@ -21,7 +21,7 @@ AI-powered web application that uses a standard webcam to interpret hand gesture
 
 ### Required
 
-To use run the application locally, depending on your OS you are required to have:
+To run the application locally, depending on your OS you are required to have:
 
 * **Windows:** Docker Desktop with WSL2 backend
 * **macOS:** Docker Desktop
