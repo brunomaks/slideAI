@@ -45,9 +45,18 @@ git clone <repository-url>
 cd team4
 ```
 
-### 2. Set up Admin Panel
+### 2. Start Application
 
-####  2.1. Run migrations
+
+```bash
+docker compose up
+```
+
+
+### 3. Set up Admin Panel
+Open a separate terminal and run the following steps:
+
+####  3.1. Run migrations
 
 ```bash
 docker-compose exec web python manage.py makemigrations core
@@ -57,18 +66,12 @@ docker-compose exec web python manage.py makemigrations core
 docker-compose exec web python manage.py migrate
 ```
 
-#### 2.2 Create admin user
+#### 3.2 Create admin user
 
 ```bash
 docker-compose exec web python initialize_admin.py
 ```
 
-### 3. Start Application
-
-
-```bash
-docker compose up
-```
 
 ### 4. Access the Application
 
