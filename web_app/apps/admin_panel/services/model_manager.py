@@ -4,6 +4,7 @@ from django.conf import settings
 from pathlib import Path
 import os
 import json
+import requests
 import sqlite3
 from apps.core.models import ModelVersion
 
@@ -48,6 +49,13 @@ class ModelManager:
         }
         with open(active_model_file, 'w') as f:
             json.dump(active_data, f, indent=2)
+        
+        # Call inference servioce to update the model
+        inference_url = os.getenv('ML_INFERENCE_API_URL', 'http://ml-inference-landmarks:8002')
+        try:
+            requests.post(f"{inference_url}/reload", timeout=5)
+        except Exception as e:
+            print(f"Failed to notify inference service at {inference_url}/reload: {e}")
         
         return model
     
