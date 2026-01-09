@@ -35,81 +35,7 @@ To run the application locally, depending on your OS you are required to have:
 > **Note**: You do NOT need to install the NVIDIA CUDA Toolkit on the host.
 > **Note**: No Python installation required on host machine. Everything runs in Docker.
 
-### GPU Configuration Guide
-
-#### Windows 11
-
-Create a `docker-compose.override.yml` file in the root directory:
-
-```yaml
-services:
-  ml-training:
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: all
-              capabilities: [gpu]
-```
-
-#### Linux (Ubuntu & Fedora)
-
-1. Verify driver installation:
-
-```bash
-nvidia-smi
-```
-
-2. Install NVIDIA Container Toolkit:
-
-**Ubuntu:**
-
-```bash
-sudo apt-get install nvidia-container-toolkit
-```
-
-**Fedora:**
-
-```bash
-sudo dnf install nvidia-container-toolkit
-```
-
-3. Generate CDI specification:
-
-```bash
-sudo nvidia-ctk cdi generate --output=/etc/cdi/nvidia.yaml
-nvidia-ctk cdi list
-```
-
-4. Restart Docker:
-
-```bash
-sudo systemctl restart docker
-```
-
-5. Verify setup:
-
-```bash
-docker run --rm -it --device=nvidia.com/gpu=all ubuntu nvidia-smi
-```
-
-6. Create Linux override:
-
-```yaml
-services:
-  ml-training:
-    devices:
-      - nvidia.com/gpu=all
-    volumes:
-      - ./ml_service:/workspace:Z
-      - ./shared_artifacts/models:/models:Z
-      - ./shared_artifacts/data:/data:Z
-      - ./shared_artifacts/images:/images:Z
-```
-
 ---
-
 ## Running the application with a pretrained model
 
 ### 1. Clone the Repository
@@ -139,16 +65,9 @@ docker-compose exec web python initialize_admin.py
 
 ### 3. Start Application
 
-**GPU:**
 
 ```bash
-docker compose --profile gpu up
-```
-
-**CPU:**
-
-```bash
-docker compose --profile cpu up
+docker compose up
 ```
 
 ### 4. Access the Application
