@@ -1,5 +1,6 @@
 # Contributors:
 # - Mahmoud
+# - Mykhailo
 
 """
 ML Training API Server
@@ -56,14 +57,14 @@ def run_training(job_id: str, config: dict):
     """Run training directly and update job status."""
     import sys
     from io import StringIO
-    
+
     try:
         training_jobs[job_id]['status'] = 'running'
         training_jobs[job_id]['started_at'] = datetime.now().isoformat()
-        
+
         # Import and run training directly (avoids subprocess + file I/O)
         from train import train_model
-        
+
         # Build args object matching train.py expectations
         class TrainingArgs:
             def __init__(self, cfg):
@@ -74,27 +75,27 @@ def run_training(job_id: str, config: dict):
                 self.version_name = cfg.get('version_name')
                 self.no_set_active = True
                 self.model_output_path = '/models'
-        
+
         args = TrainingArgs(config)
-        
+
         # Capture stdout during training
         old_stdout = sys.stdout
         sys.stdout = captured_output = StringIO()
-        
+
         try:
             result = train_model(args)
             metrics = result
-            
+
             training_jobs[job_id]['stdout'] = captured_output.getvalue()
             training_jobs[job_id]['status'] = 'completed'
             training_jobs[job_id]['return_code'] = 0
-            
+
             if metrics:
                 training_jobs[job_id]['metrics'] = metrics
-            
+
             version = config['dataset_version']
             training_jobs[job_id]['model_file'] = f"gesture_model_{version}.keras"
-            
+
             # Trigger inference service reload if active_model.json was updated
             inference_url = os.getenv('INFERENCE_API_URL')
             if inference_url:
@@ -107,7 +108,7 @@ def run_training(job_id: str, config: dict):
                 except Exception as re:
                     print(f"Failed to reload inference service: {re}")
                     training_jobs[job_id]['reload_status'] = f'failed: {re}'
-                    
+
         except Exception as train_error:
             training_jobs[job_id]['stdout'] = captured_output.getvalue()
             training_jobs[job_id]['status'] = 'failed'
@@ -115,7 +116,7 @@ def run_training(job_id: str, config: dict):
             training_jobs[job_id]['return_code'] = 1
         finally:
             sys.stdout = old_stdout
-            
+
     except Exception as e:
         training_jobs[job_id]['status'] = 'failed'
         training_jobs[job_id]['error'] = str(e)
@@ -133,12 +134,12 @@ async def health():
 async def start_training(config: TrainingConfig):
     """
     Start a new training job.
-    
+
     Accepts training configuration and returns job ID for status tracking.
     """
     # Generate job ID
     job_id = f"train_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:6]}"
-    
+
     # Initialize job record
     training_jobs[job_id] = {
         'id': job_id,
@@ -151,12 +152,12 @@ async def start_training(config: TrainingConfig):
         'stderr': '',
         'error': None,
     }
-    
+
     # Start training in background thread
     thread = threading.Thread(target=run_training, args=(job_id, config.model_dump()))
     thread.daemon = True
     thread.start()
-    
+
     return TrainingJobResponse(
         job_id=job_id,
         status='pending',
@@ -168,10 +169,10 @@ async def start_training(config: TrainingConfig):
 async def get_training_status(job_id: str):
     """Get status of a training job."""
     job = training_jobs.get(job_id)
-    
+
     if not job:
         raise HTTPException(status_code=404, detail='Job not found')
-    
+
     return job
 
 
@@ -179,10 +180,10 @@ async def get_training_status(job_id: str):
 async def get_training_logs(job_id: str):
     """Get logs for a training job."""
     job = training_jobs.get(job_id)
-    
+
     if not job:
         raise HTTPException(status_code=404, detail='Job not found')
-    
+
     return {
         'job_id': job_id,
         'stdout': job.get('stdout', ''),
@@ -208,26 +209,26 @@ async def run_preprocessing(request: PreprocJobRequest):
     def task():
         import shutil
         import zipfile
-        
+
         try:
             preprocessing_jobs[job_id]["status"] = "running"
-            
+
             # Paths
             # RAW_IMAGES_PATH is /images (mapped volume)
             zip_path = RAW_IMAGES_PATH / request.zip_filename
-            
+
             if not zip_path.exists():
                 raise FileNotFoundError(f"ZIP file not found: {zip_path}")
 
             # Temp extraction path (local to container, fast I/O)
             temp_extract_path = Path("/tmp") / f"extract_{job_id}"
             temp_extract_path.mkdir(parents=True, exist_ok=True)
-            
+
             try:
                 print(f"Extracting {zip_path} to {temp_extract_path}")
                 with zipfile.ZipFile(zip_path, 'r') as zip_ref:
                     zip_ref.extractall(temp_extract_path)
-                
+
                 # Verify structure (handle optional root folder)
                 # If everything is in one subfolder, perform processing on that subfolder
                 content = list(temp_extract_path.iterdir())
@@ -238,7 +239,7 @@ async def run_preprocessing(request: PreprocJobRequest):
                 init_database(DB_PATH)
                 raw_stats = ingest_raw_landmarks(DB_PATH, LANDMARK_DETECTOR_PATH, target_root, request.dataset_version)
                 normalized_stats = ingest_normalized_landmarks(DB_PATH, request.dataset_version)
-                
+
                 preprocessing_jobs[job_id]["status"] = "completed"
                 preprocessing_jobs[job_id]["message"] = {
                     "total_raw_samples": raw_stats["total"],
@@ -246,12 +247,12 @@ async def run_preprocessing(request: PreprocJobRequest):
                     "valid_preprocessed_samples": normalized_stats["inserted"],
                     "label_stats": normalized_stats["label_stats"]
                 }
-                
+
             finally:
                 # Cleanup temp files
                 if temp_extract_path.exists():
                     shutil.rmtree(temp_extract_path)
-                    
+
                 # Cleanup source ZIP (landmarks are now in DB, raw images no longer needed)
                 if zip_path.exists():
                     try:
@@ -283,7 +284,7 @@ async def list_models():
     """List available models."""
     model_path = Path('/models')
     models = []
-    
+
     if model_path.exists():
         for model_file in model_path.glob('*.keras'):
             models.append({
@@ -292,7 +293,7 @@ async def list_models():
                 'size_mb': round(model_file.stat().st_size / (1024 * 1024), 2),
                 'modified': datetime.fromtimestamp(model_file.stat().st_mtime).isoformat()
             })
-    
+
     # Check active model
     active_model_file = model_path / 'active_model.json'
     active_model = None
@@ -304,7 +305,7 @@ async def list_models():
             active_model = active_data.get('model_file')
         except Exception:
             pass
-    
+
     return {
         'models': models,
         'active_model': active_model

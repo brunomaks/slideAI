@@ -1,5 +1,6 @@
 # Contributors:
 # - Mahmoud
+# - Mykhailo
 
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
@@ -59,11 +60,11 @@ def dashboard(request):
 
     # Get model count
     total_models = ModelVersion.objects.count()
-    
+
     # Get dataset stats
     stats = Dataset.get_latest_statistics()
     total_samples = stats['total_samples']
-    
+
     # Prediction distribution by class (last 24h)
     class_distribution = Prediction.objects.filter(
         created_at__gte=yesterday
@@ -244,7 +245,7 @@ def upload_data(request):
                 counts = uploader.handle_upload(data_file, dataset_version=dataset_version, user=request.user)
 
                 messages.success(
-                    request, 
+                    request,
                     f"Successfully processed {counts['total']} raw samples."
                 )
                 return redirect('admin_panel:view_dataset')
@@ -276,10 +277,10 @@ def view_dataset(request):
         return render(request, 'admin_panel/view_dataset.html', {
             'dataset_versions': [],
         })
-    
+
     stats = Dataset.get_statistics_for_version(current_dataset.version)
     # {'label_stats': {'like': 1464, 'stop': 1599, 'two_up_inverted': 1525}, 'total_samples': 4588}
-    
+
     total_samples = stats['total_samples']
     label_counts = stats['label_stats']
 

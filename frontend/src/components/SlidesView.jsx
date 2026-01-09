@@ -1,7 +1,7 @@
 /*
  Contributors:
 - Yaroslav
-- 
+- Mykhailo
 
 */
 
@@ -24,7 +24,7 @@ const GESTURE_CONFIG = {
         direction: "Left"
     },
     NAVIGATE_PREV: {
-        gesture: "two_up_inverted", 
+        gesture: "two_up_inverted",
         direction: "Right"
     },
     OPEN_EXIT_POPUP: {
@@ -117,7 +117,7 @@ export default function SlidesView() {
             await deck.initialize();
 
             deckRef.current = deck
-            
+
             deck.layout();
         };
 
