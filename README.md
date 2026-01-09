@@ -119,11 +119,22 @@ git clone <repository-url>
 cd team4
 ```
 
-### 2. Initialize Database
+### 2. Set up Admin Panel
+
+####  2.1. Run migrations
 
 ```bash
-docker compose run --rm web python manage.py migrate
-docker compose run --rm web python manage.py createsuperuser
+docker-compose exec web python manage.py makemigrations core
+```
+
+```bash
+docker-compose exec web python manage.py migrate
+```
+
+#### 2.2 Create admin user
+
+```bash
+docker-compose exec web python initialize_admin.py
 ```
 
 ### 3. Start Application
@@ -144,6 +155,12 @@ docker compose --profile cpu up
 
 * User Interface: [http://localhost:5173](http://localhost:5173)
 * Admin Panel: [http://localhost:8001/admin/](http://localhost:8001/admin/)
+
+> Note: The default credentials for admin panel are: 
+> 
+> Login: admin
+> 
+> Password: admin123
 
 ---
 
