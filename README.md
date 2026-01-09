@@ -180,9 +180,9 @@ docker compose --profile cpu up
 
 ### 4. Access the Application
 
-* User Interface: [http://localhost:8000](http://localhost:8000)
-* Admin Panel: [http://localhost:8000/admin-panel/](http://localhost:8000/admin-panel/)
-* Django Admin: [http://localhost:8000/admin](http://localhost:8000/admin)
+* User Interface: [http://localhost:5173](http://localhost:5173)
+* Admin Panel: [http://localhost:5173/admin-panel/](http://localhost:5173/admin-panel/)
+* Django Admin: [http://localhost:5173/admin](http://localhost:5173/admin)
 
 ---
 
