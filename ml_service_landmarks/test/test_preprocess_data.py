@@ -1,3 +1,7 @@
+# Contributors:
+# - Maksym
+# - Yaroslav
+
 import pytest
 import numpy as np
 import sqlite3

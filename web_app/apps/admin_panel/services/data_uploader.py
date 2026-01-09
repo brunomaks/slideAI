@@ -1,5 +1,6 @@
 # Contributors:
 # - Mahmoud
+# - Yaroslav
 
 import json
 import sqlite3
