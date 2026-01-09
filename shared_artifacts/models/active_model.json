@@ -1,0 +1,8 @@
+{
+  "model_file": "gesture_model_v1_20260106_204940.keras",
+  "class_names": [
+    "like",
+    "stop",
+    "two_up_inverted"
+  ]
+}
