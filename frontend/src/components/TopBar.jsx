@@ -6,7 +6,7 @@ export default function Topbar({ onBrandClick }) {
       <div className="topbar-content">
         <div className="topbar-brand" onClick={onBrandClick}>SlideAI</div>
         <a
-          href="https://git.chalmers.se/courses/dit826/2025/team4/-/wikis/home"
+          href="https://git.chalmers.se/courses/dit826/2025/team4#data-intensive-ai-applications"
           target="_blank"
           rel="noopener noreferrer"
           className="topbar-button"
