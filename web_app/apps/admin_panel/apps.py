@@ -1,3 +1,6 @@
+# Contributors:
+# - Mahmoud
+
 from django.apps import AppConfig
 
 

@@ -1,3 +1,7 @@
+<!-- Contributors:
+ - Mahmoud
+-->
+
 # Local Kubernetes Deployment (Docker Desktop)
 
 This guide explains how to deploy the SlideAI application locally using Docker Desktop's built-in Kubernetes cluster. This is useful for development and testing without incurring cloud costs.

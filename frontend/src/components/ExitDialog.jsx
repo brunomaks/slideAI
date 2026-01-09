@@ -1,3 +1,10 @@
+/*
+ Contributors:
+- Maksym
+- 
+
+*/
+
 // We don't want to render the dialog inside Reveal or PDF containers. 
 // Portal allows to render it into document.body
 import { createPortal } from "react-dom"; 

@@ -1,3 +1,10 @@
+/*
+ Contributors:
+- Yaroslav
+- Mykhailo
+
+*/
+
 import { useRef, useEffect, useCallback, useState } from "react";
 import {
   HandLandmarker,
@@ -67,12 +74,12 @@ export function useHandLandmarks(inputStream) {
     });
     videoRef.current = video;
 
-  
+
     return () => {
       if (animationIdRef.current) {
         cancelAnimationFrame(animationIdRef.current);
       }
-      
+
       video.srcObject = null;
       document.body.removeChild(video);
       videoRef.current = null;
@@ -102,21 +109,21 @@ export function useHandLandmarks(inputStream) {
       }
 
       lastVideoTimeRef.current = video.currentTime;
-      
+
       // Use performance.now() for reliable monotonically increasing timestamps
       const timestampMs = performance.now();
-      
+
       // Ensure timestamp is strictly greater than last timestamp
       if (timestampMs <= lastTimestampMsRef.current) {
         // If performance.now() somehow didn't increase enough, force increment
         const adjustedTimestamp = lastTimestampMsRef.current + 1;
         lastTimestampMsRef.current = adjustedTimestamp;
-        
+
         const results = handLandmarker.detectForVideo(
           video,
           adjustedTimestamp
         );
-        
+
         if (results.landmarks && results.landmarks.length > 0 && onLandmarksRef.current) {
           let handedness = results.handednesses[0][0].categoryName;
           const flippedHandedness = handedness === "Left" ? "Right" : "Left";
@@ -128,7 +135,7 @@ export function useHandLandmarks(inputStream) {
         }
       } else {
         lastTimestampMsRef.current = timestampMs;
-        
+
         const results = handLandmarker.detectForVideo(
           video,
           timestampMs

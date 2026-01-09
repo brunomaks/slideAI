@@ -1,3 +1,10 @@
+/*
+ Contributors:
+- Ahmet
+- Mahmoud
+- Pavlo
+*/
+
 import './LandingPage.css';
 
 export default function Landing({ onEnter }) {
@@ -9,7 +16,7 @@ export default function Landing({ onEnter }) {
           Contol your presenetation with simple intuive gestures
         </p>
         <p className="description">
-          SlideAI tracks your hands in real time, recognizes gestures and performs control commands. 
+          SlideAI tracks your hands in real time, recognizes gestures and performs control commands.
           No need to touch anything.
         </p>
         <button className="start-button" onClick={onEnter}>

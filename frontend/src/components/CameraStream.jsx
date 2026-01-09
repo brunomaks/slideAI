@@ -1,3 +1,12 @@
+/*
+ Contributors:
+- Yaroslav
+- Mahmoud
+- Mykhailo
+- Ahmet
+- Pavlo
+*/
+
 import React, { useRef, useState, useEffect } from "react";
 import { useWebSocket } from "../contexts/WebSocketContext";
 import { useHandLandmarks } from "../hooks/useHandLandmarks";
@@ -20,7 +29,7 @@ export default function CameraStream({ onStreamReady }) {
     // draw bounding box on canvas
     const drawBoundingBox = (landmarks, canvas, video) => {
         const ctx = canvas.getContext("2d");
-        
+
         // remove previous drawings
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -34,7 +43,7 @@ export default function CameraStream({ onStreamReady }) {
 
         // min/max x and y coordinates from all landmarks
         let minX = 1, minY = 1, maxX = 0, maxY = 0;
-        
+
         landmarks.forEach(landmark => {
             minX = Math.min(minX, landmark.x);
             minY = Math.min(minY, landmark.y);
@@ -46,7 +55,7 @@ export default function CameraStream({ onStreamReady }) {
         const width = maxX - minX;
         const height = maxY - minY;
         const padding = 0.1;
-        
+
         minX = Math.max(0, minX - width * padding);
         minY = Math.max(0, minY - height * padding);
         maxX = Math.min(1, maxX + width * padding);
@@ -111,7 +120,7 @@ export default function CameraStream({ onStreamReady }) {
     useEffect(() => {
         const video = videoRef.current;
         const canvas = canvasRef.current;
-        
+
         if (!video || !canvas) return;
 
         const updateCanvasSize = () => {
@@ -124,12 +133,12 @@ export default function CameraStream({ onStreamReady }) {
         // try multiple events to catch when video dimensions are ready
         video.addEventListener("loadedmetadata", updateCanvasSize);
         video.addEventListener("loadeddata", updateCanvasSize);
-        
+
         // also try immediately in case video is already loaded
         if (video.videoWidth > 0) {
             updateCanvasSize();
         }
-        
+
         return () => {
             video.removeEventListener("loadedmetadata", updateCanvasSize);
             video.removeEventListener("loadeddata", updateCanvasSize);
@@ -184,8 +193,8 @@ export default function CameraStream({ onStreamReady }) {
                 autoPlay
                 playsInline
                 disablePictureInPicture
-                style={{ 
-                    display: "block", 
+                style={{
+                    display: "block",
                     width: "100%",
                     height: "100%",
                     objectFit: "contain"
