@@ -148,7 +148,7 @@ docker compose --profile cpu up
 ---
 
 ## Dataset for model training
-The source dataset we used for training can be found [here](https://www.kaggle.com/datasets/innominate817/hagrid-classification-512p).
+The source dataset we used for training can be found here: [HaGRID Classification 512p](https://www.kaggle.com/datasets/innominate817/hagrid-classification-512p) by Innominate817 licensed under a [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/).
 
 We recommend using [this](https://chalmers-my.sharepoint.com/:f:/g/personal/maksymm_chalmers_se/IgA0dUolF7dFQ5A2M11-G8a3Adir32hl0w7KakaoqvU3cYc?e=PbbTAV) dataset for local training, as we have already trimmed it to only include the gestures supported by the application.
 If you are having troubles accessing the link, try using incognito mode.
