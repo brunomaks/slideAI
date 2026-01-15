@@ -15,7 +15,7 @@ AI-powered web application that uses a standard webcam to interpret hand gesture
 * [License](#license)
 
 ---
-
+![Description](assets/high_level_architecture.png)
 
 ## Prerequisites
 
