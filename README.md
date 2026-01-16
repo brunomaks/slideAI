@@ -9,13 +9,32 @@ AI-powered web application that uses a standard webcam to interpret hand gesture
 
 ## Table of Contents
 
+* [System Overview](#system-overview)
 * [Prerequisites](#prerequisites)
 * [Running the application with a pretrained model](#running-the-application-with-a-pretrained-model)
 * [Dataset for model training](#dataset-for-model-training)
 * [License](#license)
 
 ---
+
+## System Overview
+
+### Frontend view (triggering "next_slide")
+
+![Description](assets/next_slide.png)
+
+### Admin Panel view
+
+![Description](assets/admin_panel.png)
+
+### High Level System architecture
+
 ![Description](assets/high_level_architecture.png)
+
+### Data preprocessing pipeline
+
+![Description](assets/preprocessing_pipeline.png)
+![Description](assets/live_landmarks.png)
 
 ## Prerequisites
 
